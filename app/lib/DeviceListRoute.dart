@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; 
+
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:BLE_demo/DevicesListElement.dart';
+import 'package:app/DevicesListElement.dart';
 
 class DeviceListRoute extends StatefulWidget{
   @override

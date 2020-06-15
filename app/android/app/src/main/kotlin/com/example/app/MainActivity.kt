@@ -1,4 +1,4 @@
-package com.example.BLE_demo
+package com.example.app
 
 import io.flutter.embedding.android.FlutterActivity
 

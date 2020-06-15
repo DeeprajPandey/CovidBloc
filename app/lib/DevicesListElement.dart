@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 class DevicesListElement extends StatelessWidget{
   final String deviceName;
   

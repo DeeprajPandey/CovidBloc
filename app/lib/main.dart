@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:BLE_demo/DeviceListRoute.dart';
+import 'package:app/DeviceListRoute.dart';
 
 void main() {
   runApp(ContractTracingApp());
