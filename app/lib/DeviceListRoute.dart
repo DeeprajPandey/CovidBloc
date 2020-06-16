@@ -28,15 +28,18 @@ class DeviceListRouteState extends State<DeviceListRoute>{
     flutterBlue.stopScan();
 
     for (var i = 0; i < _scannedDevices.length; i++) {
+      if (_scannedDevices[i].name.length>0){
         _deviceList.add(DevicesListElement(
        deviceName : _scannedDevices[i].name,
         ));
+      }   
+
     }
   }
 
  Widget build(BuildContext context){
   final listView = Container(
-        color:Colors.grey,
+        color:Colors.grey[100],
         child: ListView.builder(
           itemCount: _deviceList.length,
           itemBuilder: (BuildContext context, int index) => _deviceList[index],
@@ -50,7 +53,7 @@ class DeviceListRouteState extends State<DeviceListRoute>{
       'Available Devices',
        textAlign: TextAlign.center,
           style:TextStyle(
-          fontSize:24.0,
+          fontSize:18.0,
           color: Colors.black,
       ),
     ),
