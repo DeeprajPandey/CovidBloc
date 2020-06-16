@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:app/DeviceListRoute.dart';
+//import 'package:app/DeviceListRoute.dart';
+import 'package:app/control_pannel.dart';
 
 void main() {
   runApp(ContractTracingApp());
@@ -11,7 +12,7 @@ class ContractTracingApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Bluetooth Scanner',
-      home: DeviceListRoute(),
+      home: BluetoothPage(),
     );
   }
 }

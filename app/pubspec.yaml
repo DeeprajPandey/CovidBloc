@@ -24,6 +24,11 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_blue: 0.6.3+1
+  consumer: ^2.0.0
+  provider: ^3.0.0
+  font_awesome_flutter: ^8.4.0
+  flutter_spinkit: ^3.1.0
+  progress_indicators: ^0.1.4
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
