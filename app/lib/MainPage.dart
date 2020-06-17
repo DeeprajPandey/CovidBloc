@@ -28,6 +28,7 @@ class _MainPage extends State<MainPage> {
   BackgroundCollectingTask _collectingTask;
 
   bool _autoAcceptPairingRequests = false;
+  final bool isThreeLine=true;
 
   @override
   void initState() {
@@ -123,14 +124,10 @@ class _MainPage extends State<MainPage> {
               ),
             ),
             ListTile(
-              title: const Text('Local adapter address'),
-              subtitle: Text(_address),
+              title: const Text('Local Adapter'),
+              subtitle: Text('Address: '+ _address + '\n'+'Name: '+ _name),
             ),
-            ListTile(
-              title: const Text('Local adapter name'),
-              subtitle: Text(_name),
-              onLongPress: null,
-            ),
+            
             ListTile(
               title: _discoverableTimeoutSecondsLeft == 0
                   ? const Text("Discoverable")
@@ -215,7 +212,7 @@ class _MainPage extends State<MainPage> {
             ),
             ListTile(
               title: RaisedButton(
-                  child: const Text('Explore discovered devices'),
+                  child: const Text('Scan for Available Devices'),
                   onPressed: () async {
                     final BluetoothDevice selectedDevice =
                         await Navigator.of(context).push(
