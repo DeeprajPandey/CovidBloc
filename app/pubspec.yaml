@@ -13,12 +13,11 @@ dependencies:
 
   cupertino_icons: ^0.1.2
 
+  flutter_bluetooth_serial: ^0.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  flutter_bluetooth_serial:
-    path: ../
 
 flutter:
   uses-material-design: true
