@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-
+import 'package:progress_indicators/progress_indicators.dart';
 import './BluetoothDeviceListEntry.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class DiscoveryPage extends StatefulWidget {
   /// If true, discovery starts on page start, otherwise user must press action button.
@@ -67,22 +68,43 @@ class _DiscoveryPage extends State<DiscoveryPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    if(isDiscovering){
     return Scaffold(
+      body: Container(
+      color:Colors.blue,
+      child:Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: SpinKitWave(
+              color: Colors.white, type: SpinKitWaveType.end, size: 30),
+              ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+                  'Scanning for bluetooth devices',
+                  style:TextStyle(
+                  fontSize:18.0,
+                  color:Colors.white,
+                  )
+                ),
+            FadingText('...'),
+            ],
+        ),
+      ],
+    ),
+    )
+    );
+    }
+    else{
+      return Scaffold(
       appBar: AppBar(
-        title: isDiscovering
-            ? Text('Discovering devices')
-            : Text('Discovered devices'),
+        title: Text('Available devices'),
         actions: <Widget>[
-          isDiscovering
-              ? FittedBox(
-                  child: Container(
-                    margin: new EdgeInsets.all(16.0),
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-                )
-              : IconButton(
+         IconButton(
                   icon: Icon(Icons.replay),
                   onPressed: _restartDiscovery,
                 )
@@ -150,4 +172,4 @@ class _DiscoveryPage extends State<DiscoveryPage> {
       ),
     );
   }
-}
+}}

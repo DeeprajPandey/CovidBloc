@@ -94,7 +94,6 @@ class _MainPage extends State<MainPage> {
         child: ListView(
           children: <Widget>[
             Divider(),
-            ListTile(title: const Text('General')),
             SwitchListTile(
               title: const Text('Enable Bluetooth'),
               value: _bluetoothState.isEnabled,
@@ -137,7 +136,7 @@ class _MainPage extends State<MainPage> {
                   ? const Text("Discoverable")
                   : Text(
                       "Discoverable for ${_discoverableTimeoutSecondsLeft}s"),
-              subtitle: const Text("PsychoX-Luna"),
+              subtitle: Text(_name),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
