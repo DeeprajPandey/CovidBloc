@@ -74,6 +74,7 @@ class _DiscoveryPage extends State<DiscoveryPage> {
       await platform.invokeMethod('connectToDevice',<String,BluetoothDevice>{
         'device': dev
       });
+      print("Successful to establish connection");
     } on PlatformException catch(e){
         print("Failed to establish connection: '${e.message}'");
     }
