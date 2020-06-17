@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import './BluetoothDeviceListEntry.dart';
+import 'package:progress_indicators/progress_indicators.dart';
 
 class SelectBondedDevicePage extends StatefulWidget {
   /// If true, on page start there is performed discovery upon the bonded devices.
@@ -117,28 +118,51 @@ class _SelectBondedDevicePage extends State<SelectBondedDevicePage> {
               },
             ))
         .toList();
+
+    if(_isDiscovering){
     return Scaffold(
+      body: Container(
+      color:Colors.blue,
+      child:Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: SpinKitWave(
+              color: Colors.white, type: SpinKitWaveType.end, size: 30),
+              ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+                  'Scanning for bluetooth devices',
+                  style:TextStyle(
+                  fontSize:18.0,
+                  color:Colors.white,
+                  )
+                ),
+            FadingText('...'),
+            ],
+        ),
+      ],
+    ),
+    )
+    );
+    }
+
+    else{
+      return Scaffold(
       appBar: AppBar(
-        title: Text('Select device'),
+        title: Text('Available devices'),
         actions: <Widget>[
-          _isDiscovering
-              ? FittedBox(
-                  child: Container(
-                    margin: new EdgeInsets.all(16.0),
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.white,
-                      ),
-                    ),
-                  ),
-                )
-              : IconButton(
+         IconButton(
                   icon: Icon(Icons.replay),
                   onPressed: _restartDiscovery,
                 )
         ],
       ),
-      body: ListView(children: list),
-    );
+      body: ListView(children:list)
+      );
+    }
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:progress_indicators/progress_indicators.dart';
 import './BluetoothDeviceListEntry.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:flutter/services.dart';
 
 class DiscoveryPage extends StatefulWidget {
   /// If true, discovery starts on page start, otherwise user must press action button.
@@ -16,6 +17,7 @@ class DiscoveryPage extends StatefulWidget {
 }
 
 class _DiscoveryPage extends State<DiscoveryPage> {
+  static const platform = const MethodChannel('samples.flutter.dev/bluetooth');
   StreamSubscription<BluetoothDiscoveryResult> _streamSubscription;
   List<BluetoothDiscoveryResult> results = List<BluetoothDiscoveryResult>();
   bool isDiscovering;
@@ -64,6 +66,18 @@ class _DiscoveryPage extends State<DiscoveryPage> {
     _streamSubscription?.cancel();
 
     super.dispose();
+  }
+
+  Future<void> _connectToDevice(BluetoothDevice dev) async {
+    // String _connectionStatus;
+    try{
+      await platform.invokeMethod('connectToDevice',<String,BluetoothDevice>{
+        'device': dev
+      });
+    } on PlatformException catch(e){
+        print("Failed to establish connection: '${e.message}'");
+    }
+
   }
 
   @override
@@ -118,7 +132,8 @@ class _DiscoveryPage extends State<DiscoveryPage> {
             device: result.device,
             rssi: result.rssi,
             onTap: () {
-              Navigator.of(context).pop(result.device);
+              _connectToDevice(result.device);
+              //Navigator.of(context).pop(result.device);
             },
             onLongPress: () async {
               try {
