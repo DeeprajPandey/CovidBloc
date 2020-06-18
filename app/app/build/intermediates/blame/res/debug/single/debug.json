@@ -1,0 +1,38 @@
+[
+    {
+        "merged": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/build/intermediates/res/merged/debug/layout_fragment_client.xml.flat",
+        "source": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/src/main/res/layout/fragment_client.xml"
+    },
+    {
+        "merged": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/build/intermediates/res/merged/debug/layout_fragment_server.xml.flat",
+        "source": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/src/main/res/layout/fragment_server.xml"
+    },
+    {
+        "merged": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/build/intermediates/res/merged/debug/drawable-hdpi_ic_launcher.png.flat",
+        "source": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/src/main/res/drawable-hdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/build/intermediates/res/merged/debug/layout_fragment_help.xml.flat",
+        "source": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/src/main/res/layout/fragment_help.xml"
+    },
+    {
+        "merged": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/build/intermediates/res/merged/debug/navigation_nav_graph.xml.flat",
+        "source": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/src/main/res/navigation/nav_graph.xml"
+    },
+    {
+        "merged": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/build/intermediates/res/merged/debug/drawable-xxhdpi_ic_launcher.png.flat",
+        "source": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/src/main/res/drawable-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/build/intermediates/res/merged/debug/layout_activity_main.xml.flat",
+        "source": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/src/main/res/layout/activity_main.xml"
+    },
+    {
+        "merged": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/build/intermediates/res/merged/debug/drawable-xhdpi_ic_launcher.png.flat",
+        "source": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/src/main/res/drawable-xhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/build/intermediates/res/merged/debug/drawable-mdpi_ic_launcher.png.flat",
+        "source": "/Users/nandiniagrawal/Desktop/fabric-contact-tracing/app/app/src/main/res/drawable-mdpi/ic_launcher.png"
+    }
+]

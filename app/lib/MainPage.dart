@@ -8,6 +8,7 @@ import './SelectBondedDevicePage.dart';
 import './ChatPage.dart';
 import './BackgroundCollectingTask.dart';
 import './BackgroundCollectedPage.dart';
+import 'package:flutter/services.dart';
 
 // import './helpers/LineChart.dart';
 
@@ -18,6 +19,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPage extends State<MainPage> {
   BluetoothState _bluetoothState = BluetoothState.UNKNOWN;
+  static const platform = const MethodChannel('samples.flutter.dev/bluetooth');
 
   String _address = "...";
   String _name = "...";
@@ -84,6 +86,19 @@ class _MainPage extends State<MainPage> {
     _discoverableTimeoutTimer?.cancel();
     super.dispose();
   }
+
+  Future<void> _startServer () async {
+    String connStatus;
+    try{
+      connStatus=await platform.invokeMethod('customStartServer');
+    }on PlatformException catch(e){
+      print("Failed to establish connection: '${e.message}'");
+      connStatus = "Connection failed";
+    }
+
+    print("Connection status : $connStatus\n");
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -187,29 +202,29 @@ class _MainPage extends State<MainPage> {
             ),
             Divider(),
             ListTile(title: const Text('Devices discovery and connection')),
-            SwitchListTile(
-              title: const Text('Auto-try specific pin when pairing'),
-              subtitle: const Text('Pin 1234'),
-              value: _autoAcceptPairingRequests,
-              onChanged: (bool value) {
-                setState(() {
-                  _autoAcceptPairingRequests = value;
-                });
-                if (value) {
-                  FlutterBluetoothSerial.instance.setPairingRequestHandler(
-                      (BluetoothPairingRequest request) {
-                    print("Trying to auto-pair with Pin 1234");
-                    if (request.pairingVariant == PairingVariant.Pin) {
-                      return Future.value("1234");
-                    }
-                    return null;
-                  });
-                } else {
-                  FlutterBluetoothSerial.instance
-                      .setPairingRequestHandler(null);
-                }
-              },
-            ),
+            // SwitchListTile(
+            //   title: const Text('Auto-try specific pin when pairing'),
+            //   subtitle: const Text('Pin 1234'),
+            //   value: _autoAcceptPairingRequests,
+            //   onChanged: (bool value) {
+            //     setState(() {
+            //       _autoAcceptPairingRequests = value;
+            //     });
+            //     if (value) {
+            //       FlutterBluetoothSerial.instance.setPairingRequestHandler(
+            //           (BluetoothPairingRequest request) {
+            //         print("Trying to auto-pair with Pin 1234");
+            //         if (request.pairingVariant == PairingVariant.Pin) {
+            //           return Future.value("1234");
+            //         }
+            //         return null;
+            //       });
+            //     } else {
+            //       FlutterBluetoothSerial.instance
+            //           .setPairingRequestHandler(null);
+            //     }
+            //   },
+            // ),
             ListTile(
               title: RaisedButton(
                   child: const Text('Scan for Available Devices'),
@@ -232,7 +247,7 @@ class _MainPage extends State<MainPage> {
             ),
             ListTile(
               title: RaisedButton(
-                child: const Text('Connect to paired device to chat'),
+                child: const Text('Connect to a Paired Device'),
                 onPressed: () async {
                   final BluetoothDevice selectedDevice =
                       await Navigator.of(context).push(
@@ -252,6 +267,15 @@ class _MainPage extends State<MainPage> {
                 },
               ),
             ),
+            ListTile(
+              title: RaisedButton(
+                child: const Text('Start Server'),
+                onPressed: () {
+                  _startServer();
+                },
+              ),
+            ),
+
             Divider(),
             ListTile(title: const Text('Multiple connections example')),
             ListTile(

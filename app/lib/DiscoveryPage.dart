@@ -135,6 +135,7 @@ class _DiscoveryPage extends State<DiscoveryPage> {
                 _connectToDevice(result.device);
                 //Navigator.of(context).pop(result.device);
               },
+              
               onLongPress: () async {
                 try {
                   bool bonded = false;
@@ -181,7 +182,7 @@ class _DiscoveryPage extends State<DiscoveryPage> {
                     },
                   );
                 }
-              },
+               },
             );
           },
         ),

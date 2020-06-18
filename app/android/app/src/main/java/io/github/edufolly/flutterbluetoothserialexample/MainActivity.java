@@ -38,6 +38,7 @@ import android.os.Message;
 
 public class MainActivity extends FlutterActivity {
   public static final UUID MY_UUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
+  public static final String NAME = "BluetoothDemo";
   private static final String CHANNEL = "samples.flutter.dev/bluetooth";
   BluetoothAdapter bluetoothAdapter = null;
 
@@ -53,6 +54,9 @@ public class MainActivity extends FlutterActivity {
           public void onMethodCall(MethodCall call, Result result) {
             bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
+            if (call.method.equals("customStartServer")){
+              startServer(call,result);
+            }
             if (call.method.equals("customConnectToDevice")) {
               if (!call.hasArgument("address")) {
                 result.error("invalid_argument", "argument 'address' not found", null);
@@ -93,6 +97,18 @@ public class MainActivity extends FlutterActivity {
       //System.out.println("No device found");
     }
   }
+
+  private void startServer(MethodCall call,Result result) { //Result result,
+    //Activity activity = this;
+    //try{
+      new Thread(new AcceptThread()).start();
+      result.success("Calling Server Class successful");
+    //} 
+    //catch(IOException e){
+    //  result.error("Error calling server class","Error",null);
+    //}
+  }
+
 }
 
 
