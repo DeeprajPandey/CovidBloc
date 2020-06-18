@@ -48,7 +48,7 @@ public class ConnectThread extends Thread {
     // Get a BluetoothSocket for a connection with the
     // given BluetoothDevice
     try {
-          tmp = device.createRfcommSocketToServiceRecord(UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66"));
+          tmp = device.createRfcommSocketToServiceRecord(MainActivity.MY_UUID);
         } catch (IOException e) {
           System.out.println("Client connection failed: " + e.getMessage() + "\n");
         }
