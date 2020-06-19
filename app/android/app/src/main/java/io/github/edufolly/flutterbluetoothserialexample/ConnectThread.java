@@ -108,6 +108,7 @@ public class ConnectThread extends Thread {
               System.out.println("Made connection, but socket is null\n");
           }
           System.out.println("Client ending \n");
+      return;
     }        
 
        

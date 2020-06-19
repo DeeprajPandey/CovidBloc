@@ -90,7 +90,7 @@ class _MainPage extends State<MainPage> {
   Future<void> _startServer () async {
     String connStatus;
     try{
-      connStatus=await platform.invokeMethod('customStartServer');
+      connStatus = await platform.invokeMethod('customStartServer');
     }on PlatformException catch(e){
       print("Failed to establish connection: '${e.message}'");
       connStatus = "Connection failed";
@@ -143,63 +143,63 @@ class _MainPage extends State<MainPage> {
               subtitle: Text('Address: '+ _address + '\n'+'Name: '+ _name),
             ),
             
-            ListTile(
-              title: _discoverableTimeoutSecondsLeft == 0
-                  ? const Text("Discoverable")
-                  : Text(
-                      "Discoverable for ${_discoverableTimeoutSecondsLeft}s"),
-              subtitle: Text(_name),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Checkbox(
-                    value: _discoverableTimeoutSecondsLeft != 0,
-                    onChanged: null,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: null,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: () async {
-                      print('Discoverable requested');
-                      final int timeout = await FlutterBluetoothSerial.instance
-                          .requestDiscoverable(60);
-                      if (timeout < 0) {
-                        print('Discoverable mode denied');
-                      } else {
-                        print(
-                            'Discoverable mode acquired for $timeout seconds');
-                      }
-                      setState(() {
-                        _discoverableTimeoutTimer?.cancel();
-                        _discoverableTimeoutSecondsLeft = timeout;
-                        _discoverableTimeoutTimer =
-                            Timer.periodic(Duration(seconds: 1), (Timer timer) {
-                          setState(() {
-                            if (_discoverableTimeoutSecondsLeft < 0) {
-                              FlutterBluetoothSerial.instance.isDiscoverable
-                                  .then((isDiscoverable) {
-                                if (isDiscoverable) {
-                                  print(
-                                      "Discoverable after timeout... might be infinity timeout :F");
-                                  _discoverableTimeoutSecondsLeft += 1;
-                                }
-                              });
-                              timer.cancel();
-                              _discoverableTimeoutSecondsLeft = 0;
-                            } else {
-                              _discoverableTimeoutSecondsLeft -= 1;
-                            }
-                          });
-                        });
-                      });
-                    },
-                  )
-                ],
-              ),
-            ),
+            // ListTile(
+            //   title: _discoverableTimeoutSecondsLeft == 0
+            //       ? const Text("Discoverable")
+            //       : Text(
+            //           "Discoverable for ${_discoverableTimeoutSecondsLeft}s"),
+            //   subtitle: Text(_name),
+            //   trailing: Row(
+            //     mainAxisSize: MainAxisSize.min,
+            //     children: [
+            //       Checkbox(
+            //         value: _discoverableTimeoutSecondsLeft != 0,
+            //         onChanged: null,
+            //       ),
+            //       IconButton(
+            //         icon: const Icon(Icons.edit),
+            //         onPressed: null,
+            //       ),
+            //       IconButton(
+            //         icon: const Icon(Icons.refresh),
+            //         onPressed: () async {
+            //           print('Discoverable requested');
+            //           final int timeout = await FlutterBluetoothSerial.instance
+            //               .requestDiscoverable(60);
+            //           if (timeout < 0) {
+            //             print('Discoverable mode denied');
+            //           } else {
+            //             print(
+            //                 'Discoverable mode acquired for $timeout seconds');
+            //           }
+            //           setState(() {
+            //             _discoverableTimeoutTimer?.cancel();
+            //             _discoverableTimeoutSecondsLeft = timeout;
+            //             _discoverableTimeoutTimer =
+            //                 Timer.periodic(Duration(seconds: 1), (Timer timer) {
+            //               setState(() {
+            //                 if (_discoverableTimeoutSecondsLeft < 0) {
+            //                   FlutterBluetoothSerial.instance.isDiscoverable
+            //                       .then((isDiscoverable) {
+            //                     if (isDiscoverable) {
+            //                       print(
+            //                           "Discoverable after timeout... might be infinity timeout :F");
+            //                       _discoverableTimeoutSecondsLeft += 1;
+            //                     }
+            //                   });
+            //                   timer.cancel();
+            //                   _discoverableTimeoutSecondsLeft = 0;
+            //                 } else {
+            //                   _discoverableTimeoutSecondsLeft -= 1;
+            //                 }
+            //               });
+            //             });
+            //           });
+            //         },
+            //       )
+            //     ],
+            //   ),
+            // ),
             Divider(),
             ListTile(title: const Text('Devices discovery and connection')),
             // SwitchListTile(
@@ -276,59 +276,59 @@ class _MainPage extends State<MainPage> {
               ),
             ),
 
-            Divider(),
-            ListTile(title: const Text('Multiple connections example')),
-            ListTile(
-              title: RaisedButton(
-                child: ((_collectingTask != null && _collectingTask.inProgress)
-                    ? const Text('Disconnect and stop background collecting')
-                    : const Text('Connect to start background collecting')),
-                onPressed: () async {
-                  if (_collectingTask != null && _collectingTask.inProgress) {
-                    await _collectingTask.cancel();
-                    setState(() {
-                      /* Update for `_collectingTask.inProgress` */
-                    });
-                  } else {
-                    final BluetoothDevice selectedDevice =
-                        await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) {
-                          return SelectBondedDevicePage(
-                              checkAvailability: false);
-                        },
-                      ),
-                    );
+            // Divider(),
+            // ListTile(title: const Text('Multiple connections example')),
+            // ListTile(
+            //   title: RaisedButton(
+            //     child: ((_collectingTask != null && _collectingTask.inProgress)
+            //         ? const Text('Disconnect and stop background collecting')
+            //         : const Text('Connect to start background collecting')),
+            //     onPressed: () async {
+            //       if (_collectingTask != null && _collectingTask.inProgress) {
+            //         await _collectingTask.cancel();
+            //         setState(() {
+            //           /* Update for `_collectingTask.inProgress` */
+            //         });
+            //       } else {
+            //         final BluetoothDevice selectedDevice =
+            //             await Navigator.of(context).push(
+            //           MaterialPageRoute(
+            //             builder: (context) {
+            //               return SelectBondedDevicePage(
+            //                   checkAvailability: false);
+            //             },
+            //           ),
+            //         );
 
-                    if (selectedDevice != null) {
-                      await _startBackgroundTask(context, selectedDevice);
-                      setState(() {
-                        /* Update for `_collectingTask.inProgress` */
-                      });
-                    }
-                  }
-                },
-              ),
-            ),
-            ListTile(
-              title: RaisedButton(
-                child: const Text('View background collected data'),
-                onPressed: (_collectingTask != null)
-                    ? () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) {
-                              return ScopedModel<BackgroundCollectingTask>(
-                                model: _collectingTask,
-                                child: BackgroundCollectedPage(),
-                              );
-                            },
-                          ),
-                        );
-                      }
-                    : null,
-              ),
-            ),
+            //         if (selectedDevice != null) {
+            //           await _startBackgroundTask(context, selectedDevice);
+            //           setState(() {
+            //             /* Update for `_collectingTask.inProgress` */
+            //           });
+            //         }
+            //       }
+            //     },
+            //   ),
+            // ),
+            // ListTile(
+            //   title: RaisedButton(
+            //     child: const Text('View background collected data'),
+            //     onPressed: (_collectingTask != null)
+            //         ? () {
+            //             Navigator.of(context).push(
+            //               MaterialPageRoute(
+            //                 builder: (context) {
+            //                   return ScopedModel<BackgroundCollectingTask>(
+            //                     model: _collectingTask,
+            //                     child: BackgroundCollectedPage(),
+            //                   );
+            //                 },
+            //               ),
+            //             );
+            //           }
+            //         : null,
+            //   ),
+            // ),
           ],
         ),
       ),
