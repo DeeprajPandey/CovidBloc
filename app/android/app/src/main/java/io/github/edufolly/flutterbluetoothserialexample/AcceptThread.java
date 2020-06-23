@@ -88,8 +88,7 @@ public class AcceptThread extends Thread {
             } else {
                 System.out.println("Made connection, but socket is null\n");
             }
-            System.out.println("Server ending \n");
-            return;
+            // System.out.println("Server ending \n");
         }
 
         public void cancel() {

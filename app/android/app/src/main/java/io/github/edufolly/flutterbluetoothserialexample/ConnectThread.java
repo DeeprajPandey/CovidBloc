@@ -29,7 +29,9 @@ import android.os.Message;
 
 public class ConnectThread extends Thread {
   private BluetoothSocket socket;
+  private final String send_key;
   private final BluetoothDevice mmDevice;
+  private volatile String exchanged_key; //Volatile keyword is used to modify the value of a variable by different threads
 //   BluetoothAdapter mBluetoothAdapter = null;
 //   mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -42,9 +44,11 @@ public class ConnectThread extends Thread {
     //     handler.sendMessage(msg);
     // }
 
-  public ConnectThread(BluetoothDevice device) {
+  public ConnectThread(BluetoothDevice device,String msg) {
     mmDevice = device;
+    send_key=msg;
     BluetoothSocket tmp = null;
+    
     // Get a BluetoothSocket for a connection with the
     // given BluetoothDevice
     try {
@@ -81,17 +85,18 @@ public class ConnectThread extends Thread {
         System.out.println("Remote device address: " + socket.getRemoteDevice().getAddress() + "\n");
       //Note this is copied from the TCPdemo code.
         try {
-            PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
+            PrintWriter socket_out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
             System.out.println("Attempting to send message ...\n");
-            out.println("hello from Bluetooth Demo Client");
-            out.flush();
+            //socket_out.println("Hello from Bluetooth Client!");
+            socket_out.println(send_key);
+            socket_out.flush();
             System.out.println("Message sent...\n");        
 
             System.out.println("Attempting to receive a message ...\n");
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            String str = in.readLine();
-            System.out.println("received a message:\n" + str + "\n");
-
+            BufferedReader socket_in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            exchanged_key = socket_in.readLine();
+            System.out.println("received a message:\n" + exchanged_key + "\n");
+            
 
             System.out.println("We are done, closing connection\n");
             } catch (Exception e) {
@@ -108,8 +113,12 @@ public class ConnectThread extends Thread {
               System.out.println("Made connection, but socket is null\n");
           }
           System.out.println("Client ending \n");
-      return;
+      return ;
     }        
+
+    public String getKey(){
+      return exchanged_key;
+    }
 
        
 

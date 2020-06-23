@@ -13,17 +13,17 @@ class DiscoveryPage extends StatefulWidget {
   const DiscoveryPage({this.start = true});
 
   @override
-  _DiscoveryPage createState() => new _DiscoveryPage();
+  DiscoveryPageState createState() => new DiscoveryPageState();
 }
 
-class _DiscoveryPage extends State<DiscoveryPage> {
+class DiscoveryPageState extends State<DiscoveryPage> {
   static const platform = const MethodChannel('samples.flutter.dev/bluetooth');
   StreamSubscription<BluetoothDiscoveryResult> _streamSubscription;
   List<BluetoothDiscoveryResult> results = List<BluetoothDiscoveryResult>();
   bool isDiscovering;
   // String _statusMsg = 'Waiting for response';
 
-  _DiscoveryPage();
+  DiscoveryPageState();
 
   @override
   void initState() {
@@ -69,17 +69,48 @@ class _DiscoveryPage extends State<DiscoveryPage> {
     super.dispose();
   }
 
-  Future<void> _connectToDevice(BluetoothDevice dev) async {
-    String connStatus;
+  Future<void> _showKeyinDialogue(BuildContext context,String keyReceived) async {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false, // user must tap button!
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Exchanged Key'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              Text(keyReceived),
+              Text('Would you like to store this key?'),
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          FlatButton(
+            child: Text('Approve'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+  Future<void> connectToDevice(BluetoothDevice dev) async {
+    //String connStatus;
+    String exchanged_key;
     try {
-      connStatus =
-          await platform.invokeMethod('customConnectToDevice', {"address": dev.address});
+      exchanged_key =
+          await platform.invokeMethod('customConnectToDevice', {"address": dev.address,"message":"Client here"});
       // print("Successful to establish connection");
     } on PlatformException catch (e) {
       print("Failed to establish connection: '${e.message}'");
-      connStatus = "Connection failed";
+      //connStatus = "Connection failed";
     }
-    print("Connection status to ${dev.address}: $connStatus\n");
+    //print("Connection status to ${dev.address}: $connStatus\n");
+    print("From dart: : $exchanged_key\n");
+    _showKeyinDialogue(context,exchanged_key);
   }
 
   @override
@@ -132,7 +163,7 @@ class _DiscoveryPage extends State<DiscoveryPage> {
               device: result.device,
               rssi: result.rssi,
               onTap: () {
-                _connectToDevice(result.device);
+                connectToDevice(result.device);
                 //Navigator.of(context).pop(result.device);
               },
               

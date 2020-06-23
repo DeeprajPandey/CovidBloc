@@ -61,6 +61,9 @@ public class MainActivity extends FlutterActivity {
               if (!call.hasArgument("address")) {
                 result.error("invalid_argument", "argument 'address' not found", null);
               }
+              if(!call.hasArgument("message")){
+                result.error("invalid_argument", "argument 'message' not found", null);
+              }
 
               String address;
               try {
@@ -74,9 +77,10 @@ public class MainActivity extends FlutterActivity {
               }
 
               String addr = call.argument("address");
+              String msg= call.argument("message");
               BluetoothDevice device = bluetoothAdapter.getRemoteDevice(addr);
 
-              connectToDevice(call,result,device);
+              connectToDevice(call,result,device,msg);
             } else {
               result.notImplemented();
               //System.out.println("Not Implemented");
@@ -86,16 +90,31 @@ public class MainActivity extends FlutterActivity {
     );
   }
 
-  private void connectToDevice(MethodCall call,Result result,BluetoothDevice device) { //Result result,
+  private void connectToDevice(MethodCall call,Result result,BluetoothDevice device,String msg) { //Result result,
     //Activity activity = this;
+    String exchanged_key;
     if (device != null) {
-      new Thread(new ConnectThread(device)).start();
-      result.success("Connection Started");
+      try{
+        ConnectThread ct= new ConnectThread(device,msg);
+        Thread t=new Thread(ct);
+        //new Thread(ct).start();
+        t.start();
+        t.join();
+        exchanged_key=ct.getKey();
+        //System.out.println("From MainActivityJava, the key is: " + exchanged_key+"\n");
+        result.success(exchanged_key);
+      } catch(Exception e){
+        result.error("Failed to connect to class ConnectThread","Error connecting",null);
+      }
+      //result.success("Connection Started");
     }
     else{
       result.error("No device found","Error",null);
       //System.out.println("No device found");
     }
+
+    
+    
   }
 
   private void startServer(MethodCall call,Result result) { //Result result,

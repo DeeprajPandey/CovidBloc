@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import './BluetoothDeviceListEntry.dart';
+import './DiscoveryPage.dart';
 import 'package:progress_indicators/progress_indicators.dart';
 import 'package:flutter/services.dart';
 
@@ -107,28 +108,17 @@ class _SelectBondedDevicePage extends State<SelectBondedDevicePage> {
     super.dispose();
   }
 
-  Future<void> _connectToDevice(BluetoothDevice dev) async {
-    String connStatus;
-    try {
-      connStatus =
-          await platform.invokeMethod('customConnectToDevice', {"address": dev.address});
-      // print("Successful to establish connection");
-    } on PlatformException catch (e) {
-      print("Failed to establish connection: '${e.message}'");
-      connStatus = "Connection failed";
-    }
-    print("Connection status to ${dev.address}: $connStatus\n");
-  }
-
+  
   @override
   Widget build(BuildContext context) {
+    DiscoveryPageState discover = new DiscoveryPageState();
     List<BluetoothDeviceListEntry> list = devices
         .map((_device) => BluetoothDeviceListEntry(
               device: _device.device,
               rssi: _device.rssi,
               enabled: _device.availability == _DeviceAvailability.yes,
               onTap: () {
-                _connectToDevice(_device.device);
+                discover.connectToDevice(_device.device);
                 //Navigator.of(context).pop(_device.device);
               },
             ))
