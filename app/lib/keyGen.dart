@@ -3,6 +3,7 @@
 import 'dart:convert' show utf8;
 import 'package:cryptography/cryptography.dart';
 import 'dart:async';
+
 class KeyGeneration {
 
   int getIntervalNumber() {
@@ -52,15 +53,15 @@ class KeyGeneration {
   
 }
 
-void main() {
+Future<void> main() async {
   KeyGeneration g = new KeyGeneration();
 
   //SHOULD HAPPEN AT 12AM EVERYDAY
   SecretKey tempKey=g.temporaryKeyGen();
-  SecretKey rpik= g.genRPIK(tempKey);
+  var rpik= await g.genRPIK(tempKey);
   print(tempKey);
   print(rpik);
-  
+
   //AT 10 MIN INTERVALS 
   var i = g.getIntervalNumber();
   print(i);
