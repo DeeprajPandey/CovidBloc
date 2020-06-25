@@ -7,7 +7,6 @@ import "dart:typed_data";
 import 'dart:async';
 
 class KeyGeneration {
-
   int getIntervalNumber() {
     //current local time
     var now = new DateTime.now();
@@ -33,7 +32,7 @@ class KeyGeneration {
   }
 
   //call this function at 12am always
-  SecretKey temporaryKeyGen () {
+  SecretKey temporaryKeyGen() {
     // //generating a 16 byte cryptographically secure random number
     // int bitLength=128;//in bits
     // DartRandom rn = new DartRandom(new Random.secure());
@@ -43,28 +42,27 @@ class KeyGeneration {
     return key;
   }
 
-  //call this function as the temp key is generated at 12am 
-  Future<SecretKey> genRPIK(SecretKey tempKey) async{
+  //call this function as the temp key is generated at 12am
+  Future<SecretKey> genRPIK(SecretKey tempKey) async {
     var encoded = utf8.encode('EN-RPIK');
     final hkdf = Hkdf(Hmac(sha256));
-    final rpik = await hkdf.deriveKey(tempKey,nonce:null,info:encoded,outputLength: 16);
+    final rpik = await hkdf.deriveKey(tempKey,
+        nonce: null, info: encoded, outputLength: 16);
     return rpik;
-
   }
 
-  Uint8List intToBytes(int val) => Uint8List(4)..buffer.asByteData().setInt32(0, val, Endian.little);
-  
+  Uint8List intToBytes(int val) =>
+      Uint8List(4)..buffer.asByteData().setInt32(0, val, Endian.little);
 }
 
 void main() async {
   KeyGeneration g = new KeyGeneration();
 
   //SHOULD HAPPEN AT 12AM EVERYDAY
-  SecretKey tempKey=g.temporaryKeyGen();
-  var rpiKey= await g.genRPIK(tempKey);
+  SecretKey tempKey = g.temporaryKeyGen();
+  var rpiKey = await g.genRPIK(tempKey);
   // print('Daily Key: ${hex.encode(await tempKey.extract())}');
   // print('RPI Key: ${hex.encode(await rpiKey.extract())}');
-
 
   // Create a mutable list to store the data
   List<int> paddedData = new List.generate(6, (index) => 0, growable: true);
@@ -76,17 +74,17 @@ void main() async {
   // get the current interval number (b/w 0-143)
   final int eNIntervalNumber = g.getIntervalNumber();
   print('Current interval number: $eNIntervalNumber');
-  
+
   // Add the little endian representation of ENINT to the end of RPI
   List.copyRange(paddedData, 12, g.intToBytes(eNIntervalNumber));
-  
+
   // nonce is required by the lib function, we will concat rpi to this
   var nonce = aesGcm.newNonce();
-  final rollingProximityIdentifier = await aesGcm.encrypt(paddedData, secretKey: rpiKey, nonce: nonce);
+  final rollingProximityIdentifier =
+      await aesGcm.encrypt(paddedData, secretKey: rpiKey, nonce: nonce);
   // TODO: concat nonce to beginning of RPI
 
   print('RPI Hex: ${hex.encode(rollingProximityIdentifier)}');
   // print('RPI Bytes: $rollingProximityIdentifier');
   // print('RPI Bytes: ${hex.decode(hex.encode(rollingProximityIdentifier))}');
-
 }
