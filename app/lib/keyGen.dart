@@ -43,10 +43,10 @@ class KeyGeneration {
   }
 
   //call this function as the temp key is generated at 12am
-  Future<SecretKey> genRPIK(SecretKey tempKey) async {
-    var encoded = utf8.encode('EN-RPIK');
+  Future<SecretKey> secondaryKeygenK(SecretKey dailyKey, {String stringData}) async {
+    var encoded = utf8.encode(stringData);
     final hkdf = Hkdf(Hmac(sha256));
-    final rpik = await hkdf.deriveKey(tempKey,
+    final rpik = await hkdf.deriveKey(dailyKey,
         nonce: null, info: encoded, outputLength: 16);
     return rpik;
   }
@@ -60,7 +60,7 @@ void main() async {
 
   //SHOULD HAPPEN AT 12AM EVERYDAY
   SecretKey tempKey = g.temporaryKeyGen();
-  var rpiKey = await g.genRPIK(tempKey);
+  var rpiKey = await g.secondaryKeygenK(tempKey, stringData: 'EN-RPIK');
   // print('Daily Key: ${hex.encode(await tempKey.extract())}');
   // print('RPI Key: ${hex.encode(await rpiKey.extract())}');
 
@@ -87,4 +87,6 @@ void main() async {
   print('RPI Hex: ${hex.encode(rollingProximityIdentifier)}');
   // print('RPI Bytes: $rollingProximityIdentifier');
   // print('RPI Bytes: ${hex.decode(hex.encode(rollingProximityIdentifier))}');
+
+  var aemKey = g.secondaryKeygenK(tempKey, stringData: 'CT-AEMK');
 }
