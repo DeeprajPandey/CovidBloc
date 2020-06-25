@@ -1,7 +1,8 @@
 // import 'package:laksadart/laksadart.dart';
 // import 'dart:math';
-// import 'dart:convert';
+import 'dart:convert' show utf8;
 import 'package:cryptography/cryptography.dart';
+import 'dart:async';
 class KeyGeneration {
 
   int getIntervalNumber() {
@@ -30,19 +31,22 @@ class KeyGeneration {
 
 
   //call this function at 12am always
-  void temporaryKeyGen () {
+  SecretKey temporaryKeyGen () {
     // //generating a 16 byte cryptographically secure random number
     // int bitLength=128;//in bits
     // DartRandom rn = new DartRandom(new Random.secure());
     // var key= rn.nextBigInteger(bitLength);
     // return key;
     var key = SecretKey.randomBytes(16);
-    print(key);
+    return key;
   }
 
-  int genRPIK(BigInt tempKey){
-    //var hmacSha256 = new Hmac(sha256, tempKey);
-
+  //call this function as the temp key is generated at 12am 
+  Future<SecretKey> genRPIK(SecretKey tempKey) async{
+    var encoded = utf8.encode('EN-RPIK');
+    final hkdf = Hkdf(Hmac(sha256));
+    final rpik = await hkdf.deriveKey(tempKey,nonce:null,info:encoded,outputLength: 16);
+    return rpik;
 
   }
   
@@ -50,12 +54,16 @@ class KeyGeneration {
 
 void main() {
   KeyGeneration g = new KeyGeneration();
+
+  //SHOULD HAPPEN AT 12AM EVERYDAY
+  SecretKey tempKey=g.temporaryKeyGen();
+  SecretKey rpik= g.genRPIK(tempKey);
+  print(tempKey);
+  print(rpik);
+  
+  //AT 10 MIN INTERVALS 
   var i = g.getIntervalNumber();
   print(i);
-  g.temporaryKeyGen();
-  //var temporaryKey= 
-  //print(temporaryKey);
-  //g.genRPIK(temporaryKey);
-  //store i and temporaryKey
+  
 
 }
