@@ -6,6 +6,7 @@ import './BluetoothDeviceListEntry.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/services.dart';
 
+
 class DiscoveryPage extends StatefulWidget {
   /// If true, discovery starts on page start, otherwise user must press action button.
   final bool start;
@@ -59,7 +60,6 @@ class DiscoveryPageState extends State<DiscoveryPage> {
     });
   }
 
-  // @TODO . One day there should be `_pairDevice` on long tap on something... ;)
 
   @override
   void dispose() {
@@ -69,9 +69,9 @@ class DiscoveryPageState extends State<DiscoveryPage> {
     super.dispose();
   }
 
-  Future<void> _showKeyinDialogue(BuildContext context,String keyReceived) async {
+  Future<void> _showKeyinDialogue(String keyReceived) async {
   return showDialog<void>(
-    context: context,
+    context:context,
     barrierDismissible: false, // user must tap button!
     builder: (BuildContext context) {
       return AlertDialog(
@@ -110,7 +110,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
     }
     //print("Connection status to ${dev.address}: $connStatus\n");
     print("From dart: : $exchanged_key\n");
-    _showKeyinDialogue(context,exchanged_key);
+     _showKeyinDialogue(exchanged_key);
   }
 
   @override

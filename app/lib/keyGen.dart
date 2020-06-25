@@ -1,0 +1,44 @@
+import 'package:laksadart/laksadart.dart';
+import 'dart:math';
+class KeyGeneration {
+
+  int getIntervalNumber() {
+    //current local time
+    var now = new DateTime.now();
+    print(now);
+
+    //midnight local time
+    var lastMidnight = new DateTime(now.year, now.month, now.day);
+    print(lastMidnight);
+
+    // current unix timestamp
+    var currentUnix = ((now.toUtc().millisecondsSinceEpoch) / 1000).floor();
+
+    // midnight unix timestamp
+    var lastMidnightUnix =
+        ((lastMidnight.toUtc().millisecondsSinceEpoch) / 1000).floor();
+
+    //difference between the two UNIX timestamps
+    var diff = currentUnix - lastMidnightUnix;
+
+    //calculating interval number
+    var i = (diff / 600).floor();
+    return i;
+  }
+
+
+  void temporaryKeyGen() {
+    //generating a 16 byte cryptographically secure random number
+    int bitLength=128;//in bits
+    DartRandom rn = new DartRandom(new Random.secure());
+    var key= rn.nextBigInteger(bitLength);
+    print(key);
+  }
+}
+
+void main() {
+  KeyGeneration g = new KeyGeneration();
+  var i = g.getIntervalNumber();
+  print(i);
+  g.temporaryKeyGen();
+}

@@ -18,6 +18,9 @@ dependencies:
   progress_indicators: ^0.1.4
 
   flutter_spinkit: ^3.1.0
+  # steel_crypt: ^1.1.0
+  #pointycastle: ^1.0.2
+  laksadart: ^0.1.19
   
 dev_dependencies:
   flutter_test:

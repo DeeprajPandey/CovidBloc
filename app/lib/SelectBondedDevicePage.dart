@@ -34,7 +34,6 @@ class _DeviceWithAvailability extends BluetoothDevice {
 
 class _SelectBondedDevicePage extends State<SelectBondedDevicePage> {
   List<_DeviceWithAvailability> devices = List<_DeviceWithAvailability>();
-  static const platform = const MethodChannel('samples.flutter.dev/bluetooth');
   // Availability
   StreamSubscription<BluetoothDiscoveryResult> _discoveryStreamSubscription;
   bool _isDiscovering;
