@@ -18,6 +18,7 @@ class ExposureNotification {
   SecretKey _aemKey; // AssociatedEncryptedMetadataKey
 
   int _eNIntervalNumber;
+  List<int> rollingProximityIdentifier; // to be broadcasted
 
   ExposureNotification() {
     // TODO: First try reading from storage, if empty, run this
@@ -90,8 +91,8 @@ class ExposureNotification {
   ///
   /// Called every 10 minutes.
   ///
-  /// @return rpi     hex encoding of the rolling proximity ID
-  Future<String> _rollingProximityID() async {
+  /// @return rpi   hex encoding of the rolling proximity ID
+  Future<String> _rpiGen() async {
     // Create a mutable list to store PaddedData
     List<int> paddedData = new List.generate(6, (index) => 0, growable: true);
     // PaddedData starts with the bytes for thisstring
@@ -102,24 +103,21 @@ class ExposureNotification {
       paddedData.add(0);
     }
 
-    // Get the current interval number (b/w 0-143)
-    var j = new DateTime.now();
-    var eNIntervalNumber = this._getIntervalNumber(timestamp: j);
-    print('Current interval number: $eNIntervalNumber');
     // Add the little endian representation of ENINT to the end of RPI
-    List.copyRange(paddedData, 12, this._intToBytes(eNIntervalNumber));
+    List.copyRange(paddedData, 12, this._intToBytes(this._eNIntervalNumber));
 
     // Nonce is required by the lib function, we will concat rpi to this
     var nonce = aesGcm.newNonce();
-    var rollingProximityIdentifier =
+    List<int> rpi =
         await aesGcm.encrypt(paddedData, secretKey: this._rpiKey, nonce: nonce);
     // TODO: concat nonce to beginning of RPI
 
-    // print('RPI Bytes: $rollingProximityIdentifier');
-    // print('RPI Bytes: ${hex.decode(hex.encode(rollingProximityIdentifier))}');
-    print('RPI Hex: ${hex.encode(rollingProximityIdentifier)}');
-
-    return hex.encode(rollingProximityIdentifier);
+    // print('RPI Bytes: $rpi');
+    // print('RPI Bytes: ${hex.decode(hex.encode(rpi))}');
+    // print('RPI Hex: ${hex.encode(rpi)}');
+    this.rollingProximityIdentifier = rpi;
+    print('Updated RPI');
+    return hex.encode(rpi);
   }
 
   /// The driver/scheduler function
@@ -132,16 +130,19 @@ class ExposureNotification {
           'Updated TempExpKey: ${hex.encode(await this._temporaryExposureKey.extract())}');
     }
     this._eNIntervalNumber = currInterval;
-    print('Update interval: $currInterval');
+    print('Updated ENIntervalNum: $currInterval');
 
     this._rpiKey = await this
         ._secondaryKeygen(_temporaryExposureKey, stringData: 'EN-RPIK');
-    print('Updated RPI Key.');
+    print('Updated RPI Key');
 
-    await this._rollingProximityID();
+    // now generate a new RPI
+    var rpiHex = await this._rpiGen();
+    print('RPI Hex (w/o nonce): $rpiHex');
 
-    var aemKey = await this
+    this._aemKey = await this
         ._secondaryKeygen(_temporaryExposureKey, stringData: 'CT-AEMK');
+    print('Updated AEM Key\n');
     // print('AEM Key: ${hex.encode(await aemKey.extract())}');
   }
 }
