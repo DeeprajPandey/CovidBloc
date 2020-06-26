@@ -9,6 +9,7 @@ import "dart:typed_data";
 
 import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart';
+import 'package:encrypt/encrypt.dart';
 
 class ExposureNotification {
   /// Secret Keys
@@ -29,9 +30,21 @@ class ExposureNotification {
 
     // TODO: Find when the next interval starts and set up one-shot
     // scheduler to do this.
-    const tenMins = const Duration(seconds: 10);
+    // var now = new DateTime.now();
+    15 _getIntervalNumber()
+    15 +1 -> time - now;
+
+    const timeToInitiate = const Duration(seconds: 60);
+    const tenMins = const Duration(minutes: 10);
+
+    // 3:04
+    new Timer(
+        timeToInitiate,
+        () async => await this._scheduler(firstRun: true)); // 3:10
+    // 3:04    
     new Timer.periodic(
-        tenMins, (timer) async => await this._scheduler(firstRun: true));
+            tenMins, (timer) async => await this._scheduler(firstRun: false)) // 3:14, 24, 34
+
     print('\n');
   }
 
@@ -109,12 +122,9 @@ class ExposureNotification {
     // Add the little endian representation of ENINT to the end of RPI
     List.copyRange(paddedData, 12, this._intToBytes(this._eNIntervalNumber));
 
-    // Nonce is required by the lib function, we will concat rpi to this
-    var cipher = aesGcm;
-    var nonce = Nonce.randomBytes(16);
-    List<int> rpi =
-        await cipher.encrypt(paddedData, secretKey: this._rpiKey, nonce: nonce);
-    // TODO: concat nonce to beginning of RPI (gotcha: AEM needs RPI)
+    var key = Key(await this._rpiKey.extract());
+    var cipher = Encrypter(AES(key, mode: AESMode.ecb, padding: null));
+    List<int> rpi = cipher.encryptBytes(paddedData, iv: null).bytes;
 
     print('(_repiGen) RPI Bytes: ${rpi.length}');
     // print('RPI Bytes: ${hex.decode(hex.encode(rpi))}');
@@ -132,12 +142,15 @@ class ExposureNotification {
   Future<String> _aemGen() async {
     // Use placeholder for msg as specsheet has no info on this
     var metadata = utf8.encode("Metadata");
-    var aes_ctr = CipherWithAppendedMac(aesCtr, Hmac(sha256));
 
-    List<int> aem = await aes_ctr.encrypt(metadata,
-        secretKey: this._aemKey, nonce: Nonce(this.rollingProximityIdentifier));
-    
+    var key = Key(await this._aemKey.extract());
+    var cipher = Encrypter(AES(key, mode: AESMode.ctr, padding: 'PKCS7'));
+    List<int> aem = cipher
+        .encryptBytes(metadata, iv: IV(this.rollingProximityIdentifier))
+        .bytes;
+
     this.associatedEncryptedMetadata = aem;
+    print('(_aemGen) AEM Length: ${aem.length}');
     print('(_aemGen) Update AEM');
     return hex.encode(aem);
   }
@@ -168,8 +181,8 @@ class ExposureNotification {
     // print('AEM Key: ${hex.encode(await aemKey.extract())}');
 
     // Issue: AEM needs RPI as IV but RPI is 32 Bytes however nonce limit for AES_CTR is 16 Bytes
-    // var aemHex = await this._aemGen();
-    // print('[scheduler] AEM Hex: $aemHex');
+    var aemHex = await this._aemGen();
+    print('(scheduler) AEM Hex: $aemHex');
 
     print('\n');
   }
