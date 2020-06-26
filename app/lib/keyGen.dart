@@ -25,11 +25,13 @@ class ExposureNotification {
     // with firstRun: true
     this._eNIntervalNumber =
         this._getIntervalNumber(timestamp: new DateTime.now());
+    print('[constructor] Intialised ENIntervalNum');
     
     // TODO: Find when the next interval starts and set up one-shot
     // scheduler to do this.
     const tenMins = const Duration(seconds: 10);
     new Timer.periodic(tenMins, (timer) async => await this._scheduler(firstRun: true));
+    print('\n');
   }
 
   /// Calculate and return the index of the 10-min interval during
@@ -116,7 +118,7 @@ class ExposureNotification {
     // print('RPI Bytes: ${hex.decode(hex.encode(rpi))}');
     // print('RPI Hex: ${hex.encode(rpi)}');
     this.rollingProximityIdentifier = rpi;
-    print('Updated RPI');
+    print('[_rpiGen] Updated RPI');
     return hex.encode(rpi);
   }
 
@@ -127,23 +129,25 @@ class ExposureNotification {
     if (currInterval == 0 || firstRun) {
       this._temporaryExposureKey = this._dailyKeygen();
       print(
-          'Updated TempExpKey: ${hex.encode(await this._temporaryExposureKey.extract())}');
+          '[_scheduler] Updated TempExpKey: ${hex.encode(await this._temporaryExposureKey.extract())}');
     }
     this._eNIntervalNumber = currInterval;
-    print('Updated ENIntervalNum: $currInterval');
+    print('[_scheduler] Updated ENIntervalNum: $currInterval');
 
     this._rpiKey = await this
         ._secondaryKeygen(_temporaryExposureKey, stringData: 'EN-RPIK');
-    print('Updated RPI Key');
+    print('[_scheduler] Updated RPI Key');
 
     // now generate a new RPI
     var rpiHex = await this._rpiGen();
-    print('RPI Hex (w/o nonce): $rpiHex');
+    print('[_scheduler] RPI Hex (w/o nonce): $rpiHex');
 
     this._aemKey = await this
         ._secondaryKeygen(_temporaryExposureKey, stringData: 'CT-AEMK');
-    print('Updated AEM Key\n');
+    print('[_scheduler] Updated AEM Key');
     // print('AEM Key: ${hex.encode(await aemKey.extract())}');
+
+    print('\n');
   }
 }
 
