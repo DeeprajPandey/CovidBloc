@@ -21,6 +21,30 @@ class ExposureNotification {
   List<int> rollingProximityIdentifier; // to be broadcasted
   List<int> associatedEncryptedMetadata; // additional metadata
 
+  List<String> contactRpis = [
+    '65a3940ff9343e6b0afb27ac1d30059b',
+    'f241cadcbb65dcc8a45c1d882a6871c1',
+    'a5c195f57dc71dd5ef0047ec29ab590d',
+    '5fbc80fc28cded25a1c6f03244921dcc',
+    '4b9a9ef328d45fedf45f99cb08a9aee4',
+    'e01e6ed198be1c1572260f60c7b53fa0',
+    '932e02169bbfa1cfe31c02f84a5234c6',
+    '0ea3354ac2ef09ccc01ba42c75b0c4c1',
+    '7ac430efe6432860047f00e1b438b84a'
+  ];
+  // Fetched from the server periodically
+  List<String> diagnosisKeys = [
+    '3ea0716b1ec754e85ca4e91d81bdb019',
+    'd529f8371571ce5069e3e227d4f3a3c2',
+    'c1248a8fceb814c7f20f659bc5f67b47',
+    '47ab81977cf0b2d637395a3ae52f3942',
+    '08e26ee695685e2062bdb0bec0afceb8',
+    '2c3b4cad354cf9ba828f4d4039e17e30',
+    '2018619fe1ca21541616fde56a9e02a1',
+    '23b5053f108580ecedccee133ae032e3',
+    'b75b3034b9cf09f0d31f0ef02d4f494e'
+  ];
+
   ExposureNotification() {
     // TODO: First try reading from storage, if empty, run this
     // with firstRun: true
@@ -43,7 +67,7 @@ class ExposureNotification {
     //     () async => await this._scheduler(firstRun: true)); // 3:10
 
     new Timer.periodic(
-            tenMins, (timer) async => await this._scheduler(firstRun: true));
+        tenMins, (timer) async => await this._scheduler(firstRun: true));
 
     print('\n');
   }
