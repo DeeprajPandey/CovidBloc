@@ -1,66 +1,84 @@
-// import 'package:laksadart/laksadart.dart';
-// import 'dart:math';
+// A Dart port of the Exposure Notification API. The class has
+// a custom implementation of all the functionalities of the API.
+//
+// 2020. Ashoka University Computer Science.
+
+import 'dart:async';
 import 'dart:convert' show utf8;
+import "dart:typed_data";
+
 import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart';
-import "dart:typed_data";
-import 'dart:async';
 
-class KeyGeneration {
-  int getIntervalNumber() {
-    //current local time
-    var now = new DateTime.now();
-    //print(now);
+class ExposureNotification {
+  /// Calculate and return the index of the 10-min interval during
+  /// a day that the given time lies in.
+  ///
+  /// ENIntervalNumber in Docs.
+  ///
+  /// @param timestamp  the current time of which we need the interval number
+  /// @return      the 10-min interval index (0-143)
+  int getIntervalNumber({DateTime timestamp}) {
+    var lastMidnight =
+        new DateTime(timestamp.year, timestamp.month, timestamp.day);
 
-    //midnight local time
-    var lastMidnight = new DateTime(now.year, now.month, now.day);
-    //print(lastMidnight);
-
-    // current unix timestamp
-    var currentUnix = ((now.toUtc().millisecondsSinceEpoch) / 1000).floor();
-
-    // midnight unix timestamp
+    // Get the Unix time for that day's midnight and current time
+    var currentUnix =
+        ((timestamp.toUtc().millisecondsSinceEpoch) / 1000).floor();
     var lastMidnightUnix =
         ((lastMidnight.toUtc().millisecondsSinceEpoch) / 1000).floor();
 
-    //difference between the two UNIX timestamps
+    // This is how long it has been since the day started
     var diff = currentUnix - lastMidnightUnix;
 
-    //calculating interval number
-    var i = (diff / 600).floor();
-    return i;
+    // Calculate the current 10-min interval number in the day
+    return (diff / 600).floor();
   }
 
-  //call this function at 12am always
-  SecretKey temporaryKeyGen() {
-    // //generating a 16 byte cryptographically secure random number
-    // int bitLength=128;//in bits
-    // DartRandom rn = new DartRandom(new Random.secure());
-    // var key= rn.nextBigInteger(bitLength);
-    // return key;
-    var key = SecretKey.randomBytes(16);
+  /// Generate the daily key every day at 00:00 that generates
+  /// that day's keys. Called temporary exposure key in Doc.
+  ///
+  /// TemporaryExposureKey in Docs.
+  ///
+  /// @return       16-byte cryptographically secure key
+  SecretKey temporaryExpKeygen() {
+    return SecretKey.randomBytes(16);
+  }
+
+  /// Generate the secodary set of keys for the final encryption.
+  /// 
+  /// This utility function can be used to generate the rolling
+  /// proximity identifier key and the associated encrypted metadata
+  /// key.
+  /// 
+  /// @param  dailyKey    that day's temporary exposure key
+  ///         stringData  string that will be encoded during keygen
+  ///                     (either EN-RPI or CT-AEMK)
+  /// @return key         generated RPI or AEM key
+  Future<SecretKey> secondaryKeygen(SecretKey dailyKey,
+      {String stringData}) async {
+    var encodedData = utf8.encode(stringData);
+    var hkdf = Hkdf(Hmac(sha256));
+    var key = await hkdf.deriveKey(dailyKey,
+        nonce: null, info: encodedData, outputLength: 16);
     return key;
   }
 
-  //call this function as the temp key is generated at 12am
-  Future<SecretKey> secondaryKeygenK(SecretKey dailyKey, {String stringData}) async {
-    var encoded = utf8.encode(stringData);
-    final hkdf = Hkdf(Hmac(sha256));
-    final rpik = await hkdf.deriveKey(dailyKey,
-        nonce: null, info: encoded, outputLength: 16);
-    return rpik;
-  }
-
+  /// Return the ByteData (List<int>) representation of an integer.
+  /// 
+  /// @param  val         number to be represented in bytes
+  /// @return Uint8List   number in byte form
   Uint8List intToBytes(int val) =>
       Uint8List(4)..buffer.asByteData().setInt32(0, val, Endian.little);
 }
 
+// Using only for debug
 void main() async {
-  KeyGeneration g = new KeyGeneration();
+  ExposureNotification g = new ExposureNotification();
 
   //SHOULD HAPPEN AT 12AM EVERYDAY
-  SecretKey tempKey = g.temporaryKeyGen();
-  var rpiKey = await g.secondaryKeygenK(tempKey, stringData: 'EN-RPIK');
+  SecretKey tempKey = g.temporaryExpKeygen();
+  var rpiKey = await g.secondaryKeygen(tempKey, stringData: 'EN-RPIK');
   // print('Daily Key: ${hex.encode(await tempKey.extract())}');
   // print('RPI Key: ${hex.encode(await rpiKey.extract())}');
 
@@ -72,7 +90,8 @@ void main() async {
     paddedData.add(0);
   }
   // get the current interval number (b/w 0-143)
-  final int eNIntervalNumber = g.getIntervalNumber();
+  final int eNIntervalNumber =
+      g.getIntervalNumber(timestamp: new DateTime.now());
   print('Current interval number: $eNIntervalNumber');
 
   // Add the little endian representation of ENINT to the end of RPI
@@ -88,5 +107,5 @@ void main() async {
   // print('RPI Bytes: $rollingProximityIdentifier');
   // print('RPI Bytes: ${hex.decode(hex.encode(rollingProximityIdentifier))}');
 
-  var aemKey = g.secondaryKeygenK(tempKey, stringData: 'CT-AEMK');
+  var aemKey = g.secondaryKeygen(tempKey, stringData: 'CT-AEMK');
 }
