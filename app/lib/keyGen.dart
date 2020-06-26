@@ -5,7 +5,6 @@
 
 import 'dart:async';
 import 'dart:convert' show utf8;
-import 'dart:ffi';
 import "dart:typed_data";
 
 import 'package:convert/convert.dart';
@@ -26,7 +25,7 @@ class ExposureNotification {
     // with firstRun: true
     this._eNIntervalNumber =
         this._getIntervalNumber(timestamp: new DateTime.now());
-    print('[constructor] Intialised ENIntervalNum');
+    print('(constructor) Intialised ENIntervalNum');
 
     // TODO: Find when the next interval starts and set up one-shot
     // scheduler to do this.
@@ -120,7 +119,7 @@ class ExposureNotification {
     // print('RPI Bytes: ${hex.decode(hex.encode(rpi))}');
     // print('RPI Hex: ${hex.encode(rpi)}');
     this.rollingProximityIdentifier = rpi;
-    print('[_rpiGen] Updated RPI');
+    print('(_rpiGen) Updated RPI');
     return hex.encode(rpi);
   }
 
@@ -138,7 +137,7 @@ class ExposureNotification {
         secretKey: this._aemKey, nonce: Nonce(this.rollingProximityIdentifier));
     
     this.associatedEncryptedMetadata = aem;
-    print('[_aemGen] Update AEM');
+    print('(_aemGen) Update AEM');
     return hex.encode(aem);
   }
 
@@ -149,22 +148,22 @@ class ExposureNotification {
     if (currInterval == 0 || firstRun) {
       this._temporaryExposureKey = this._dailyKeygen();
       print(
-          '[_scheduler] Updated TempExpKey: ${hex.encode(await this._temporaryExposureKey.extract())}');
+          '(_scheduler) Updated TempExpKey: ${hex.encode(await this._temporaryExposureKey.extract())}');
     }
     this._eNIntervalNumber = currInterval;
-    print('[_scheduler] Updated ENIntervalNum: $currInterval');
+    print('(_scheduler) Updated ENIntervalNum: $currInterval');
 
     this._rpiKey = await this
         ._secondaryKeygen(_temporaryExposureKey, stringData: 'EN-RPIK');
-    print('[_scheduler] Updated RPI Key');
+    print('(_scheduler) Updated RPI Key');
 
     // now generate a new RPI
     var rpiHex = await this._rpiGen();
-    print('[_scheduler] RPI Hex (w/o nonce): $rpiHex');
+    print('(_scheduler) RPI Hex (w/o nonce): $rpiHex');
 
     this._aemKey = await this
         ._secondaryKeygen(_temporaryExposureKey, stringData: 'CT-AEMK');
-    print('[_scheduler] Updated AEM Key');
+    print('(_scheduler) Updated AEM Key');
     // print('AEM Key: ${hex.encode(await aemKey.extract())}');
 
     // Issue: AEM needs RPI as IV but RPI is 32 Bytes however nonce limit for AES_CTR is 16 Bytes
