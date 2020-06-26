@@ -133,7 +133,7 @@ class ExposureNotification {
   ///
   /// @param  interval  10-min interval i for which we need the RPI
   /// @return rpi       hex encoding of the rolling proximity ID
-  Future<String> _rpiGen({int interval}) async {
+  Future<String> _rpiGen({SecretKey localRPIKey, int interval}) async {
     // Create a mutable list to store PaddedData
     List<int> paddedData = new List.generate(6, (index) => 0, growable: true);
     // PaddedData starts with the bytes for thisstring
@@ -147,7 +147,7 @@ class ExposureNotification {
     // Add the little endian representation of ENINT to the end of RPI
     List.copyRange(paddedData, 12, this._intToBytes(interval));
 
-    var key = Key(await this._rpiKey.extract());
+    var key = Key(await localRPIKey.extract());
     var cipher = Encrypter(AES(key, mode: AESMode.ecb, padding: null));
     List<int> rpi = cipher.encryptBytes(paddedData, iv: null).bytes;
 
@@ -197,7 +197,7 @@ class ExposureNotification {
     print('(_scheduler) Updated RPI Key');
 
     // now generate a new RPI
-    var rpiHex = await this._rpiGen(interval: this._eNIntervalNumber);
+    var rpiHex = await this._rpiGen(localRPIKey: this._rpiKey, interval: this._eNIntervalNumber);
     print('(_scheduler) RPI Hex: $rpiHex');
 
     this._aemKey = await this
@@ -205,15 +205,32 @@ class ExposureNotification {
     print('(_scheduler) Updated AEM Key');
     // print('AEM Key: ${hex.encode(await aemKey.extract())}');
 
-    // Issue: AEM needs RPI as IV but RPI is 32 Bytes however nonce limit for AES_CTR is 16 Bytes
     var aemHex = await this._aemGen();
     print('(_scheduler) AEM Hex: $aemHex');
 
     print('\n');
   }
+
+  /// Check for exposures
+  Future<void> checkExposure() async {
+    for (var positiveKey in this.diagnosisKeys) {
+      // We received the keys as hex strings. Convert them to bytes and create a SecretKey instance.
+      var tempKey = SecretKey(hex.decode(positiveKey));
+
+      // Generate an RPI for all intervals during the day
+      for (var i = 0; i < 144; i++) {
+        var tempRPIKey = await this._secondaryKeygen(tempKey, stringData: 'EN-RPIK');
+        var tempRPIHex = await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
+
+        // Now check if we ever came in contact with this rolling proximity identifier
+
+      }
+    }
+  }
 }
 
 // Using only for debug
 void main() async {
-  new ExposureNotification();
+  var exp = new ExposureNotification();
+  // exp.checkExposure();
 }
