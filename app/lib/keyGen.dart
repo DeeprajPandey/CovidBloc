@@ -31,19 +31,19 @@ class ExposureNotification {
     // TODO: Find when the next interval starts and set up one-shot
     // scheduler to do this.
     // var now = new DateTime.now();
-    15 _getIntervalNumber()
-    15 +1 -> time - now;
+    // 15 _getIntervalNumber()
+    // 15 +1 -> time - now;
 
-    const timeToInitiate = const Duration(seconds: 60);
-    const tenMins = const Duration(minutes: 10);
+    // const timeToInitiate = const Duration(seconds: 60);
+    const tenMins = const Duration(seconds: 5);
 
     // 3:04
-    new Timer(
-        timeToInitiate,
-        () async => await this._scheduler(firstRun: true)); // 3:10
-    // 3:04    
+    // new Timer(
+    //     timeToInitiate,
+    //     () async => await this._scheduler(firstRun: true)); // 3:10
+
     new Timer.periodic(
-            tenMins, (timer) async => await this._scheduler(firstRun: false)) // 3:14, 24, 34
+            tenMins, (timer) async => await this._scheduler(firstRun: true));
 
     print('\n');
   }
@@ -173,7 +173,7 @@ class ExposureNotification {
 
     // now generate a new RPI
     var rpiHex = await this._rpiGen();
-    print('(_scheduler) RPI Hex (w/o nonce): $rpiHex');
+    print('(_scheduler) RPI Hex: $rpiHex');
 
     this._aemKey = await this
         ._secondaryKeygen(_temporaryExposureKey, stringData: 'CT-AEMK');
