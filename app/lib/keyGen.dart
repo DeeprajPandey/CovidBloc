@@ -131,8 +131,9 @@ class ExposureNotification {
   ///
   /// Called every 10 minutes.
   ///
-  /// @return rpi   hex encoding of the rolling proximity ID
-  Future<String> _rpiGen() async {
+  /// @param  interval  10-min interval i for which we need the RPI
+  /// @return rpi       hex encoding of the rolling proximity ID
+  Future<String> _rpiGen({int interval}) async {
     // Create a mutable list to store PaddedData
     List<int> paddedData = new List.generate(6, (index) => 0, growable: true);
     // PaddedData starts with the bytes for thisstring
@@ -144,7 +145,7 @@ class ExposureNotification {
     }
 
     // Add the little endian representation of ENINT to the end of RPI
-    List.copyRange(paddedData, 12, this._intToBytes(this._eNIntervalNumber));
+    List.copyRange(paddedData, 12, this._intToBytes(interval));
 
     var key = Key(await this._rpiKey.extract());
     var cipher = Encrypter(AES(key, mode: AESMode.ecb, padding: null));
@@ -196,7 +197,7 @@ class ExposureNotification {
     print('(_scheduler) Updated RPI Key');
 
     // now generate a new RPI
-    var rpiHex = await this._rpiGen();
+    var rpiHex = await this._rpiGen(interval: this._eNIntervalNumber);
     print('(_scheduler) RPI Hex: $rpiHex');
 
     this._aemKey = await this
@@ -206,7 +207,7 @@ class ExposureNotification {
 
     // Issue: AEM needs RPI as IV but RPI is 32 Bytes however nonce limit for AES_CTR is 16 Bytes
     var aemHex = await this._aemGen();
-    print('(scheduler) AEM Hex: $aemHex');
+    print('(_scheduler) AEM Hex: $aemHex');
 
     print('\n');
   }
