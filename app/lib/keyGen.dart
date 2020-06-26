@@ -4,6 +4,7 @@
 // 2020. Ashoka University Computer Science.
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert' show utf8;
 import "dart:typed_data";
 
@@ -21,7 +22,7 @@ class ExposureNotification {
   List<int> rollingProximityIdentifier; // to be broadcasted
   List<int> associatedEncryptedMetadata; // additional metadata
 
-  List<String> contactRpis = [
+  List<String> dummyRPIs = [
     '65a3940ff9343e6b0afb27ac1d30059b',
     'f241cadcbb65dcc8a45c1d882a6871c1',
     'a5c195f57dc71dd5ef0047ec29ab590d',
@@ -30,6 +31,8 @@ class ExposureNotification {
     'e01e6ed198be1c1572260f60c7b53fa0',
     '932e02169bbfa1cfe31c02f84a5234c6',
     '0ea3354ac2ef09ccc01ba42c75b0c4c1',
+    '7ac430efe6432860047f00e1b438b84a',
+    '7ac430efe6432860047f00e1b438b84a',
     '7ac430efe6432860047f00e1b438b84a'
   ];
   // Fetched from the server periodically
@@ -44,8 +47,16 @@ class ExposureNotification {
     '23b5053f108580ecedccee133ae032e3',
     'b75b3034b9cf09f0d31f0ef02d4f494e'
   ];
+  // Generate a HashMap from the list of RPIs
+  HashMap contactRPIs = HashMap();
 
   ExposureNotification() {
+    // This dummy code is how we will add new RPIs to the hashmap
+    for (var hexString in this.dummyRPIs) {
+      // only add an RPI if it's not already in the hashmap
+      this.contactRPIs.putIfAbsent(hexString, () => 1);
+    }
+
     // TODO: First try reading from storage, if empty, run this
     // with firstRun: true
     this._eNIntervalNumber =
@@ -151,11 +162,11 @@ class ExposureNotification {
     var cipher = Encrypter(AES(key, mode: AESMode.ecb, padding: null));
     List<int> rpi = cipher.encryptBytes(paddedData, iv: null).bytes;
 
-    print('(_repiGen) RPI Bytes: ${rpi.length}');
+    // print('(_repiGen) RPI Bytes: ${rpi.length}');
     // print('RPI Bytes: ${hex.decode(hex.encode(rpi))}');
     // print('RPI Hex: ${hex.encode(rpi)}');
     this.rollingProximityIdentifier = rpi;
-    print('(_rpiGen) Updated RPI');
+    // print('(_rpiGen) Updated RPI');
     return hex.encode(rpi);
   }
 
@@ -213,6 +224,7 @@ class ExposureNotification {
 
   /// Check for exposures
   Future<void> checkExposure() async {
+    int exposedCtr = 0;
     for (var positiveKey in this.diagnosisKeys) {
       // We received the keys as hex strings. Convert them to bytes and create a SecretKey instance.
       var tempKey = SecretKey(hex.decode(positiveKey));
@@ -223,14 +235,17 @@ class ExposureNotification {
         var tempRPIHex = await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
 
         // Now check if we ever came in contact with this rolling proximity identifier
-
+        if (this.contactRPIs.containsKey(tempRPIHex)) {
+          exposedCtr++;
+        }
       }
     }
+    print('\n\nExposed counter: $exposedCtr\n\n'); // should be 5
   }
 }
 
 // Using only for debug
 void main() async {
   var exp = new ExposureNotification();
-  // exp.checkExposure();
+  exp.checkExposure();
 }
