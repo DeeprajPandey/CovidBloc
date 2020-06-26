@@ -110,12 +110,13 @@ class ExposureNotification {
     List.copyRange(paddedData, 12, this._intToBytes(this._eNIntervalNumber));
 
     // Nonce is required by the lib function, we will concat rpi to this
-    var nonce = aesGcm.newNonce();
+    var cipher = aesGcm;
+    var nonce = Nonce.randomBytes(16);
     List<int> rpi =
-        await aesGcm.encrypt(paddedData, secretKey: this._rpiKey, nonce: nonce);
+        await cipher.encrypt(paddedData, secretKey: this._rpiKey, nonce: nonce);
     // TODO: concat nonce to beginning of RPI (gotcha: AEM needs RPI)
 
-    // print('RPI Bytes: $rpi');
+    print('(_repiGen) RPI Bytes: ${rpi.length}');
     // print('RPI Bytes: ${hex.decode(hex.encode(rpi))}');
     // print('RPI Hex: ${hex.encode(rpi)}');
     this.rollingProximityIdentifier = rpi;
