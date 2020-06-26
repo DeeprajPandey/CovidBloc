@@ -19,6 +19,7 @@ class ExposureNotification {
 
   int _eNIntervalNumber;
   List<int> rollingProximityIdentifier; // to be broadcasted
+  List<int> associatedEncryptedMetadata; // additional metadata
 
   ExposureNotification() {
     // TODO: First try reading from storage, if empty, run this
@@ -26,11 +27,12 @@ class ExposureNotification {
     this._eNIntervalNumber =
         this._getIntervalNumber(timestamp: new DateTime.now());
     print('[constructor] Intialised ENIntervalNum');
-    
+
     // TODO: Find when the next interval starts and set up one-shot
     // scheduler to do this.
     const tenMins = const Duration(seconds: 10);
-    new Timer.periodic(tenMins, (timer) async => await this._scheduler(firstRun: true));
+    new Timer.periodic(
+        tenMins, (timer) async => await this._scheduler(firstRun: true));
     print('\n');
   }
 
@@ -89,7 +91,7 @@ class ExposureNotification {
     return key;
   }
 
-  /// Generate the Rolling Proximity Identifier given the RPI Key.
+  /// Generate the Rolling Proximity Identifier using the RPI Key.
   ///
   /// Called every 10 minutes.
   ///
@@ -112,7 +114,7 @@ class ExposureNotification {
     var nonce = aesGcm.newNonce();
     List<int> rpi =
         await aesGcm.encrypt(paddedData, secretKey: this._rpiKey, nonce: nonce);
-    // TODO: concat nonce to beginning of RPI
+    // TODO: concat nonce to beginning of RPI (gotcha: AEM needs RPI)
 
     // print('RPI Bytes: $rpi');
     // print('RPI Bytes: ${hex.decode(hex.encode(rpi))}');
@@ -120,6 +122,24 @@ class ExposureNotification {
     this.rollingProximityIdentifier = rpi;
     print('[_rpiGen] Updated RPI');
     return hex.encode(rpi);
+  }
+
+  /// Generate the Associated Encrypted Metadata using the AEM Key.
+  ///
+  /// Called every 10 mins with _rpiGen()
+  ///
+  /// @return   aem   hexadecimal encoding of aem
+  Future<String> _aemGen() async {
+    // Use placeholder for msg as specsheet has no info on this
+    var metadata = utf8.encode("Metadata");
+    var aes_ctr = CipherWithAppendedMac(aesCtr, Hmac(sha256));
+
+    List<int> aem = await aes_ctr.encrypt(metadata,
+        secretKey: this._aemKey, nonce: Nonce(this.rollingProximityIdentifier));
+    
+    this.associatedEncryptedMetadata = aem;
+    print('[_aemGen] Update AEM');
+    return hex.encode(aem);
   }
 
   /// The driver/scheduler function
@@ -147,11 +167,15 @@ class ExposureNotification {
     print('[_scheduler] Updated AEM Key');
     // print('AEM Key: ${hex.encode(await aemKey.extract())}');
 
+    // Issue: AEM needs RPI as IV but RPI is 32 Bytes however nonce limit for AES_CTR is 16 Bytes
+    // var aemHex = await this._aemGen();
+    // print('[scheduler] AEM Hex: $aemHex');
+
     print('\n');
   }
 }
 
 // Using only for debug
 void main() async {
-new ExposureNotification();
+  new ExposureNotification();
 }
