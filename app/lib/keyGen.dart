@@ -14,9 +14,13 @@ import 'package:encrypt/encrypt.dart';
 
 class ExposureNotification {
   final _eKRollingPeriod = 144;
+
   /// Secret Keys
   // TODO: before pushing these keys to the server, change key to hex first
-  Map _temporaryExposureKey = {'key': null, 'id': null}; // {key: SecretKey, i: uint32_t}
+  Map _temporaryExposureKey = {
+    'key': null,
+    'id': null
+  }; // {key: SecretKey, i: uint32_t}
   SecretKey _rpiKey; // RollingProximityIdentifierKey
   SecretKey _aemKey; // AssociatedEncryptedMetadataKey
 
@@ -24,7 +28,6 @@ class ExposureNotification {
   List<int> rollingProximityIdentifier; // to be broadcasted
   List<int> associatedEncryptedMetadata; // additional metadata
 
-  
   List<String> dummyRPIs = [
     '41e9f07b40e2cab25a1c6c31f83d6b45',
     '02940563c5c9ea374595d65c57e120e3',
@@ -93,7 +96,10 @@ class ExposureNotification {
 
   /// This returns the i value that changes every 24 hours
   /// Stored with every TempExpKey.
-  int _getIval({DateTime timestamp}) => ((this._getIntervalNumber(timestamp: timestamp) /this._eKRollingPeriod).floor() * this._eKRollingPeriod);
+  int _getIval({DateTime timestamp}) =>
+      ((this._getIntervalNumber(timestamp: timestamp) / this._eKRollingPeriod)
+              .floor() *
+          this._eKRollingPeriod);
 
   /// Generate the daily temporary exposure key.
   ///
@@ -186,14 +192,16 @@ class ExposureNotification {
     print('(_scheduler) Updated ENIntervalNum: $currInterval');
 
     int currIval = this._getIval(timestamp: new DateTime.now());
-    
+
     // If tempKey hasn't been set yet
     // or if it's been more than 24 hours since last keygen (i value must have changed)
-    if (this._temporaryExposureKey['i'] == null || this._temporaryExposureKey['i'] != currIval) {
+    if (this._temporaryExposureKey['i'] == null ||
+        this._temporaryExposureKey['i'] != currIval) {
       this._temporaryExposureKey['i'] = currIval;
       this._temporaryExposureKey['key'] = this._dailyKeygen();
 
-      var tempKeyHex = hex.encode(await this._temporaryExposureKey['key'].extract());
+      var tempKeyHex =
+          hex.encode(await this._temporaryExposureKey['key'].extract());
       print('(_scheduler) Generated new TempExpKey: $tempKeyHex');
       print('(_scheduler) i: ${this._temporaryExposureKey['i']}');
     }
@@ -203,7 +211,8 @@ class ExposureNotification {
     print('(_scheduler) Updated RPI Key');
 
     // now generate a new RPI
-    var rpiHex = await this._rpiGen(localRPIKey: this._rpiKey, interval: this._eNIntervalNumber);
+    var rpiHex = await this
+        ._rpiGen(localRPIKey: this._rpiKey, interval: this._eNIntervalNumber);
     print('(_scheduler) RPI Hex: $rpiHex');
 
     this._aemKey = await this
@@ -224,11 +233,13 @@ class ExposureNotification {
       // We received the keys as hex strings. Convert them to bytes and create a SecretKey instance.
       var tempKey = SecretKey(hex.decode(positiveKey['key']));
       var tempIval = positiveKey['i'];
-      var tempRPIKey = await this._secondaryKeygen(tempKey, stringData: 'EN-RPIK'); 
+      var tempRPIKey =
+          await this._secondaryKeygen(tempKey, stringData: 'EN-RPIK');
 
       // Generate an RPI for all intervals during the day
       for (var i = tempIval; i < tempIval + 144; i++) {
-        var tempRPIHex = await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
+        var tempRPIHex =
+            await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
         // Now check if we ever came in contact with this rolling proximity identifier
         if (this.contactRPIs.containsKey(tempRPIHex)) {
           exposedCtr++;
