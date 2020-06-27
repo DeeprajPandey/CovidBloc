@@ -228,10 +228,10 @@ class ExposureNotification {
     for (var positiveKey in this.diagnosisKeys) {
       // We received the keys as hex strings. Convert them to bytes and create a SecretKey instance.
       var tempKey = SecretKey(hex.decode(positiveKey));
+      var tempRPIKey = await this._secondaryKeygen(tempKey, stringData: 'EN-RPIK'); 
 
       // Generate an RPI for all intervals during the day
       for (var i = 0; i < 144; i++) {
-        var tempRPIKey = await this._secondaryKeygen(tempKey, stringData: 'EN-RPIK');
         var tempRPIHex = await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
 
         // Now check if we ever came in contact with this rolling proximity identifier
