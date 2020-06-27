@@ -13,8 +13,10 @@ import 'package:cryptography/cryptography.dart';
 import 'package:encrypt/encrypt.dart';
 
 class ExposureNotification {
+  final _eKRollingPeriod = 144;
   /// Secret Keys
-  SecretKey _temporaryExposureKey;
+  // TODO: before pushing these keys to the server, change key to hex first
+  Map _temporaryExposureKey = {'key': null, 'id': null}; // {key: SecretKey, i: uint32_t}
   SecretKey _rpiKey; // RollingProximityIdentifierKey
   SecretKey _aemKey; // AssociatedEncryptedMetadataKey
 
@@ -24,29 +26,11 @@ class ExposureNotification {
 
   
   List<String> dummyRPIs = [
-    '65a3940ff9343e6b0afb27ac1d30059b',
-    'f241cadcbb65dcc8a45c1d882a6871c1',
-    'a5c195f57dc71dd5ef0047ec29ab590d',
-    '5fbc80fc28cded25a1c6f03244921dcc',
-    '4b9a9ef328d45fedf45f99cb08a9aee4',
-    'e01e6ed198be1c1572260f60c7b53fa0',
-    '932e02169bbfa1cfe31c02f84a5234c6',
-    '0ea3354ac2ef09ccc01ba42c75b0c4c1',
-    '7ac430efe6432860047f00e1b438b84a',
-    '7ac430efe6432860047f00e1b438b84a',
-    '7ac430efe6432860047f00e1b438b84a'
+    'bb342beb25a89a79ff044a0c8444cfc7',
   ];
   // Fetched from the server periodically
-  List<String> diagnosisKeys = [
-    '3ea0716b1ec754e85ca4e91d81bdb019',
-    'd529f8371571ce5069e3e227d4f3a3c2',
-    'c1248a8fceb814c7f20f659bc5f67b47',
-    '47ab81977cf0b2d637395a3ae52f3942',
-    '08e26ee695685e2062bdb0bec0afceb8',
-    '2c3b4cad354cf9ba828f4d4039e17e30',
-    '2018619fe1ca21541616fde56a9e02a1',
-    '23b5053f108580ecedccee133ae032e3',
-    'b75b3034b9cf09f0d31f0ef02d4f494e'
+  List<Map> diagnosisKeys = [
+    {'key': '3bb405883fcac63130ee90507b71cc26', 'i': 2655425}
   ];
   // Generate a HashMap from the list of RPIs
   HashMap contactRPIs = HashMap();
@@ -71,7 +55,7 @@ class ExposureNotification {
     // 15 +1 -> time - now;
 
     // const timeToInitiate = const Duration(seconds: 60);
-    const tenMins = const Duration(seconds: 5);
+    const tenMins = const Duration(minutes: 10);
 
     // 3:04
     // new Timer(
@@ -90,23 +74,19 @@ class ExposureNotification {
   /// ENIntervalNumber in Docs.
   ///
   /// @param timestamp  the current time of which we need the interval number
-  /// @return      the 10-min interval index (0-143)
+  /// @return      the 10-min interval
   int _getIntervalNumber({DateTime timestamp}) {
-    var lastMidnight =
-        new DateTime(timestamp.year, timestamp.month, timestamp.day);
-
     // Get the Unix time for that day's midnight and current time
     var currentUnix =
         ((timestamp.toUtc().millisecondsSinceEpoch) / 1000).floor();
-    var lastMidnightUnix =
-        ((lastMidnight.toUtc().millisecondsSinceEpoch) / 1000).floor();
-
-    // This is how long it has been since the day started
-    var diff = currentUnix - lastMidnightUnix;
 
     // Calculate the current 10-min interval number in the day
-    return (diff / 600).floor();
+    return (currentUnix / 600).floor();
   }
+
+  /// This returns the i value that changes every 24 hours
+  /// Stored with every TempExpKey.
+  int _getIval({DateTime timestamp}) => ((this._getIntervalNumber(timestamp: timestamp) /this._eKRollingPeriod).floor() * this._eKRollingPeriod);
 
   /// Generate the daily temporary exposure key.
   ///
@@ -195,17 +175,24 @@ class ExposureNotification {
   /// The driver/scheduler function
   Future<void> _scheduler({bool firstRun = false}) async {
     int currInterval = this._getIntervalNumber(timestamp: new DateTime.now());
-    // It's after 00:00, get a new daily key
-    if (currInterval == 0 || firstRun) {
-      this._temporaryExposureKey = this._dailyKeygen();
-      print(
-          '(_scheduler) Updated TempExpKey: ${hex.encode(await this._temporaryExposureKey.extract())}');
-    }
     this._eNIntervalNumber = currInterval;
     print('(_scheduler) Updated ENIntervalNum: $currInterval');
 
+    int currIval = this._getIval(timestamp: new DateTime.now());
+    
+    // If tempKey hasn't been set yet
+    // or if it's been more than 24 hours since last keygen (i value must have changed)
+    if (this._temporaryExposureKey['i'] == null || this._temporaryExposureKey['i'] != currIval) {
+      this._temporaryExposureKey['i'] = currIval;
+      this._temporaryExposureKey['key'] = this._dailyKeygen();
+
+      var tempKeyHex = hex.encode(await this._temporaryExposureKey['key'].extract());
+      print('(_scheduler) Generated new TempExpKey: $tempKeyHex');
+      print('(_scheduler) i: ${this._temporaryExposureKey['i']}');
+    }
+
     this._rpiKey = await this
-        ._secondaryKeygen(_temporaryExposureKey, stringData: 'EN-RPIK');
+        ._secondaryKeygen(_temporaryExposureKey['key'], stringData: 'EN-RPIK');
     print('(_scheduler) Updated RPI Key');
 
     // now generate a new RPI
@@ -213,7 +200,7 @@ class ExposureNotification {
     print('(_scheduler) RPI Hex: $rpiHex');
 
     this._aemKey = await this
-        ._secondaryKeygen(_temporaryExposureKey, stringData: 'CT-AEMK');
+        ._secondaryKeygen(_temporaryExposureKey['key'], stringData: 'CT-AEMK');
     print('(_scheduler) Updated AEM Key');
     // print('AEM Key: ${hex.encode(await aemKey.extract())}');
 
@@ -228,11 +215,12 @@ class ExposureNotification {
     int exposedCtr = 0;
     for (var positiveKey in this.diagnosisKeys) {
       // We received the keys as hex strings. Convert them to bytes and create a SecretKey instance.
-      var tempKey = SecretKey(hex.decode(positiveKey));
+      var tempKey = SecretKey(hex.decode(positiveKey['key']));
+      var tempIval = positiveKey['i'];
       var tempRPIKey = await this._secondaryKeygen(tempKey, stringData: 'EN-RPIK'); 
 
       // Generate an RPI for all intervals during the day
-      for (var i = 0; i < 144; i++) {
+      for (var i = tempIval; i < tempIval + 144; i++) {
         var tempRPIHex = await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
         // Now check if we ever came in contact with this rolling proximity identifier
         if (this.contactRPIs.containsKey(tempRPIHex)) {
