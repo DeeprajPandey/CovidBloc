@@ -26,11 +26,18 @@ class ExposureNotification {
 
   
   List<String> dummyRPIs = [
-    'bb342beb25a89a79ff044a0c8444cfc7',
+    '41e9f07b40e2cab25a1c6c31f83d6b45',
+    '02940563c5c9ea374595d65c57e120e3',
+    '0b98bc8f903b5257c8affff791b527fd',
+    '70d3b09c746de08732df5e7a03c1a904',
+    '2a11bae1e0d913ec0cad0661dfa43c00',
+    '79621740d9728794f2f84e19a7d62654',
+    'c0dfd971a99aadd40914daa31eeb0d0b',
+    '83ad49d35c03cbfc59d48ee3f7cb4fcb'
   ];
   // Fetched from the server periodically
   List<Map> diagnosisKeys = [
-    {'key': '3bb405883fcac63130ee90507b71cc26', 'i': 2655425}
+    {'key': '33917c36d48744ef3fbc4985188ea9e2', 'i': 2655360}
   ];
   // Generate a HashMap from the list of RPIs
   HashMap contactRPIs = HashMap();
