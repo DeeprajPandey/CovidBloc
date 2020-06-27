@@ -5,26 +5,31 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import './BluetoothDeviceListEntry.dart';
 import './DiscoveryPage.dart';
 import 'package:progress_indicators/progress_indicators.dart';
-import 'package:flutter/services.dart';
+//import 'package:flutter/services.dart';
+import './keyGen.dart';
+
 
 class SelectBondedDevicePage extends StatefulWidget {
   /// If true, on page start there is performed discovery upon the bonded devices.
   /// Then, if they are not avaliable, they would be disabled from the selection.
   final bool checkAvailability;
+  final ExposureNotification exp;
 
-  const SelectBondedDevicePage({this.checkAvailability = true});
+  const SelectBondedDevicePage({this.checkAvailability = true,
+  @required this.exp}):assert(exp!=null);
 
   @override
-  _SelectBondedDevicePage createState() => new _SelectBondedDevicePage();
+  _SelectBondedDevicePage createState() => new _SelectBondedDevicePage(exp:exp);
 }
 
 enum _DeviceAvailability {
-  no,
+  //no,
   maybe,
   yes,
 }
 
 class _DeviceWithAvailability extends BluetoothDevice {
+  
   BluetoothDevice device;
   _DeviceAvailability availability;
   int rssi;
@@ -33,12 +38,14 @@ class _DeviceWithAvailability extends BluetoothDevice {
 }
 
 class _SelectBondedDevicePage extends State<SelectBondedDevicePage> {
+  final ExposureNotification exp;
   List<_DeviceWithAvailability> devices = List<_DeviceWithAvailability>();
   // Availability
   StreamSubscription<BluetoothDiscoveryResult> _discoveryStreamSubscription;
   bool _isDiscovering;
 
-  _SelectBondedDevicePage();
+  _SelectBondedDevicePage({@required this.exp}):assert(exp!=null);
+
 
   @override
   void initState() {
@@ -110,7 +117,7 @@ class _SelectBondedDevicePage extends State<SelectBondedDevicePage> {
   
   @override
   Widget build(BuildContext context) {
-    DiscoveryPageState discover = new DiscoveryPageState();
+    DiscoveryPageState discover = new DiscoveryPageState(exp:exp);
     List<BluetoothDeviceListEntry> list = devices
         .map((_device) => BluetoothDeviceListEntry(
               device: _device.device,

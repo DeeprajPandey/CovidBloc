@@ -5,26 +5,31 @@ import 'package:progress_indicators/progress_indicators.dart';
 import './BluetoothDeviceListEntry.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/services.dart';
-
+import './keyGen.dart';
+import 'package:convert/convert.dart';
 
 class DiscoveryPage extends StatefulWidget {
   /// If true, discovery starts on page start, otherwise user must press action button.
   final bool start;
+  final ExposureNotification exp;
 
-  const DiscoveryPage({this.start = true});
+  const DiscoveryPage({this.start = true,
+  @required this.exp,
+  }):assert(exp!=null);
 
   @override
-  DiscoveryPageState createState() => new DiscoveryPageState();
+  DiscoveryPageState createState() => new DiscoveryPageState(exp:exp);
 }
 
 class DiscoveryPageState extends State<DiscoveryPage> {
+  final ExposureNotification exp;
   static const platform = const MethodChannel('samples.flutter.dev/bluetooth');
   StreamSubscription<BluetoothDiscoveryResult> _streamSubscription;
   List<BluetoothDiscoveryResult> results = List<BluetoothDiscoveryResult>();
   bool isDiscovering;
   // String _statusMsg = 'Waiting for response';
 
-  DiscoveryPageState();
+  DiscoveryPageState({@required this.exp,}):assert(exp!=null);
 
   @override
   void initState() {
@@ -100,9 +105,11 @@ class DiscoveryPageState extends State<DiscoveryPage> {
   Future<void> connectToDevice(BluetoothDevice dev) async {
     //String connStatus;
     String exchanged_key;
+    List<int> rpi= exp.rollingProximityIdentifier;
+    String rollingProximityIdentifier=hex.encode(rpi);
     try {
       exchanged_key =
-          await platform.invokeMethod('customConnectToDevice', {"address": dev.address,"message":"Client here"});
+          await platform.invokeMethod('customConnectToDevice', {"address": dev.address,"message":rollingProximityIdentifier});
       // print("Successful to establish connection");
     } on PlatformException catch (e) {
       print("Failed to establish connection: '${e.message}'");

@@ -22,6 +22,7 @@ class ExposureNotification {
   List<int> rollingProximityIdentifier; // to be broadcasted
   List<int> associatedEncryptedMetadata; // additional metadata
 
+  
   List<String> dummyRPIs = [
     '65a3940ff9343e6b0afb27ac1d30059b',
     'f241cadcbb65dcc8a45c1d882a6871c1',
@@ -233,7 +234,6 @@ class ExposureNotification {
       // Generate an RPI for all intervals during the day
       for (var i = 0; i < 144; i++) {
         var tempRPIHex = await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
-
         // Now check if we ever came in contact with this rolling proximity identifier
         if (this.contactRPIs.containsKey(tempRPIHex)) {
           exposedCtr++;

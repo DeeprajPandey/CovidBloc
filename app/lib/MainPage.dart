@@ -9,6 +9,7 @@ import './ChatPage.dart';
 import './BackgroundCollectingTask.dart';
 import './BackgroundCollectedPage.dart';
 import 'package:flutter/services.dart';
+import './keyGen.dart';
 
 // import './helpers/LineChart.dart';
 
@@ -20,7 +21,7 @@ class MainPage extends StatefulWidget {
 class _MainPage extends State<MainPage> {
   BluetoothState _bluetoothState = BluetoothState.UNKNOWN;
   static const platform = const MethodChannel('samples.flutter.dev/bluetooth');
-
+  
   String _address = "...";
   String _name = "...";
 
@@ -32,6 +33,8 @@ class _MainPage extends State<MainPage> {
   bool _autoAcceptPairingRequests = false;
   final bool isThreeLine=true;
 
+  var e = new ExposureNotification();
+  
   @override
   void initState() {
     super.initState();
@@ -233,7 +236,7 @@ class _MainPage extends State<MainPage> {
                         await Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) {
-                          return DiscoveryPage();
+                          return DiscoveryPage(exp:e);
                         },
                       ),
                     );
@@ -253,7 +256,7 @@ class _MainPage extends State<MainPage> {
                       await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) {
-                        return SelectBondedDevicePage(checkAvailability: false);
+                        return SelectBondedDevicePage(checkAvailability: false,exp:e);
                       },
                     ),
                   );
