@@ -36,11 +36,22 @@ class ExposureNotification {
     '2a11bae1e0d913ec0cad0661dfa43c00',
     '79621740d9728794f2f84e19a7d62654',
     'c0dfd971a99aadd40914daa31eeb0d0b',
-    '83ad49d35c03cbfc59d48ee3f7cb4fcb'
+    '83ad49d35c03cbfc59d48ee3f7cb4fcb', // end of first key
+    '6c608c78470d0f32c68284fa836be237',
+    'e16f9262233ed0c66adc733d279c029a',
+    '9013b1fe47ae0a5667fcd2c23c0e37ce',
+    '73c90e63003745e219ab2682f26239a4',
+    '40be8d9a145ac51487a5e7c61b3f211d',
+    '3f911893239b71d0dd577f203e99f689',
+    '4eeed4f8fb6ac91bc2d4fe1b277c6050',
+    '41ad948180f5737e0412a6cbc2e9de47',
+    '391e63bfe98f7d6a59d6c5aaf4d167b6',
+    'cc317cd860395bec3315a4f2b9929feb'
   ];
   // Fetched from the server periodically
   List<Map> diagnosisKeys = [
-    {'key': '33917c36d48744ef3fbc4985188ea9e2', 'i': 2655360}
+    {'key': '33917c36d48744ef3fbc4985188ea9e2', 'i': 2655360},
+    {'key': 'd67a4d2c5f44c218e92b03dd99fa3f92', 'i': 2655504}
   ];
   // Generate a HashMap from the list of RPIs
   HashMap contactRPIs = HashMap();
