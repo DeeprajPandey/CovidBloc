@@ -44,3 +44,11 @@ export class HealthOfficer {
     public approvalCtr: number = -1;
 
 }
+
+@Object()
+export class Approval{
+
+    @Property()
+    public approvalID:string;
+    public patientID: string;
+}
