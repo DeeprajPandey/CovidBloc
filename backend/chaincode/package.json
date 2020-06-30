@@ -1,7 +1,7 @@
 {
-  "name": "backend",
-  "version": "0.0.4",
-  "description": "My Smart Contract",
+  "name": "ctof-chaincode",
+  "version": "0.0.1",
+  "description": "CToF Project Chaincode",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "engines": {
@@ -18,7 +18,7 @@
     "prepublishOnly": "npm run build"
   },
   "engineStrict": true,
-  "author": "John Doe",
+  "author": "Deepraj Pandey",
   "license": "Apache-2.0",
   "dependencies": {
     "fabric-contract-api": "^1.4.5",
