@@ -51,15 +51,22 @@ export class AssetContract extends Contract {
         return (!!buffer && buffer.length > 0);
     }
 
+    /**
+     * Creates a new asset in the WS. Type is specified in the generic arg.
+     * 
+     * @param T Asset type (generics)
+     * @param ctx Transactional context
+     * @param assetId Asset key in WS
+     * @param value The 
+     */
     @Transaction()
-    public async createAsset(ctx: Context, assetId: string, value: string): Promise<void> {
+    public async createAsset<T>(ctx: Context, assetId: string, value: T): Promise<void> {
         const exists = await this.assetExists(ctx, assetId);
         if (exists) {
             throw new Error(`The asset ${assetId} already exists`);
         }
-        const asset = new Asset();
-        asset.value = value;
-        const buffer = Buffer.from(JSON.stringify(asset));
+
+        const buffer = Buffer.from(JSON.stringify(value));
         await ctx.stub.putState(assetId, buffer);
     }
 
@@ -67,8 +74,9 @@ export class AssetContract extends Contract {
      * Returns the asset object of a given key. Uses Generics, so needs
      * the type as argument as well.
      * 
+     * @param T Asset type (generics)
      * @param ctx Transactional context
-     * @param assetId WS asset key
+     * @param assetId Asset key in WS
      */
     @Transaction(false)
     @Returns('T')
@@ -82,18 +90,31 @@ export class AssetContract extends Contract {
         return asset;
     }
 
+    /**
+     * Update an asset with a new value. Type is passed as generic argument.
+     * 
+     * @param T Asset type (generics)
+     * @param ctx Transactional context
+     * @param assetId Asset key in WS
+     * @param newValue New asset object
+     */
     @Transaction()
-    public async updateAsset(ctx: Context, assetId: string, newValue: string): Promise<void> {
+    public async updateAsset<T>(ctx: Context, assetId: string, newValue: T): Promise<void> {
         const exists = await this.assetExists(ctx, assetId);
         if (!exists) {
             throw new Error(`The asset ${assetId} does not exist`);
         }
-        const asset = new Asset();
-        asset.value = newValue;
-        const buffer = Buffer.from(JSON.stringify(asset));
+        
+        const buffer = Buffer.from(JSON.stringify(newValue));
         await ctx.stub.putState(assetId, buffer);
     }
 
+    /**
+     * Delete an asset from the WS.
+     * 
+     * @param ctx Transactional context
+     * @param assetId Asset key
+     */
     @Transaction()
     public async deleteAsset(ctx: Context, assetId: string): Promise<void> {
         const exists = await this.assetExists(ctx, assetId);
