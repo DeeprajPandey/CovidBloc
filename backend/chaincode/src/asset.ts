@@ -49,6 +49,7 @@ export class HealthOfficer {
 export class Approval{
 
     @Property()
-    public approvalID:string;
+    public approvalID: string;
     public patientID: string;
+    
 }
