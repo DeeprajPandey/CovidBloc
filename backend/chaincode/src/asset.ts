@@ -12,10 +12,35 @@ export class Asset {
 
 }
 
-export class MedicalProf {
+@Object()
+export class Meta {
+    
+    @Property()
+    public patientCtr: number = 0;
+
+}
+
+// export interface DailyKey {
+//     hexkey: string;
+//     i: number;
+// }
+
+@Object()
+export class Patient {
+
+    @Property()
+    public approvalID: string;
+    public medID: string;
+    public dailyKeys: Array<{hexkey: string, i: number}>;
+}
+
+@Object()
+export class HealthOfficer {
+
     @Property()
     public name: string;
     public email: string;
     public hospital: string;
-    public approvalCtr: number;
+    public approvalCtr: number = -1;
+
 }

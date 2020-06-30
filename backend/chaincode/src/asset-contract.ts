@@ -3,21 +3,32 @@
  */
 
 import { Context, Contract, Info, Returns, Transaction } from 'fabric-contract-api';
-import { Asset, MedicalProf } from './asset';
+import { Asset, Meta, HealthOfficer, Patient } from './asset';
 
 @Info({title: 'AssetContract', description: 'My Smart Contract' })
 export class AssetContract extends Contract {
 
     @Transaction()
     public async initiateState(ctx: Context): Promise<void> {
-        for (let index = 0; index < 7; index++) {
-            const element = "string" + index.toString();
-            await this.createAsset(ctx, index.toString(), element);
-        }
-        const medProf = new MedicalProf();
+        const meta_buffer = Buffer.from(JSON.stringify(new Meta()));
+        await ctx.stub.putState("meta", meta_buffer);
+
+        const medProf = new HealthOfficer();
+        medProf.name = "New Name";
         medProf.hospital = "Apollo";
-        const buffer = Buffer.from(JSON.stringify(medProf));
-        await ctx.stub.putState("8", buffer);
+        const medBuff = Buffer.from(JSON.stringify(medProf));
+        await ctx.stub.putState("m123", medBuff);
+
+        const newPatient = new Patient();
+        newPatient.approvalID = "1231312";
+        newPatient.medID = "m123";
+        newPatient.dailyKeys = [
+            {'hexkey': "33917c36d48744ef3fbc4985188ea9e2", 'i': 2655360},
+            {'hexkey': "33917c36d48744ef3fbc4985188ea9e2", 'i': 2655360}
+        ];
+        const pBuff = Buffer.from(JSON.stringify(newPatient));
+        await ctx. stub.putState('p1', pBuff);
+
     }
 
     @Transaction(false)
