@@ -3,7 +3,7 @@
  */
 
 import { Context, Contract, Info, Returns, Transaction } from 'fabric-contract-api';
-import { Asset, Meta, DailyKey } from './asset';
+import { Meta, DailyKey } from './asset';
 import { HealthOfficer, Patient, Approval } from './asset';
 
 @Info({title: 'AssetContract', description: 'My Smart Contract' })
@@ -18,7 +18,13 @@ export class AssetContract extends Contract {
      */
     @Transaction()
     public async addPatient(ctx: Context, patientObj: Patient): Promise<void> {
-        const lastPatientID = await this.readAsset<Meta>(ctx, 'meta');
+        const lastPatientID = (await this.readAsset(ctx, 'meta')).patientCtr;
+        const newKey = "p" + (lastPatientID + 1).toString();
+        await this.createAsset(ctx, newKey, JSON.stringify(patientObj));
+
+        const updatedMeta = new Meta();
+        updatedMeta.patientCtr = lastPatientID + 1;
+        await this.updateAsset(ctx, 'meta', JSON.stringify(updatedMeta));
     }
 
     @Transaction()
@@ -32,16 +38,15 @@ export class AssetContract extends Contract {
         const medBuff = Buffer.from(JSON.stringify(medProf));
         await ctx.stub.putState("m123", medBuff);
 
-        const newPatient = new Patient();
-        newPatient.approvalID = "1231312";
-        newPatient.medID = "m123";
-        newPatient.dailyKeys = [
-            {'hexkey': "33917c36d48744ef3fbc4985188ea9e2", 'i': 2655360},
-            {'hexkey': "33917c36d48744ef3fbc4985188ea9e2", 'i': 2655360}
-        ];
-        const pBuff = Buffer.from(JSON.stringify(newPatient));
-        await ctx. stub.putState('p1', pBuff);
-
+        const patientFromServer = {
+            approvalID: "1231312",
+            medID: "m123",
+            dailyKeys: [
+                {hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360},
+                {hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360}
+            ]
+        };
+        await this.addPatient(ctx, patientFromServer);
     }
 
     @Transaction(false)
@@ -54,19 +59,18 @@ export class AssetContract extends Contract {
     /**
      * Creates a new asset in the WS. Type is specified in the generic arg.
      * 
-     * @param T Asset type (generics)
      * @param ctx Transactional context
      * @param assetId Asset key in WS
-     * @param value The 
+     * @param value String-ified asset
      */
     @Transaction()
-    public async createAsset<T>(ctx: Context, assetId: string, value: T): Promise<void> {
+    public async createAsset(ctx: Context, assetId: string, value: string): Promise<void> {
         const exists = await this.assetExists(ctx, assetId);
         if (exists) {
             throw new Error(`The asset ${assetId} already exists`);
         }
 
-        const buffer = Buffer.from(JSON.stringify(value));
+        const buffer = Buffer.from(value);
         await ctx.stub.putState(assetId, buffer);
     }
 
@@ -74,38 +78,36 @@ export class AssetContract extends Contract {
      * Returns the asset object of a given key. Uses Generics, so needs
      * the type as argument as well.
      * 
-     * @param T Asset type (generics)
      * @param ctx Transactional context
      * @param assetId Asset key in WS
      */
     @Transaction(false)
-    @Returns('T')
-    public async readAsset<T>(ctx: Context, assetId: string): Promise<T> {
+    @Returns('any')
+    public async readAsset(ctx: Context, assetId: string): Promise<any> {
         const exists = await this.assetExists(ctx, assetId);
         if (!exists) {
             throw new Error(`The asset ${assetId} does not exist`);
         }
         const buffer = await ctx.stub.getState(assetId);
-        const asset = JSON.parse(buffer.toString()) as T;
+        const asset = JSON.parse(buffer.toString());
         return asset;
     }
 
     /**
      * Update an asset with a new value. Type is passed as generic argument.
      * 
-     * @param T Asset type (generics)
      * @param ctx Transactional context
      * @param assetId Asset key in WS
-     * @param newValue New asset object
+     * @param newValue String-ified asset
      */
     @Transaction()
-    public async updateAsset<T>(ctx: Context, assetId: string, newValue: T): Promise<void> {
+    public async updateAsset(ctx: Context, assetId: string, newValue: string): Promise<void> {
         const exists = await this.assetExists(ctx, assetId);
         if (!exists) {
             throw new Error(`The asset ${assetId} does not exist`);
         }
         
-        const buffer = Buffer.from(JSON.stringify(newValue));
+        const buffer = Buffer.from(newValue);
         await ctx.stub.putState(assetId, buffer);
     }
 
