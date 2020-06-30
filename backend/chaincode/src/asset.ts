@@ -14,5 +14,8 @@ export class Asset {
 
 export class MedicalProf {
     @Property()
+    public name: string;
+    public email: string;
     public hospital: string;
+    public approvalCtr: number;
 }
