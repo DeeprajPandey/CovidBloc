@@ -3,10 +3,16 @@
  */
 
 import { Context, Contract, Info, Returns, Transaction } from 'fabric-contract-api';
-import { Asset, Meta, HealthOfficer, Patient } from './asset';
+import { Asset, Meta, DailyKey } from './asset';
+import { HealthOfficer, Patient, Approval } from './asset';
 
 @Info({title: 'AssetContract', description: 'My Smart Contract' })
 export class AssetContract extends Contract {
+
+    @Transaction()
+    public async addPatient(patientObj: Patient): Promise<void> {
+
+    }
 
     @Transaction()
     public async initiateState(ctx: Context): Promise<void> {
