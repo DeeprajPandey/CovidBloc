@@ -9,9 +9,16 @@ import { HealthOfficer, Patient, Approval } from './asset';
 @Info({title: 'AssetContract', description: 'My Smart Contract' })
 export class AssetContract extends Contract {
 
+    /**
+     * Add a set of diagnosed keys to WS.
+     * IMP: Call only after validating patient.
+     * 
+     * @param ctx Transactional context
+     * @param patientObj Approval ID and daily keys of user diagnosed +ve
+     */
     @Transaction()
-    public async addPatient(patientObj: Patient): Promise<void> {
-
+    public async addPatient(ctx: Context, patientObj: Patient): Promise<void> {
+        const lastPatientID = await this.readAsset<Meta>(ctx, 'meta');
     }
 
     @Transaction()
@@ -56,15 +63,22 @@ export class AssetContract extends Contract {
         await ctx.stub.putState(assetId, buffer);
     }
 
+    /**
+     * Returns the asset object of a given key. Uses Generics, so needs
+     * the type as argument as well.
+     * 
+     * @param ctx Transactional context
+     * @param assetId WS asset key
+     */
     @Transaction(false)
-    @Returns('Asset')
-    public async readAsset(ctx: Context, assetId: string): Promise<Asset> {
+    @Returns('T')
+    public async readAsset<T>(ctx: Context, assetId: string): Promise<T> {
         const exists = await this.assetExists(ctx, assetId);
         if (!exists) {
             throw new Error(`The asset ${assetId} does not exist`);
         }
         const buffer = await ctx.stub.getState(assetId);
-        const asset = JSON.parse(buffer.toString()) as Asset;
+        const asset = JSON.parse(buffer.toString()) as T;
         return asset;
     }
 
