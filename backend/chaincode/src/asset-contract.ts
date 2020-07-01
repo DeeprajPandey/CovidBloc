@@ -207,16 +207,16 @@ export class AssetContract extends Contract {
      * @param medID Unique ID of the health officer 
      */
     @Transaction(false)
-    public async getMedProfile(ctx: Context, medID:string){
+    public async getMedProfile(ctx: Context, medID:string): Promise<any> {
         // const cid = new ClientIdentity(ctx.stub);
         // const userID = cid.getID();
 
         const medObj = await this.readAsset(ctx, medID);
-        if(medObj!=null){ // && medObj.email==userID){
+        if (medObj!=null) { // && medObj.email==userID){
             return medObj;
         }
-        else{
-            return null;
+        else { 
+            throw new Error(`The MedicalID ${medID} is invalid`);
         }
     }
 
@@ -228,20 +228,20 @@ export class AssetContract extends Contract {
      * @param checkID ApprovalID of the patient 
      */
     @Transaction()
-    public async validatePatient(ctx: Context, medID:string, checkID:string){
+    public async validatePatient(ctx: Context, medID:string, checkID:string): Promise<String> {
         const medObj= await this.readAsset(ctx, medID);
-        if(medObj!=null){
+        if (medObj!=null) {
             for (let i = medObj.approvalCtr; i > 0; i--) {
                 const assetKey= medID + ":" + i.toString();
                 const approvalObj = await this.readAsset(ctx,assetKey);
-                if(approvalObj!=null && approvalObj.approvalID==checkID && approvalObj.patientID==null){
+                if (approvalObj!=null && approvalObj.approvalID==checkID && approvalObj.patientID==null) {
                     return "Validate Patient Successful";
                 }
             }
             throw new Error(`ApprovalID ${checkID} is invalid`);
         }
 
-        else{
+        else {
             throw new Error(`MedicalID ${medID} is invalid`);
         }
     }
@@ -252,14 +252,14 @@ export class AssetContract extends Contract {
      * @param ctx Transactional context
      */
     @Transaction(false)
-    public async getKeys(ctx:Context){
+    public async getKeys(ctx:Context): Promise<String> {
         const allResults= [];
         const key = "meta";
         const metaObj = await this.readAsset(ctx,key);
-        for (let i = metaObj.patientCtr; i > 0; i--){
+        for (let i = metaObj.patientCtr; i > 0; i--) {
             const patientKey = "p"+i.toString();
             const patientObj = await this.readAsset(ctx,patientKey);
-            if(patientObj!=null){
+            if (patientObj!=null) {
                 allResults.push(patientObj.dailyKeys);  //if key also needs to sent then {patientKey,patientObj}
             }
         }
