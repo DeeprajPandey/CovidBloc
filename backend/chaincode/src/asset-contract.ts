@@ -25,7 +25,7 @@ export class AssetContract extends Contract {
         console.log("creating patient");
         await this.createAsset(ctx, newKey, JSON.stringify(patientObj));
 
-        const updatedMeta = new Meta();
+        let updatedMeta = new Meta();
         updatedMeta.patientCtr = lastPatientID + 1;
         console.log("Updating meta");
         await this.updateAsset(ctx, "meta", JSON.stringify(updatedMeta));
