@@ -33,6 +33,14 @@ export class AssetContract extends Contract {
     }
 
     @Transaction()
+    public async addHealthOfficer(ctx: Context, medObj: HealthOfficer): Promise<void> {
+        const registered = await this.assetExists(ctx, medObj.medID);
+        if (!registered) {
+            await this.createAsset(ctx, medObj.medID, JSON.stringify(medObj));
+        }
+    }
+
+    @Transaction()
     public async initiateState(ctx: Context): Promise<void> {
         // const temp = new Meta();
         // temp.patientCtr = 0;

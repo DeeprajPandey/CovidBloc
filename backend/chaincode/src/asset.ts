@@ -58,6 +58,7 @@ export class HealthOfficer {
     public name: string;
     public email: string;
     public hospital: string;
+    public medID: string;
     public approvalCtr: number = -1;
 }
 
