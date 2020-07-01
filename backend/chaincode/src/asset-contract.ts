@@ -29,6 +29,10 @@ export class AssetContract extends Contract {
 
         const healthOfficial = await this.readAsset(ctx, patientObj.medID) as HealthOfficer;
         
+        if (!healthOfficial) {
+            // TODO: return to server as invalid medical official (medID)
+            return;
+        }
         // Check from the most recent approval number
         for (let apNum = healthOfficial.approveCtr; apNum > 0; apNum--) {
             const apKey = "m" + patientObj.medID + ":" + apNum.toString();
@@ -72,7 +76,8 @@ export class AssetContract extends Contract {
     public async addPatientApprovalRecord(ctx: Context, medID: string, newApprovalID: string) {
         let official = await this.readAsset(ctx, medID) as HealthOfficer;
         if (!official) {
-            // Return to server gracefully
+            // throw new Error("Doc doesnt exist");
+            // TODO: Return to server gracefully
             return;
         }
         const apNum = official.approveCtr + 1;
@@ -88,22 +93,27 @@ export class AssetContract extends Contract {
 
     @Transaction()
     public async initiateState(ctx: Context): Promise<void> {
-        // const temp = new Meta();
-        // temp.patientCtr = 0;
-        // await this.createAsset(ctx, "meta", JSON.stringify(temp));
+        let temp = new Meta();
+        temp.patientCtr = 0;
+        const str = JSON.stringify(temp);
+        await this.createAsset(ctx, "meta", str);
 
-        const patientFromServer = {
-            approvalID: "1231312",
-            medID: "m123",
-            dailyKeys: [
-                {hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360},
-                {hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360}
-            ]
-        };
+        const meta = await this.readAsset(ctx, "meta");
+        if (!meta) {
+            throw new Error("Meta not there!");
+        }
+        // const patientFromServer = {
+        //     approvalID: "1231312",
+        //     medID: "m123",
+        //     dailyKeys: [
+        //         {hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360},
+        //         {hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360}
+        //     ]
+        // };
 
-        //await this.validatePatient(ctx,"123","1231312")
-        //await this.addPatient(ctx, patientFromServer);
-        await this.getMedProfile(ctx,"123");
+        // //await this.validatePatient(ctx,"123","1231312")
+        // await this.addPatient(ctx, patientFromServer);
+        // await this.getMedProfile(ctx,"123");
         //await this.getKeys(ctx);
     }
 
@@ -130,6 +140,8 @@ export class AssetContract extends Contract {
 
         const buffer = Buffer.from(value);
         await ctx.stub.putState(assetId, buffer);
+        console.log('Added');
+        return;
     }
 
     /**
