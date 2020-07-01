@@ -114,6 +114,16 @@ export class AssetContract extends Contract {
         //     ]
         // };
 
+        // const medObj = {
+        //     name: "M1",
+        //     email: "M1@apollo.com",
+        //     hospital : "Apollo",
+        //     medID: "123",
+        //     approveCtr: 0  
+        // };
+
+        // await this.addHealthOfficer(ctx,medObj);
+
         // //await this.validatePatient(ctx,"123","1231312")
         // await this.addPatient(ctx, patientFromServer);
         // await this.getMedProfile(ctx,"123");
