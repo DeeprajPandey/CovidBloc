@@ -40,6 +40,32 @@ export class AssetContract extends Contract {
         }
     }
 
+    /**
+     * Adds a record of a health official approving a patient
+     * approvalNum = approveCtr + 1
+     * 
+     * @param medID Health Official's ID
+     * @param approvalNum The approval ID for this official
+     */
+    @Transaction()
+    public async addPatientApprovalRecord(ctx: Context, medID: string, newApprovalID: string) {
+        const officialExists = await this.assetExists(ctx, medID);
+        if (!officialExists) {
+            // Return to server gracefully
+            return;
+        }
+        let official = await this.readAsset(ctx, medID) as HealthOfficer;
+        const apNum = official.approveCtr + 1;
+        official.approveCtr = apNum;
+
+        const key = "m" + medID + ":" + apNum.toString();
+        let apObj = new Approval();
+        apObj.approvalID = newApprovalID;
+        apObj.patientID = null; // patient hasn't uploaded keys yet
+
+        await this.createAsset(ctx, key, JSON.stringify(apObj));
+    }
+
     @Transaction()
     public async initiateState(ctx: Context): Promise<void> {
         // const temp = new Meta();
