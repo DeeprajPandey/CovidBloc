@@ -59,7 +59,7 @@ export class HealthOfficer {
     public email: string;
     public hospital: string;
     public medID: string;
-    public approveCtr: number = -1;
+    public approveCtr: number = 0;
 }
 
 /**
