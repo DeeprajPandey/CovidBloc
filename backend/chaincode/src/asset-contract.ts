@@ -19,27 +19,24 @@ export class AssetContract extends Contract {
      */
     @Transaction()
     public async addPatient(ctx: Context, patientObj: Patient): Promise<void> {
-        const lastPatientID = (await this.readAsset(ctx, 'meta')).patientCtr;
+        console.log("Reading meta");
+        const lastPatientID = (await this.readAsset(ctx, "meta")).patientCtr;
         const newKey = "p" + (lastPatientID + 1).toString();
+        console.log("creating patient");
         await this.createAsset(ctx, newKey, JSON.stringify(patientObj));
 
         const updatedMeta = new Meta();
         updatedMeta.patientCtr = lastPatientID + 1;
-        await this.updateAsset(ctx, 'meta', JSON.stringify(updatedMeta));
-
+        console.log("Updating meta");
+        await this.updateAsset(ctx, "meta", JSON.stringify(updatedMeta));
+        console.log("done");
     }
 
     @Transaction()
     public async initiateState(ctx: Context): Promise<void> {
-        //const meta_buffer = Buffer.from(JSON.stringify(new Meta()));
-        //await ctx.stub.putState("meta", meta_buffer);
-
-        const medProf = new HealthOfficer();
-        medProf.name = "New Name";
-        medProf.hospital = "Apollo";
-        //medProf.email="m1@apollo.com";
-        const medBuff = Buffer.from(JSON.stringify(medProf));
-        await ctx.stub.putState("m123", medBuff);
+        // const temp = new Meta();
+        // temp.patientCtr = 0;
+        // await this.createAsset(ctx, "meta", JSON.stringify(temp));
 
         const patientFromServer = {
             approvalID: "1231312",
