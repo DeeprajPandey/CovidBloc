@@ -208,10 +208,10 @@ export class AssetContract extends Contract {
      */
     @Transaction(false)
     public async getMedProfile(ctx: Context, medID:string){
-        const cid = new ClientIdentity(ctx.stub);
-        const userID = cid.getID(); 
-        const medKey= "m" + medID;
-        const medObj = await this.readAsset(ctx,medKey);
+        // const cid = new ClientIdentity(ctx.stub);
+        // const userID = cid.getID();
+
+        const medObj = await this.readAsset(ctx, medID);
         if(medObj!=null){ // && medObj.email==userID){
             return medObj;
         }
@@ -229,11 +229,10 @@ export class AssetContract extends Contract {
      */
     @Transaction()
     public async validatePatient(ctx: Context, medID:string, checkID:string){
-        const medKey = "m" + medID;
-        const medObj= await this.readAsset(ctx,medKey);
+        const medObj= await this.readAsset(ctx, medID);
         if(medObj!=null){
-            for (let i = 1; i <= medObj.approvalCtr; i++) {
-                const assetKey= medKey+":"+i.toString();
+            for (let i = medObj.approvalCtr; i > 0; i--) {
+                const assetKey= medID + ":" + i.toString();
                 const approvalObj = await this.readAsset(ctx,assetKey);
                 if(approvalObj!=null && approvalObj.approvalID==checkID && approvalObj.patientID==null){
                     return "Validate Patient Successful";
@@ -257,7 +256,7 @@ export class AssetContract extends Contract {
         const allResults= [];
         const key = "meta";
         const metaObj = await this.readAsset(ctx,key);
-        for (let i=1;i<=metaObj.num_positives;i++){
+        for (let i = metaObj.patientCtr; i > 0; i--){
             const patientKey = "p"+i.toString();
             const patientObj = await this.readAsset(ctx,patientKey);
             if(patientObj!=null){
