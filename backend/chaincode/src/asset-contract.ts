@@ -188,7 +188,7 @@ export class AssetContract extends Contract {
      * @param ctx Transactional context
      * @param medID Unique ID of the health officer 
      */
-    @Transaction()
+    @Transaction(false)
     public async getMedProfile(ctx: Context, medID:string){
         const cid = new ClientIdentity(ctx.stub);
         const userID = cid.getID(); 
@@ -234,7 +234,7 @@ export class AssetContract extends Contract {
      * 
      * @param ctx Transactional context
      */
-    @Transaction()
+    @Transaction(false)
     public async getKeys(ctx:Context){
         const allResults= [];
         const key = "meta";
