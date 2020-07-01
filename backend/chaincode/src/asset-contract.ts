@@ -21,6 +21,9 @@ export class AssetContract extends Contract {
     public async addPatient(ctx: Context, patientObj: Patient): Promise<void> {
         console.log("Reading meta");
         let currMeta = await this.readAsset(ctx, "meta") as Meta;
+        if (currMeta == null) {
+            throw new Error(`Meta does not exist`);
+        }
         const lastPatientID = currMeta.patientCtr;
         const newPKey = "p" + (lastPatientID + 1).toString();
 
@@ -67,12 +70,11 @@ export class AssetContract extends Contract {
      */
     @Transaction()
     public async addPatientApprovalRecord(ctx: Context, medID: string, newApprovalID: string) {
-        const officialExists = await this.assetExists(ctx, medID);
-        if (!officialExists) {
+        let official = await this.readAsset(ctx, medID) as HealthOfficer;
+        if (!official) {
             // Return to server gracefully
             return;
         }
-        let official = await this.readAsset(ctx, medID) as HealthOfficer;
         const apNum = official.approveCtr + 1;
         official.approveCtr = apNum;
 
@@ -142,7 +144,8 @@ export class AssetContract extends Contract {
     public async readAsset(ctx: Context, assetId: string): Promise<any> {
         const exists = await this.assetExists(ctx, assetId);
         if (!exists) {
-            throw new Error(`The asset ${assetId} does not exist`);
+            // throw new Error(`The asset ${assetId} does not exist`);
+            return null;
         }
         const buffer = await ctx.stub.getState(assetId);
         const asset = JSON.parse(buffer.toString());
