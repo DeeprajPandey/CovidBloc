@@ -20,16 +20,34 @@ export class AssetContract extends Contract {
     @Transaction()
     public async addPatient(ctx: Context, patientObj: Patient): Promise<void> {
         console.log("Reading meta");
-        const lastPatientID = (await this.readAsset(ctx, "meta")).patientCtr;
-        const newKey = "p" + (lastPatientID + 1).toString();
-        console.log("creating patient");
-        await this.createAsset(ctx, newKey, JSON.stringify(patientObj));
+        let currMeta = await this.readAsset(ctx, "meta") as Meta;
+        const lastPatientID = currMeta.patientCtr;
+        const newPKey = "p" + (lastPatientID + 1).toString();
 
-        let updatedMeta = new Meta();
-        updatedMeta.patientCtr = lastPatientID + 1;
-        console.log("Updating meta");
-        await this.updateAsset(ctx, "meta", JSON.stringify(updatedMeta));
-        console.log("done");
+        const healthOfficial = await this.readAsset(ctx, patientObj.medID) as HealthOfficer;
+        
+        // Check from the most recent approval number
+        for (let apNum = healthOfficial.approveCtr; apNum > 0; apNum--) {
+            const apKey = "m" + patientObj.medID + ":" + apNum.toString();
+            let apObj = await this.readAsset(ctx, apKey) as Approval;
+
+            // Found valid approval from health official
+            if (apObj.patientID == null && apObj.approvalID == patientObj.approvalID) {
+                // Update approval to add patient key
+                apObj.patientID = newPKey;
+                await this.updateAsset(ctx, apKey, JSON.stringify(apObj));
+                
+                console.log("Creating patient");
+                await this.createAsset(ctx, newPKey, JSON.stringify(patientObj));
+
+                currMeta.patientCtr = lastPatientID + 1;
+                console.log("Updating meta");
+                await this.updateAsset(ctx, "meta", JSON.stringify(currMeta));
+                console.log("done");
+
+                break;
+            }
+        }
     }
 
     @Transaction()
