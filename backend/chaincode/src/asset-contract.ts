@@ -83,7 +83,10 @@ export class AssetContract extends Contract {
         const apNum = official.approveCtr + 1;
         official.approveCtr = apNum;
 
-        const key = "m" + medID + ":" + apNum.toString();
+        // Update health official record with new ctr
+        await this.updateAsset(ctx, medID, JSON.stringify(official));
+
+        const key = medID + ":" + apNum.toString();
         let apObj = new Approval();
         apObj.approvalID = newApprovalID;
         apObj.patientID = null; // patient hasn't uploaded keys yet
