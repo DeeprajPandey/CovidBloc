@@ -1,3 +1,4 @@
 .DS_Store
-node_modules
-Org1Wallet
+node_modules/
+dist/
+Org1Wallet/
