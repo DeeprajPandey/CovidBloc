@@ -98,7 +98,7 @@ export class AssetContract extends Contract {
     public async initiateState(ctx: Context): Promise<void> {
         let temp = new Meta();
         temp.patientCtr = 0;
-        const str = JSON.stringify(temp);
+        let str = JSON.stringify(temp);
         await this.createAsset(ctx, "meta", str);
 
         const meta = await this.readAsset(ctx, "meta");
@@ -114,14 +114,7 @@ export class AssetContract extends Contract {
         //     ]
         // };
 
-        // const medObj = {
-        //     name: "M1",
-        //     email: "M1@apollo.com",
-        //     hospital : "Apollo",
-        //     medID: "123",
-        //     approveCtr: 0  
-        // };
-
+        const medObj = {name: "M1",email: "M1@apollo.com",hospital : "Apollo",medID: "123",approveCtr: 0};
         // await this.addHealthOfficer(ctx,medObj);
 
         // //await this.validatePatient(ctx,"123","1231312")

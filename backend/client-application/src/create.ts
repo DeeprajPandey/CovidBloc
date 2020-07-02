@@ -19,7 +19,7 @@ async function main() {
         const network = await gateway.getNetwork('mychannel');
 
         // Get the contract from the network.
-        const contract = network.getContract('asset-contract');
+        const contract = network.getContract('ctof-chaincode');
 
         // Submit the specified transaction.
         const medObj = {
@@ -29,7 +29,8 @@ async function main() {
             medID: "123",
             approveCtr: 0  
         };
-        await contract.submitTransaction('addHealthOfficer', medObj);
+
+        await contract.submitTransaction('addHealthOfficer', JSON.stringify(medObj));
         console.log(`Transaction has been submitted`);
 
         // Disconnect from the gateway.
