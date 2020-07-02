@@ -58,11 +58,16 @@ export class AssetContract extends Contract {
     }
 
     @Transaction()
-    public async addHealthOfficer(ctx: Context, medObj: HealthOfficer): Promise<void> {
+    public async addHealthOfficer(ctx: Context, medObj: HealthOfficer): Promise<any> {
+        let responseObj = {};
         const registered = await this.assetExists(ctx, medObj.medID);
         if (!registered) {
             await this.createAsset(ctx, medObj.medID, JSON.stringify(medObj));
+            responseObj["msg"] = "Registered successfully";
+        } else {
+            responseObj["err"] = "User has registered";
         }
+        return responseObj;
     }
 
     /**

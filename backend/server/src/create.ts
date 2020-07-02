@@ -26,7 +26,7 @@ async function main() {
         }
 
         // Submit the specified transaction.
-        await contract.submitTransaction('createAsset', 'meta', JSON.stringify(obj));
+        await contract.submitTransaction('createAsset', 'demo1', JSON.stringify(obj));
         console.log(`Transaction has been submitted`);
 
         // Disconnect from the gateway.
