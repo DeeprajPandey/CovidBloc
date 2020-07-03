@@ -29,6 +29,8 @@ app.get("/", async(req: Request, res: Response) => {
   try {
     const msg: string = "Houston to Base, the server's up."
     res.status(200).send(msg);
+  } catch (e) {
+    res.status(418).send("I'm a teapot.");
   }
 });
 
