@@ -44,7 +44,7 @@ export interface DailyKey {
 export class Patient {
     @Property()
     public approvalID: string;
-    public medID: string;
+    public medEmail: string;
     public dailyKeys: Array<DailyKey>;
 }
 
@@ -56,7 +56,7 @@ export class Patient {
 export class HealthOfficer {
     @Property()
     public name: string;
-    public email: string;
+    //public email: string;
     public hospital: string;
     public medID: string;
     public approveCtr: number = 0;
