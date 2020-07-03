@@ -10,7 +10,7 @@ console.log(`Wallet path: ${walletPath}`);
 const connectionProfile = path.resolve(__dirname, '..', 'connection.json');
 
 // Returns the network object after connecting as `user`
-export const connectAsUser = async (user: string): Promise<NetworkObject> => {
+export const connectAsUser = async (username: string): Promise<NetworkObject> => {
   let responseObj: NetworkObject = {
     gateway: null,
     contract: null,
@@ -18,9 +18,9 @@ export const connectAsUser = async (user: string): Promise<NetworkObject> => {
   };
   try {
     // Check if the user exists
-    const userExists = await wallet.exists(user);
+    const userExists = await wallet.exists(username);
     if (!userExists) {
-      const errorMsg = `fabric.connectAsUser::Identity ${user} not found.`;
+      const errorMsg = `fabric.connectAsUser::Identity ${username} not found.`;
       console.info(errorMsg);
       responseObj.err = errorMsg;
       return responseObj;
@@ -28,7 +28,7 @@ export const connectAsUser = async (user: string): Promise<NetworkObject> => {
 
     // Create new gateway to connect to peer
     const gateway = new Gateway();
-    const connectionOptions = { wallet, identity: user, discovery: { enabled: true, asLocalhost: true }};
+    const connectionOptions = { wallet, identity: username, discovery: { enabled: true, asLocalhost: true }};
     await gateway.connect(connectionProfile, connectionOptions);
 
     // Get the network (channel) our contract is deployed to
@@ -39,7 +39,7 @@ export const connectAsUser = async (user: string): Promise<NetworkObject> => {
 
     responseObj.gateway = gateway;
     responseObj.contract = contract;
-    console.info(`fabric.connectAsUser::${user} connect to network...`);
+    console.info(`fabric.connectAsUser::${username} connect to network...`);
 
     return responseObj;
   } catch (e) {
