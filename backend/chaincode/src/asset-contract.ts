@@ -227,19 +227,19 @@ export class AssetContract extends Contract {
     @Transaction(false)
     public async getMedProfile(ctx: Context, medEmail:string): Promise<any> {
         let responseObj={};
-        // const cid = new ClientIdentity(ctx.stub);
-        // const userID = cid.getID();
-        // if (medEmail != userID) {
-        //     responseObj["err"]= "Not allowed to query this profile";
-        // }
-
-        const medObj = await this.readAsset(ctx, medEmail);
-        if (medObj!=null) {
-            responseObj["data"]=medObj;
-        }
-        else { 
-            //throw new Error(`Email ID ${medEmail} is invalid`);
-            responseObj["err"]= "Invalid Email Address";
+        const cid = new ClientIdentity(ctx.stub);
+        const attrCheck: boolean = cid.assertAttributeValue('health-official', 'true');
+        if (attrCheck) {
+            const medObj = await this.readAsset(ctx, medEmail);
+            if (medObj!=null) {
+                responseObj["data"]=medObj;
+            }
+            else { 
+                //throw new Error(`Email ID ${medEmail} is invalid`);
+                responseObj["err"]= "Invalid Email Address";
+            }
+        } else {
+            responseObj["err"]= "Not allowed to query this profile";
         }
 
         return responseObj;
