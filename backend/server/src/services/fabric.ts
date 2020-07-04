@@ -1,6 +1,8 @@
-import { FileSystemWallet, Gateway } from 'fabric-network';
-import { NetworkObject } from './fabric.interface';
+import { FileSystemWallet, Gateway, X509WalletMixin } from 'fabric-network';
+import { GenericResponse, NetworkObject } from './fabric.interface';
 import * as path from 'path';
+
+const ADMIN = 'org1Admin';
 
 // Create a new file system based wallet for managing identities.
 const walletPath = path.join(process.cwd(), 'Org1Wallet');
@@ -8,6 +10,75 @@ const wallet = new FileSystemWallet(walletPath);
 console.log(`Wallet path: ${walletPath}`);
 
 const connectionProfile = path.resolve(__dirname, '..', 'connection.json');
+
+/**
+ * Generates a new identity (user)
+ * The medical param will set the attributes accordingly for permissions.
+ * @param newuser new user's email(medical) or random string (diagnosed keys)
+ * @param medical boolean value specifying if it's a medical professional
+ */
+export const registerUser = async (newuser: string, medical: boolean): Promise<any> => {
+  if (!validUsername(newuser)) {
+    return {"err": "Invalid username/email."};
+  }
+  let responseObj: GenericResponse = {
+    err: null
+  };
+
+  try {
+    // Check if admin exists
+    const adminExists = await wallet.exists(ADMIN);
+    if (!adminExists) {
+      const errorMsg = "fabric.registerUser::Admin doesn't exist";
+      console.info(errorMsg);
+      return responseObj.err = errorMsg;
+    }
+
+    // Check if user has registered
+    const userExists = await wallet.exists(newuser);
+    if (userExists) {
+      const errorMsg = `fabric.registerUser::Identity ${newuser} exists.`;
+      console.info(errorMsg);
+      responseObj.err = errorMsg;
+      return responseObj;
+    }
+
+    const gateway = new Gateway();
+    const connectionOptions = { wallet, identity: ADMIN, discovery: { enabled: true, asLocalhost: true }};
+    await gateway.connect(connectionProfile, connectionOptions);
+
+    // Get CA object to interact and craete new identity
+    const ca = gateway.getClient().getCertificateAuthority();
+    const adminIdentity = gateway.getCurrentIdentity();
+
+    // Array of KeyValueAttribute objects to assign when registering with CA
+    let attributes: any[] = [{
+      name: "health-official",
+      value: "false", // not health-official by default
+      ecert: true
+    }];
+
+    if (medical) {
+      attributes[0]["value"] = "true";
+    }
+    // Register, enroll, and import new identity to wallet
+    const secret = await ca.register({
+      affiliation: "org1.health",
+      enrollmentID: newuser,
+      role: 'client',
+      attrs: attributes
+    }, adminIdentity);
+
+    const enrollment = await ca.enroll({enrollmentID: newuser, enrollmentSecret: secret});
+    const userIdentity = X509WalletMixin.createIdentity("Org1MSP", enrollment.certificate, enrollment.key.toBytes());
+    await wallet.import(newuser, userIdentity);
+
+    console.info(`fabric.registerUser::${newuser} registered, enrolled, identity imported to wallet.`);
+    return responseObj;
+  } catch (e) {
+    console.error(e);
+  }
+};
 
 // Returns the network object after connecting as `user`
 export const connectAsUser = async (username: string): Promise<NetworkObject> => {
@@ -49,3 +120,12 @@ export const connectAsUser = async (username: string): Promise<NetworkObject> =>
     return responseObj;
   }
 };
+
+// Utility function to check for special characters needed in the contract
+// can't have colon(:)
+async function validUsername(username: string): Promise<boolean> {
+  if (!username || username.includes(':')) {
+      return false;
+  }
+  return true;
+}
