@@ -1,4 +1,4 @@
-import { FileSystemWallet, Gateway, X509WalletMixin, Contract } from 'fabric-network';
+import { FileSystemWallet, Gateway, X509WalletMixin } from 'fabric-network';
 import { GenericResponse, NetworkObject } from './fabric.interface';
 import * as path from 'path';
 
