@@ -227,14 +227,14 @@ export class AssetContract extends Contract {
     @Transaction(false)
     public async getMedProfile(ctx: Context, medEmail:string): Promise<any> {
         let responseObj={};
-        const cid = new ClientIdentity(ctx.stub);
-        const userID = cid.getID();
-        if (medEmail != userID) {
-            responseObj["err"]= "Not allowed to query this profile";
-        }
+        // const cid = new ClientIdentity(ctx.stub);
+        // const userID = cid.getID();
+        // if (medEmail != userID) {
+        //     responseObj["err"]= "Not allowed to query this profile";
+        // }
 
         const medObj = await this.readAsset(ctx, medEmail);
-        if (medObj!=null && medEmail==userID) {
+        if (medObj!=null) {
             responseObj["data"]=medObj;
         }
         else { 
@@ -283,7 +283,7 @@ export class AssetContract extends Contract {
      * @param ctx Transactional context
      */
     @Transaction(false)
-    public async getKeys(ctx:Context): Promise<any> {
+    public async getKeys(ctx:Context, currentIval:string): Promise<any> {
         let responseObj={};
         const allResults= [];
         const key = "meta";
@@ -292,7 +292,12 @@ export class AssetContract extends Contract {
             const patientKey = "p"+i.toString();
             const patientObj = await this.readAsset(ctx,patientKey);
             if (patientObj!=null) {
-                allResults.push(patientObj.dailyKeys);  //if key also needs to sent then {patientKey,patientObj}
+                if (patientObj.ival==(parseInt(currentIval)-144).toString()) { //we will call this function when tempkey is gen(so new i val)- need patients who have been added in the last 24hrs
+                    allResults.push(patientObj.dailyKeys);  //if key also needs to sent then {patientKey,patientObj}
+                }
+                else if (parseInt(currentIval)==-1) {       //for first time users
+                    allResults.push(patientObj.dailyKeys);
+                }
             }
             else{
                 responseObj["err"] = "Error downloading keys";
