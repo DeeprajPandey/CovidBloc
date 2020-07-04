@@ -25,26 +25,20 @@ export const registerUser = async (newuser: string, medical: boolean): Promise<G
   };
 
   if (!validUsername(newuser)) {
-    responseObj.err = "Invalid username/email.";
-    return responseObj;
+    throw new Error("Invalid username/email.");
   }
 
   try {
     // Check if admin exists
     const adminExists = await wallet.exists(ADMIN);
     if (!adminExists) {
-      const errorMsg: string = "fabric.registerUser::Admin doesn't exist";
-      console.info(errorMsg);
-      responseObj.err = errorMsg;
-      return responseObj;
+      throw new Error("Admin doesn't exist");
     }
 
     // Check if user has registered
     const userExists: boolean = await wallet.exists(newuser);
     if (userExists) {
-      const errorMsg = `fabric.registerUser::Identity ${newuser} exists.`;
-      console.info(errorMsg);
-      responseObj.err = errorMsg;
+      throw new Error(`Identity ${newuser} exists.`);
     } else {
       const gateway = new Gateway();
       const connectionOptions = { wallet, identity: ADMIN, discovery: { enabled: true, asLocalhost: true } };
@@ -80,6 +74,7 @@ export const registerUser = async (newuser: string, medical: boolean): Promise<G
     }
   } catch (e) {
     console.error(e);
+    responseObj.err = "fabric.registerUser::" + e.message;
   } finally {
     return responseObj;
   }
@@ -96,10 +91,7 @@ export const connectAsUser = async (username: string): Promise<NetworkObject | G
     // Check if the user exists
     const userExists = await wallet.exists(username);
     if (!userExists) {
-      const errorMsg = `fabric.connectAsUser::Identity ${username} not found.`;
-      console.info(errorMsg);
-      errResp.err = errorMsg;
-      return errResp;
+      throw new Error(`Identity ${username} not found.`);
     }
 
     // Create new gateway to connect to peer
@@ -114,13 +106,11 @@ export const connectAsUser = async (username: string): Promise<NetworkObject | G
     const contract = network.getContract('ctof-chaincode');
 
     const responseObj: NetworkObject = { gateway: gateway, contract: contract, err: null };
-    console.info(`fabric.connectAsUser::${username} connect to network...`);
+    console.info(`fabric.connectAsUser::${username} connected to network...`);
 
     return responseObj;
   } catch (e) {
-    const errorMsg = "${user} failed to connect to network";
-    console.error(`fabric.connectAsUser::${errorMsg}.`);
-    errResp.err = errorMsg;
+    errResp.err = "fabric.connectAsUser::" + e.message;
     return errResp;
   }
 };
