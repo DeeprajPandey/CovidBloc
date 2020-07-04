@@ -20,12 +20,14 @@ const connectionProfile = path.resolve(__dirname, '..', 'connection.json');
  * @returns GenericResponse With only err set to null or a string (if no errors)
  */
 export const registerUser = async (newuser: string, medical: boolean): Promise<GenericResponse> => {
-  if (!validUsername(newuser)) {
-    return { "err": "Invalid username/email." };
-  }
   let responseObj: GenericResponse = {
     err: null
   };
+  
+  if (!validUsername(newuser)) {
+    responseObj.err = "Invalid username/email.";
+    return responseObj;
+  }
 
   try {
     // Check if admin exists
