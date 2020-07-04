@@ -5,6 +5,6 @@ export interface GenericResponse {
 }
 
 export interface NetworkObject extends GenericResponse {
-  gateway: Gateway | null,
-  contract: Contract | null
+  gateway: Gateway,
+  contract: Contract
 };

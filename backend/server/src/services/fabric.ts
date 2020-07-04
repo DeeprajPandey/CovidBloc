@@ -1,4 +1,4 @@
-import { FileSystemWallet, Gateway, X509WalletMixin } from 'fabric-network';
+import { FileSystemWallet, Gateway, X509WalletMixin, Contract } from 'fabric-network';
 import { GenericResponse, NetworkObject } from './fabric.interface';
 import * as path from 'path';
 
@@ -23,7 +23,7 @@ export const registerUser = async (newuser: string, medical: boolean): Promise<G
   let responseObj: GenericResponse = {
     err: null
   };
-  
+
   if (!validUsername(newuser)) {
     responseObj.err = "Invalid username/email.";
     return responseObj;
@@ -90,20 +90,16 @@ export const registerUser = async (newuser: string, medical: boolean): Promise<G
  * @param username email id (health official) or random string (diagnosed keys)
  * @returns NetworkObject with gateway and contract
  */
-export const connectAsUser = async (username: string): Promise<NetworkObject> => {
-  let responseObj: NetworkObject = {
-    gateway: null,
-    contract: null,
-    err: null
-  };
+export const connectAsUser = async (username: string): Promise<NetworkObject | GenericResponse> => {
+  let errResp: GenericResponse = { err: null };
   try {
     // Check if the user exists
     const userExists = await wallet.exists(username);
     if (!userExists) {
       const errorMsg = `fabric.connectAsUser::Identity ${username} not found.`;
       console.info(errorMsg);
-      responseObj.err = errorMsg;
-      return responseObj;
+      errResp.err = errorMsg;
+      return errResp;
     }
 
     // Create new gateway to connect to peer
@@ -117,16 +113,15 @@ export const connectAsUser = async (username: string): Promise<NetworkObject> =>
     // Get the contract from the network.
     const contract = network.getContract('ctof-chaincode');
 
-    responseObj.gateway = gateway;
-    responseObj.contract = contract;
+    const responseObj: NetworkObject = { gateway: gateway, contract: contract, err: null };
     console.info(`fabric.connectAsUser::${username} connect to network...`);
 
     return responseObj;
   } catch (e) {
     const errorMsg = "${user} failed to connect to network";
     console.error(`fabric.connectAsUser::${errorMsg}.`);
-    responseObj.err = errorMsg;
-    return responseObj;
+    errResp.err = errorMsg;
+    return errResp;
   }
 };
 
