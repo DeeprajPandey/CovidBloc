@@ -85,7 +85,7 @@ export const registerUser = async (newuser: string, medical: boolean): Promise<G
   }
 };
 
-/**
+/**let responseObj: GenericResponse = { err: null };
  * Connect to the network as specified user
  * @param username email id (health official) or random string (diagnosed keys)
  * @returns NetworkObject with gateway and contract
@@ -121,6 +121,39 @@ export const connectAsUser = async (username: string): Promise<NetworkObject | G
     const errorMsg = "${user} failed to connect to network";
     console.error(`fabric.connectAsUser::${errorMsg}.`);
     errResp.err = errorMsg;
+    return errResp;
+  }
+};
+
+/**
+ * 
+ * @param action Name of chaincode function to be invoked
+ * @param args Array of args the function takes
+ * @param isQuery True(evaluate) / False(submit) transaction
+ * @param networkObj The object returned from connectAsUser
+ */
+export const invoke = async (action: string, args: string[], isQuery: boolean, networkObj: NetworkObject): Promise<any | GenericResponse> => {
+  try {
+    let result: any;
+    if (isQuery) {
+      if (args.length == 0) {
+        result = await networkObj.contract.evaluateTransaction(action, ...args);
+      } else {
+        result = await networkObj.contract.evaluateTransaction(action);
+      }
+    } else {
+      if (args.length == 0) {
+        result = await networkObj.contract.submitTransaction(action, ...args);
+      } else {
+        result = await networkObj.contract.submitTransaction(action);
+      }
+    }
+    networkObj.gateway.disconnect();
+    const respObj = await JSON.parse(result);
+    return respObj;
+    
+  } catch (e) {
+    const errResp: GenericResponse = {err: `fabric.invoke(${action})::${e.message}`};
     return errResp;
   }
 };
