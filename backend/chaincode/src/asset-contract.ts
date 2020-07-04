@@ -5,9 +5,9 @@
 import { Context, Contract, Info, Returns, Transaction } from 'fabric-contract-api';
 import { Meta, DailyKey } from './asset';
 import { HealthOfficer, Patient, Approval } from './asset';
-const ClientIdentity = require('fabric-shim').ClientIdentity; 
+const ClientIdentity = require('fabric-shim').ClientIdentity;
 
-@Info({title: 'AssetContract', description: 'My Smart Contract' })
+@Info({ title: 'AssetContract', description: 'My Smart Contract' })
 export class AssetContract extends Contract {
 
     /**
@@ -30,7 +30,7 @@ export class AssetContract extends Contract {
         const newPKey = "p" + (lastPatientID + 1).toString();
 
         const healthOfficial = await this.readAsset(ctx, patientObj.medEmail) as HealthOfficer;
-        
+
         if (!healthOfficial) {
             // TODO: return to server as invalid medical official (medEmail)
             responseObj["err"] = "Invalid medical official"
@@ -46,7 +46,7 @@ export class AssetContract extends Contract {
                 // Update approval to add patient key
                 apObj.patientID = newPKey;
                 await this.updateAsset(ctx, apKey, JSON.stringify(apObj));
-                
+
                 console.log("Creating patient");
                 await this.createAsset(ctx, newPKey, JSON.stringify(patientObj));
 
@@ -54,8 +54,8 @@ export class AssetContract extends Contract {
                 console.log("Updating meta");
                 await this.updateAsset(ctx, "meta", JSON.stringify(currMeta));
                 console.log("done");
-                
-                responseObj["msg"]="Patient Added Successfully";
+
+                responseObj["msg"] = "Patient Added Successfully";
                 break;
             }
         }
@@ -64,7 +64,7 @@ export class AssetContract extends Contract {
 
     @Transaction()
 
-    public async addHealthOfficer(ctx: Context, medEmail:string, medObj: HealthOfficer): Promise<any> {
+    public async addHealthOfficer(ctx: Context, medEmail: string, medObj: HealthOfficer): Promise<any> {
         let responseObj = {};
         const registered = await this.assetExists(ctx, medEmail);
         if (!registered) {
@@ -90,7 +90,7 @@ export class AssetContract extends Contract {
         if (!official) {
             // throw new Error("Doc doesnt exist");
             // TODO: Return to server gracefully
-            responseObj["err"]= "Health official with this email doesnt exist";
+            responseObj["err"] = "Health official with this email doesnt exist";
             return responseObj;
         }
         const apNum = official.approveCtr + 1;
@@ -105,7 +105,7 @@ export class AssetContract extends Contract {
         apObj.patientID = null; // patient hasn't uploaded keys yet
 
         await this.createAsset(ctx, key, JSON.stringify(apObj));
-        responseObj["msg"]= "Approval asset created successfully";
+        responseObj["msg"] = "Approval asset created successfully";
         return responseObj;
     }
 
@@ -198,7 +198,7 @@ export class AssetContract extends Contract {
         if (!exists) {
             throw new Error(`The asset ${assetId} does not exist`);
         }
-        
+
         const buffer = Buffer.from(newValue);
         await ctx.stub.putState(assetId, buffer);
     }
@@ -225,21 +225,21 @@ export class AssetContract extends Contract {
      * @param medID Unique ID of the health officer 
      */
     @Transaction(false)
-    public async getMedProfile(ctx: Context, medEmail:string): Promise<any> {
-        let responseObj={};
+    public async getMedProfile(ctx: Context, medEmail: string): Promise<any> {
+        let responseObj = {};
         const cid = new ClientIdentity(ctx.stub);
         const attrCheck: boolean = cid.assertAttributeValue('health-official', 'true');
         if (attrCheck) {
             const medObj = await this.readAsset(ctx, medEmail);
-            if (medObj!=null) {
-                responseObj["data"]=medObj;
+            if (medObj != null) {
+                responseObj["data"] = medObj;
             }
-            else { 
+            else {
                 //throw new Error(`Email ID ${medEmail} is invalid`);
-                responseObj["err"]= "Invalid Email Address";
+                responseObj["err"] = "Invalid Email Address";
             }
         } else {
-            responseObj["err"]= "Not allowed to query this profile";
+            responseObj["err"] = "Not allowed to query this profile";
         }
 
         return responseObj;
@@ -252,15 +252,15 @@ export class AssetContract extends Contract {
      * @param medID Unique ID of the health officer 
      * @param checkID ApprovalID of the patient 
      */
-    public async validatePatient(ctx: Context, medEmail:string, checkID:string): Promise<any> {
-        let responseObj={};
-        const medObj= await this.readAsset(ctx, medEmail);
-        if (medObj!=null) {
+    public async validatePatient(ctx: Context, medEmail: string, checkID: string): Promise<any> {
+        let responseObj = {};
+        const medObj = await this.readAsset(ctx, medEmail);
+        if (medObj != null) {
             for (let i = medObj.approvalCtr; i > 0; i--) {
-                const assetKey= medEmail + ":" + i.toString();
-                const approvalObj = await this.readAsset(ctx,assetKey);
-                if (approvalObj!=null && approvalObj.approvalID==checkID && approvalObj.patientID==null) {
-                    responseObj["msg"]= "Validate patient successful";
+                const assetKey = medEmail + ":" + i.toString();
+                const approvalObj = await this.readAsset(ctx, assetKey);
+                if (approvalObj != null && approvalObj.approvalID == checkID && approvalObj.patientID == null) {
+                    responseObj["msg"] = "Validate patient successful";
                     return responseObj;
                     //return "Validate Patient Successful";
                 }
@@ -271,7 +271,7 @@ export class AssetContract extends Contract {
 
         else {
             //throw new Error(`Email ID ${medEmail} is invalid`);
-            responseObj["err"]="No medical facility with this email exists";
+            responseObj["err"] = "No medical facility with this email exists";
         }
 
         return responseObj;
@@ -283,53 +283,53 @@ export class AssetContract extends Contract {
      * @param ctx Transactional context
      */
     @Transaction(false)
-    public async getKeys(ctx:Context, currentIval:string): Promise<any> {
-        let responseObj={};
-        const allResults= [];
+    public async getKeys(ctx: Context, currentIval: string): Promise<any> {
+        let responseObj = {};
+        const allResults = [];
         const key = "meta";
-        const metaObj = await this.readAsset(ctx,key);
+        const metaObj = await this.readAsset(ctx, key);
         for (let i = metaObj.patientCtr; i > 0; i--) {
-            const patientKey = "p"+i.toString();
-            const patientObj = await this.readAsset(ctx,patientKey);
-            if (patientObj!=null) {
-                if (patientObj.ival==(parseInt(currentIval)-144).toString()) { //we will call this function when tempkey is gen(so new i val)- need patients who have been added in the last 24hrs
+            const patientKey = "p" + i.toString();
+            const patientObj = await this.readAsset(ctx, patientKey);
+            if (patientObj != null) {
+                if (patientObj.ival == (parseInt(currentIval) - 144).toString()) { //we will call this function when tempkey is gen(so new i val)- need patients who have been added in the last 24hrs
                     allResults.push(patientObj.dailyKeys);  //if key also needs to sent then {patientKey,patientObj}
                 }
-                else if (parseInt(currentIval)==-1) {       //for first time users
+                else if (parseInt(currentIval) == -1) {       //for first time users
                     allResults.push(patientObj.dailyKeys);
                 }
             }
-            else{
+            else {
                 responseObj["err"] = "Error downloading keys";
                 return responseObj;
             }
         }
-        responseObj["data"]=JSON.stringify(allResults);
+        responseObj["data"] = JSON.stringify(allResults);
         return responseObj;
     }
 
-     /**
-     * Deleting old keys from the WS.
-     * 
-     * @param ctx Transactional context
-     * @param currentIval: i value of current time
-     */
+    /**
+    * Deleting old keys from the WS.
+    * 
+    * @param ctx Transactional context
+    * @param currentIval: i value of current time
+    */
     @Transaction()
-    public async deleteKeys(ctx:Context,currentIval:string){
-        let responseObj={};
-        const key= "meta";
-        const metaObj= await this.readAsset(ctx,key);
-        const threshold = parseInt(currentIval)- (144*14);
+    public async deleteKeys(ctx: Context, currentIval: string) {
+        let responseObj = {};
+        const key = "meta";
+        const metaObj = await this.readAsset(ctx, key);
+        const threshold = parseInt(currentIval) - (144 * 14);
         for (let i = 1; i <= metaObj.patientCtr; i++) {
-            const patientKey = "p"+i.toString();
-            const patientObj = await this.readAsset(ctx,patientKey);
-            if (patientObj!= null && patientObj.ival==threshold.toString()) {
-                await this.deleteAsset(ctx,patientKey);
+            const patientKey = "p" + i.toString();
+            const patientObj = await this.readAsset(ctx, patientKey);
+            if (patientObj != null && patientObj.ival == threshold.toString()) {
+                await this.deleteAsset(ctx, patientKey);
             }
 
         }
 
-        responseObj["msg"]= "Old keys deleted";
+        responseObj["msg"] = "Old keys deleted";
         return responseObj;
     }
 
