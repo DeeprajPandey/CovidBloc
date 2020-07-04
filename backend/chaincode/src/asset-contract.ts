@@ -308,4 +308,29 @@ export class AssetContract extends Contract {
         return responseObj;
     }
 
+     /**
+     * Deleting old keys from the WS.
+     * 
+     * @param ctx Transactional context
+     * @param currentIval: i value of current time
+     */
+    @Transaction()
+    public async deleteKeys(ctx:Context,currentIval:string){
+        let responseObj={};
+        const key= "meta";
+        const metaObj= await this.readAsset(ctx,key);
+        const threshold = parseInt(currentIval)- (144*14);
+        for (let i = 1; i <= metaObj.patientCtr; i++) {
+            const patientKey = "p"+i.toString();
+            const patientObj = await this.readAsset(ctx,patientKey);
+            if (patientObj!= null && patientObj.ival==threshold.toString()) {
+                await this.deleteAsset(ctx,patientKey);
+            }
+
+        }
+
+        responseObj["msg"]= "Old keys deleted";
+        return responseObj;
+    }
+
 }
