@@ -84,11 +84,16 @@ app.get("/healthofficial/:id", async (req: Request, res: Response) => {
       console.error(networkObj.err);
       throw new Error("Medical official not registered.");
     }
-
-
-    //throw new Error("Not implemented");
+    const contractResponse = await fabric.invoke('getMedProfile', [req.params.id], true, networkObj);
+    if ("err" in contractResponse) {
+      console.error(contractResponse.err);
+      // Transaction error
+      throw new Error("Something went wrong, please try again.");
+    }
+    return contractResponse;
   } catch (e) {
     res.status(404).send(e.message);
+    return;
   }
 });
 
