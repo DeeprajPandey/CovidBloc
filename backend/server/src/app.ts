@@ -4,11 +4,12 @@ import cors from "cors";
 import helmet from "helmet";
 
 import * as fabric from "./services/fabric";
+import { NetworkObject, GenericResponse } from "./services/fabric.interface";
 
 dotenv.config();
 
 /**
- * Variables
+ * Variable
  */
 
  const PORT = normalisePort(process.env.PORT || '6401');
@@ -63,7 +64,7 @@ app.post("/generateapproval", async (req: Request, res: Response) => {
 });
 
 // POST: upload keys of a new diagnosis
-app.post("/keys", async (req: Request, res: Response) => {
+app.post("/pushkeys", async (req: Request, res: Response) => {
   try {
     throw new Error("Not implemented");
   } catch (e) {
@@ -71,12 +72,26 @@ app.post("/keys", async (req: Request, res: Response) => {
   }
 });
 
-// GET: Get diagnosis keys
-app.get("/keys", async (req: Request, res: Response) => {
+// Get diagnosis keys. Network will send keys app doesn't have based on currentIVal
+app.post("/keys", async (req: Request, res: Response) => {
   try {
-    throw new Error("Not implemented");
+    const validBody = Boolean(
+      req.body.currentIval
+    );
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
+    if (networkObj.err != null || !("gateway" in networkObj)) {
+      console.error(networkObj.err);
+      throw new Error("Admin not registered.");
+    }
+    const contractResponse = await fabric.invoke('getKeys', [req.body.currentIval], true, networkObj);
+    if ("err" in contractResponse) {
+      console.error(contractResponse.err);
+      // Transaction error
+      throw new Error("Something went wrong, please try again.");
+    }
   } catch (e) {
-    res.status(404).send(e.message);
+    res.status(400).send(e.message);
+    return;
   }
 });
 
