@@ -153,9 +153,33 @@ app.post("/generateapproval", async (req: Request, res: Response) => {
 // POST: upload keys of a new diagnosis
 app.post("/pushkeys", async (req: Request, res: Response) => {
   try {
-    throw new Error("Not implemented");
+    const validBody = Boolean(
+      req.body.approvalID &&
+      req.body.medEmail &&
+      req.body.ival &&
+      req.body.dailyKeys.length > 0
+    );
+    const validKeys = await keyValidity(req.body.dailyKeys);
+    if (!validBody || !validKeys) {
+      throw new Error("Invalid request.");
+    }
+    
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
+    if (networkObj.err != null || !("gateway" in networkObj)) {
+      console.error(networkObj.err);
+      throw new Error("Admin not registered.");
+    }
+    const validateResponse = await fabric.invoke('validatePatient', [req.body.medEmail, req.body.approvalID], false, networkObj);
+    if ("err" in validateResponse) {
+      throw new Error(validateResponse.err);
+    }
+    const contractResponse = await fabric. invoke('addPatient', [JSON.stringify(req.body)], false, networkObj);
+    if ("err" in contractResponse) {
+      throw new Error(contractResponse.err);
+    }
+    res.status(200).send(contractResponse.msg);
   } catch (e) {
-    res.status(404).send(e.message);
+    res.status(400).send(e.message);
   }
 });
 
@@ -165,6 +189,9 @@ app.post("/keys", async (req: Request, res: Response) => {
     const validBody = Boolean(
       req.body.currentIval
     );
+    if (!validBody) {
+      throw new Error("Invalid request");
+    }
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
     if (networkObj.err != null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
@@ -206,4 +233,55 @@ const server = app.listen(PORT, () => {
     return num;
   }
   return false;
+}
+
+/**
+ * 
+ * @param keyArray Array of DailyKey objects
+ */
+async function keyValidity(keyArray: any[]) {
+  interface Invalid {
+    errorMsg: string
+  };
+  const Invalid = class implements Invalid {
+    public errorMsg: string;
+    public constructor(msg: string) {
+      this.errorMsg = msg;
+    }
+  }
+
+  type InvalidOr<T> = Invalid | T;
+  type Validate<T> = (t: T) => InvalidOr<T>;
+
+  type IsInvalidTypeGuard<T> = (errorOrT: InvalidOr<T>) => errorOrT is Invalid;
+  const isInvalid: IsInvalidTypeGuard<{}> = (errorOrT): errorOrT is Invalid => {
+    return (errorOrT as Invalid).errorMsg !== undefined;
+  };
+
+  interface DailyKey {
+    hexkey: string;
+    i: number;
+  };
+
+  const properKey:Validate<DailyKey> = (key) => {
+    const valid = Boolean(
+      key.hexkey !== "" &&
+      typeof key.i === "number"
+    );
+    return valid ? key : new Invalid("Invalid key");
+  };
+
+  await asyncForEach(keyArray, async(element: any) => {
+    const result: InvalidOr<DailyKey> = properKey(element);
+    if (isInvalid(result)) {
+      return false;
+    }
+  });
+  return true;
+}
+
+async function asyncForEach(array: any[], callback: any) {
+  for (let index = 0; index < array.length; index++) {
+    await callback(array[index], index, array);
+  }
 }
