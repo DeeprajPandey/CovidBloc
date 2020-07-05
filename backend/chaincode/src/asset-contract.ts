@@ -119,8 +119,9 @@ export class AssetContract extends Contract {
     public async getMedProfile(ctx: Context, medEmail: string): Promise<any> {
         let responseObj = {};
         const cid = new ClientIdentity(ctx.stub);
+        const username=cid.getID()
         const attrCheck: boolean = cid.assertAttributeValue('health-official', 'true');
-        if (attrCheck) {
+        if (attrCheck && username==medEmail) {
             const medObj = await this.readAsset(ctx, medEmail);
             if (medObj != null) {
                 responseObj["data"] = medObj;

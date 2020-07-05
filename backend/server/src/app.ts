@@ -9,7 +9,7 @@ import { NetworkObject, GenericResponse } from "./services/fabric.interface";
 dotenv.config();
 
 /**
- * Variables
+ * Variable
  */
 
  const PORT = normalisePort(process.env.PORT || '6401');
@@ -29,7 +29,7 @@ app.use(express.json());
 // GET: Hello
 app.get("/", async(req: Request, res: Response) => {
   try {
-    const msg: string = "Houston to Base, the server's up.";
+    const msg: string = "Houston to Base, the server's up."
     res.status(200).send(msg);
   } catch (e) {
     res.status(418).send("I'm a teapot.");
@@ -42,6 +42,7 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
   medicalOfficial.set('m1@apollo.com','3425');
   medicalOfficial.set('doc232@max.com','2367');
   medicalOfficial.set('hosp123@fortis.in','3821');
+  
   try {
     let medObj = req.body;
     let medEmail  = medObj.medEmail;
