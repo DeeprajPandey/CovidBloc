@@ -27,11 +27,13 @@
   "author": "Hyperledger",
   "license": "Apache-2.0",
   "dependencies": {
+    "@types/seedrandom": "^2.4.28",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "fabric-network": "~1.4.0",
-    "helmet": "^3.23.3"
+    "helmet": "^3.23.3",
+    "seedrandom": "^3.0.5"
   },
   "devDependencies": {
     "@types/chai": "^4.2.0",

@@ -3,6 +3,7 @@ import express, {Request, Response} from "express";
 import cors from "cors";
 import helmet from "helmet";
 import seedrandom from 'seedrandom';
+
 import * as fabric from "./services/fabric";
 import { NetworkObject, GenericResponse } from "./services/fabric.interface";
 
@@ -31,7 +32,10 @@ app.use(express.json());
 
 app.get("/", async(req: Request, res: Response) => {
   try {
-    const msg: string = "Houston to Base, the server's up."
+    const generator = seedrandom.tychei(new Date().valueOf().toString());
+    const num = generator();
+
+    const msg: string = `Random number: ${num}`;
     res.status(200).send(msg);
   } catch (e) {
     res.status(418).send("I'm a teapot.");
@@ -150,7 +154,7 @@ app.post("/keys", async (req: Request, res: Response) => {
       // Transaction error
       throw new Error("Something went wrong, please try again.");
     }
-    return contractResponse;
+    res.status(200).send(contractResponse);
   } catch (e) {
     res.status(400).send(e.message);
     return;
