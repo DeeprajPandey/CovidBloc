@@ -117,6 +117,7 @@ app.post("/keys", async (req: Request, res: Response) => {
       // Transaction error
       throw new Error("Something went wrong, please try again.");
     }
+    return contractResponse;
   } catch (e) {
     res.status(400).send(e.message);
     return;
