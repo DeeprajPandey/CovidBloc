@@ -96,9 +96,6 @@ export class AssetContract extends Contract {
         const apNum = official.approveCtr + 1;
         official.approveCtr = apNum;
 
-        // Update health official record with new ctr
-        await this.updateAsset(ctx, medEmail, JSON.stringify(official));
-
         const key = medEmail + ":" + apNum.toString();
         let apObj = new Approval();
         apObj.approvalID = newApprovalID;
@@ -106,6 +103,10 @@ export class AssetContract extends Contract {
 
         await this.createAsset(ctx, key, JSON.stringify(apObj));
         responseObj["msg"] = "Approval asset created successfully";
+
+        // Update health official record with new ctr only if the approval record is created
+        await this.updateAsset(ctx, medEmail, JSON.stringify(official));
+
         return responseObj;
     }
 
