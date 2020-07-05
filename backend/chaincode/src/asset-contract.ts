@@ -24,6 +24,7 @@ export class AssetContract extends Contract {
         let currMeta = await this.readAsset(ctx, "meta") as Meta;
         if (currMeta == null) {
             responseObj["err"] = "Meta does not exist";
+            return responseObj;
             //throw new Error(`Meta does not exist`);
         }
         const lastPatientID = currMeta.patientCtr;
