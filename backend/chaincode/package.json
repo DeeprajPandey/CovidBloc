@@ -1,6 +1,6 @@
 {
   "name": "ctof-chaincode",
-  "version": "0.0.40",
+  "version": "0.0.41",
   "description": "CToF Project Chaincode",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",

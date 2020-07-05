@@ -109,115 +109,6 @@ export class AssetContract extends Contract {
         return responseObj;
     }
 
-    @Transaction()
-    public async initiateState(ctx: Context): Promise<void> {
-        let temp = new Meta();
-        temp.patientCtr = 0;
-        let str = JSON.stringify(temp);
-        await this.createAsset(ctx, "meta", str);
-
-        const meta = await this.readAsset(ctx, "meta");
-        if (!meta) {
-            throw new Error("Meta not there!");
-        }
-        // const patientFromServer = {
-        //     approvalID: "1231312",
-        //     medID: "m123",
-        //     dailyKeys: [
-        //         {hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360},
-        //         {hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360}
-        //     ]
-        // };
-
-        //const medObj = {name: "M1",hospital : "Apollo",medID: "123",approveCtr: 0};
-        // await this.addHealthOfficer(ctx,medObj);
-
-        // //await this.validatePatient(ctx,"123","1231312")
-        // await this.addPatient(ctx, patientFromServer);
-        // await this.getMedProfile(ctx,"123");
-        //await this.getKeys(ctx);
-    }
-
-    @Transaction(false)
-    @Returns('boolean')
-    public async assetExists(ctx: Context, assetId: string): Promise<boolean> {
-        const buffer = await ctx.stub.getState(assetId);
-        return (!!buffer && buffer.length > 0);
-    }
-
-    /**
-     * Creates a new asset in the WS. Type is specified in the generic arg.
-     * 
-     * @param ctx Transactional context
-     * @param assetId Asset key in WS
-     * @param value String-ified asset
-     */
-    @Transaction()
-    public async createAsset(ctx: Context, assetId: string, value: string): Promise<void> {
-        const exists = await this.assetExists(ctx, assetId);
-        if (exists) {
-            throw new Error(`The asset ${assetId} already exists`);
-        }
-
-        const buffer = Buffer.from(value);
-        await ctx.stub.putState(assetId, buffer);
-        console.log('Added');
-        return;
-    }
-
-    /**
-     * Returns the asset object of a given key. Uses Generics, so needs
-     * the type as argument as well.
-     * 
-     * @param ctx Transactional context
-     * @param assetId Asset key in WS
-     */
-    @Transaction(false)
-    @Returns('any')
-    public async readAsset(ctx: Context, assetId: string): Promise<any> {
-        const exists = await this.assetExists(ctx, assetId);
-        if (!exists) {
-            // throw new Error(`The asset ${assetId} does not exist`);
-            return null;
-        }
-        const buffer = await ctx.stub.getState(assetId);
-        const asset = JSON.parse(buffer.toString());
-        return asset;
-    }
-
-    /**
-     * Update an asset with a new value. Type is passed as generic argument.
-     * 
-     * @param ctx Transactional context
-     * @param assetId Asset key in WS
-     * @param newValue String-ified asset
-     */
-    @Transaction()
-    public async updateAsset(ctx: Context, assetId: string, newValue: string): Promise<void> {
-        const exists = await this.assetExists(ctx, assetId);
-        if (!exists) {
-            throw new Error(`The asset ${assetId} does not exist`);
-        }
-
-        const buffer = Buffer.from(newValue);
-        await ctx.stub.putState(assetId, buffer);
-    }
-
-    /**
-     * Delete an asset from the WS.
-     * 
-     * @param ctx Transactional context
-     * @param assetId Asset key
-     */
-    @Transaction()
-    public async deleteAsset(ctx: Context, assetId: string): Promise<void> {
-        const exists = await this.assetExists(ctx, assetId);
-        if (!exists) {
-            throw new Error(`The asset ${assetId} does not exist`);
-        }
-        await ctx.stub.deleteState(assetId);
-    }
-
     /**
      * Query a HealthOfficer Asset from the WS.
      * 
@@ -331,6 +222,115 @@ export class AssetContract extends Contract {
 
         responseObj["msg"] = "Old keys deleted";
         return responseObj;
+    }
+
+    @Transaction()
+    public async initiateState(ctx: Context): Promise<void> {
+        let temp = new Meta();
+        temp.patientCtr = 0;
+        let str = JSON.stringify(temp);
+        await this.createAsset(ctx, "meta", str);
+
+        const meta = await this.readAsset(ctx, "meta");
+        if (!meta) {
+            throw new Error("Meta not there!");
+        }
+        // const patientFromServer = {
+        //     approvalID: "1231312",
+        //     medID: "m123",
+        //     dailyKeys: [
+        //         {hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360},
+        //         {hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360}
+        //     ]
+        // };
+
+        //const medObj = {name: "M1",hospital : "Apollo",medID: "123",approveCtr: 0};
+        // await this.addHealthOfficer(ctx,medObj);
+
+        // //await this.validatePatient(ctx,"123","1231312")
+        // await this.addPatient(ctx, patientFromServer);
+        // await this.getMedProfile(ctx,"123");
+        //await this.getKeys(ctx);
+    }
+
+    @Transaction(false)
+    @Returns('boolean')
+    public async assetExists(ctx: Context, assetId: string): Promise<boolean> {
+        const buffer = await ctx.stub.getState(assetId);
+        return (!!buffer && buffer.length > 0);
+    }
+
+    /**
+     * Creates a new asset in the WS. Type is specified in the generic arg.
+     * 
+     * @param ctx Transactional context
+     * @param assetId Asset key in WS
+     * @param value String-ified asset
+     */
+    @Transaction()
+    public async createAsset(ctx: Context, assetId: string, value: string): Promise<void> {
+        const exists = await this.assetExists(ctx, assetId);
+        if (exists) {
+            throw new Error(`The asset ${assetId} already exists`);
+        }
+
+        const buffer = Buffer.from(value);
+        await ctx.stub.putState(assetId, buffer);
+        console.log('Added');
+        return;
+    }
+
+    /**
+     * Returns the asset object of a given key. Uses Generics, so needs
+     * the type as argument as well.
+     * 
+     * @param ctx Transactional context
+     * @param assetId Asset key in WS
+     */
+    @Transaction(false)
+    @Returns('any')
+    public async readAsset(ctx: Context, assetId: string): Promise<any> {
+        const exists = await this.assetExists(ctx, assetId);
+        if (!exists) {
+            // throw new Error(`The asset ${assetId} does not exist`);
+            return null;
+        }
+        const buffer = await ctx.stub.getState(assetId);
+        const asset = JSON.parse(buffer.toString());
+        return asset;
+    }
+
+    /**
+     * Update an asset with a new value. Type is passed as generic argument.
+     * 
+     * @param ctx Transactional context
+     * @param assetId Asset key in WS
+     * @param newValue String-ified asset
+     */
+    @Transaction()
+    public async updateAsset(ctx: Context, assetId: string, newValue: string): Promise<void> {
+        const exists = await this.assetExists(ctx, assetId);
+        if (!exists) {
+            throw new Error(`The asset ${assetId} does not exist`);
+        }
+
+        const buffer = Buffer.from(newValue);
+        await ctx.stub.putState(assetId, buffer);
+    }
+
+    /**
+     * Delete an asset from the WS.
+     * 
+     * @param ctx Transactional context
+     * @param assetId Asset key
+     */
+    @Transaction()
+    public async deleteAsset(ctx: Context, assetId: string): Promise<void> {
+        const exists = await this.assetExists(ctx, assetId);
+        if (!exists) {
+            throw new Error(`The asset ${assetId} does not exist`);
+        }
+        await ctx.stub.deleteState(assetId);
     }
 
 }
