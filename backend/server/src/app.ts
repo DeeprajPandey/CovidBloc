@@ -2,7 +2,8 @@ import * as dotenv from "dotenv";
 import express, {Request, Response} from "express";
 import cors from "cors";
 import helmet from "helmet";
-import { prototype } from "events";
+
+import * as fabric from "./services/fabric";
 
 dotenv.config();
 
@@ -70,7 +71,7 @@ app.post("/keys", async (req: Request, res: Response) => {
   }
 });
 
-// GTE: Get diagnosis keys
+// GET: Get diagnosis keys
 app.get("/keys", async (req: Request, res: Response) => {
   try {
     throw new Error("Not implemented");

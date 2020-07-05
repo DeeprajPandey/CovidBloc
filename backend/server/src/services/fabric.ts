@@ -2,7 +2,7 @@ import { FileSystemWallet, Gateway, X509WalletMixin } from 'fabric-network';
 import { GenericResponse, NetworkObject } from './fabric.interface';
 import * as path from 'path';
 
-const ADMIN = 'org1Admin';
+export const ADMIN = 'org1Admin';
 
 // Create a new file system based wallet for managing identities.
 const walletPath = path.join(process.cwd(), 'Org1Wallet');
