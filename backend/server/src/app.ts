@@ -29,14 +29,19 @@ app.use(express.json());
 
 // GET: Hello
 
+function generateApprovalID() {
+  const prng = seedrandom.tychei(new Date().valueOf.toString());
+  let approvalID= prng.int32();
+  if (approvalID<0) {
+    approvalID= approvalID * -1;
+  }
+
+  return approvalID;
+}
 
 app.get("/", async(req: Request, res: Response) => {
   try {
-    const generator = seedrandom.tychei(new Date().valueOf().toString());
-    let num = generator.int32();
-    if (num<0) {
-      num = num * -1;
-    }
+    let num = generateApprovalID();
     const msg: string = `Random number: ${num}`;
     res.status(200).send(msg);
   } catch (e) {
@@ -110,11 +115,7 @@ app.post("/generateapproval", async (req: Request, res: Response) => {
   try {
     let medEmail = req.body.medEmail;
     let patientEmail = req.body.patientEmail;
-    const prng = seedrandom.tychei(new Date().valueOf.toString());
-    let approvalID= prng.int32();
-    if (approvalID<0) {
-      approvalID= approvalID * -1;
-    } 
+    let approvalID = generateApprovalID();
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(medEmail);
     if (networkObj.err != null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
