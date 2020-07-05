@@ -59,7 +59,7 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
                 console.error(networkObj.err);
                 throw new Error("Medical official not registered.");
             }
-            const contractResponse = await fabric.invoke('addHealthOfficer', [medEmail,JSON.stringify(medObj)], true, networkObj);
+            const contractResponse = await fabric.invoke('addHealthOfficer', [medEmail,JSON.stringify(medObj)], false, networkObj);
             if ("err" in contractResponse) {
                 console.error(contractResponse.err);
                 // Transaction error
@@ -76,7 +76,17 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
 // GET: Get an official's profile
 app.get("/healthofficial/:id", async (req: Request, res: Response) => {
   try {
-    throw new Error("Not implemented");
+    const validBody = Boolean(
+      req.params.id
+    );
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(req.params.id);
+    if (networkObj.err != null || !("gateway" in networkObj)) {
+      console.error(networkObj.err);
+      throw new Error("Medical official not registered.");
+    }
+
+
+    //throw new Error("Not implemented");
   } catch (e) {
     res.status(404).send(e.message);
   }
