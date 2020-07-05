@@ -38,10 +38,37 @@ app.get("/", async(req: Request, res: Response) => {
 
 // POST: Register a new official
 app.post("/healthofficial", async (req: Request, res: Response) => {
+  let medicalOfficial = new Map<string, string>();
+  medicalOfficial.set('m1@apollo.com','3425');
+  medicalOfficial.set('doc232@max.com','2367');
+  medicalOfficial.set('hosp123@fortis.in','3821');
   try {
-    throw new Error("Not implemented");
+    let medObj = req.body;
+    let medEmail  = medObj.medEmail;
+    delete medObj.medEmail;
+
+    if (medicalOfficial.has(medEmail) && medicalOfficial.get(medEmail)==medObj.medID) {
+        const responeObj: GenericResponse = await fabric.registerUser(medEmail,true);
+        if (responeObj.err != null) {
+            console.error(responeObj.err);
+        }
+        else {
+            const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.medEmail);
+            if (networkObj.err != null || !("gateway" in networkObj)) {
+                console.error(networkObj.err);
+                throw new Error("Medical official not registered.");
+            }
+            const contractResponse = await fabric.invoke('addHealthOfficer', [medEmail,JSON.stringify(medObj)], true, networkObj);
+            if ("err" in contractResponse) {
+                console.error(contractResponse.err);
+                // Transaction error
+                throw new Error("Something went wrong, please try again.");
+            }
+        }
+    }
   } catch (e) {
     res.status(404).send(e.message);
+    return;
   }
 });
 
