@@ -2,8 +2,8 @@ import * as dotenv from "dotenv";
 import express, {Request, Response} from "express";
 import cors from "cors";
 import helmet from "helmet";
-import seedrandom from 'seedrandom';
-
+import seedrandom from "seedrandom";
+import twilio from 'twilio';
 import * as fabric from "./services/fabric";
 import { NetworkObject, GenericResponse } from "./services/fabric.interface";
 
@@ -30,7 +30,7 @@ app.use(express.json());
 // GET: Hello
 
 function generateApprovalID() {
-  const prng = seedrandom.tychei(new Date().valueOf.toString());
+  const prng = seedrandom.tychei(new Date().valueOf().toString());
   let approvalID= prng.int32();
   if (approvalID<0) {
     approvalID= approvalID * -1;
@@ -39,8 +39,22 @@ function generateApprovalID() {
   return approvalID;
 }
 
+function sendSMS(to:string,from:string,approvalID:string) {
+
+  const accountSid = '';
+  const authToken = '';
+  const client = twilio(accountSid, authToken);
+  client.messages.create({
+      body: 'Approval ID - '+ approvalID + '\n Medical ID - '+ from,
+      from: '+12058914938',
+      to: to
+    })
+    .then(message => console.log(message.sid));
+}
+
 app.get("/", async(req: Request, res: Response) => {
   try {
+    sendSMS('9312266033','try@sms','31625647527');
     let num = generateApprovalID();
     const msg: string = `Random number: ${num}`;
     res.status(200).send(msg);
@@ -114,7 +128,7 @@ app.get("/healthofficial/:id", async (req: Request, res: Response) => {
 app.post("/generateapproval", async (req: Request, res: Response) => {
   try {
     let medEmail = req.body.medEmail;
-    let patientEmail = req.body.patientEmail;
+    let patientPhoneNum = req.body.patientEmail;
     let approvalID = generateApprovalID();
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(medEmail);
     if (networkObj.err != null || !("gateway" in networkObj)) {
@@ -128,6 +142,8 @@ app.post("/generateapproval", async (req: Request, res: Response) => {
       throw new Error("Something went wrong, please try again.");
     }
     //send email to patient with approvalID and medEmail
+    sendSMS(patientPhoneNum,medEmail,approvalID.toString());
+
   } catch (e) {
     res.status(404).send(e.message);
     return;
