@@ -54,7 +54,7 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
             console.error(responeObj.err);
         }
         else {
-            const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.medEmail);
+            const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(medObj.medEmail);
             if (networkObj.err != null || !("gateway" in networkObj)) {
                 console.error(networkObj.err);
                 throw new Error("Medical official not registered.");
