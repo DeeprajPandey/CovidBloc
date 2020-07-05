@@ -9,7 +9,7 @@ import { NetworkObject, GenericResponse } from "./services/fabric.interface";
 dotenv.config();
 
 /**
- * Variable
+ * Variables
  */
 
  const PORT = normalisePort(process.env.PORT || '6401');
@@ -29,7 +29,7 @@ app.use(express.json());
 // GET: Hello
 app.get("/", async(req: Request, res: Response) => {
   try {
-    const msg: string = "Houston to Base, the server's up."
+    const msg: string = "Houston to Base, the server's up.";
     res.status(200).send(msg);
   } catch (e) {
     res.status(418).send("I'm a teapot.");
