@@ -2,7 +2,7 @@ import * as dotenv from "dotenv";
 import express, {Request, Response} from "express";
 import cors from "cors";
 import helmet from "helmet";
-import { totp } from 'otplib';
+import seedrandom from 'seedrandom';
 import * as fabric from "./services/fabric";
 import { NetworkObject, GenericResponse } from "./services/fabric.interface";
 
@@ -12,7 +12,7 @@ dotenv.config();
  * Variable
  */
 
- const PORT = normalisePort(process.env.PORT || '6401');
+const PORT = normalisePort(process.env.PORT || '6401');
 
 const app = express();
 
@@ -27,6 +27,8 @@ app.use(express.json());
 // Routes
 
 // GET: Hello
+
+
 app.get("/", async(req: Request, res: Response) => {
   try {
     const msg: string = "Houston to Base, the server's up."
@@ -100,10 +102,10 @@ app.get("/healthofficial/:id", async (req: Request, res: Response) => {
 // POST: Generate an approval for patient
 app.post("/generateapproval", async (req: Request, res: Response) => {
   try {
-    //let patientPhoneNum = req.body.phone; to send sms
     let medEmail = req.body.medEmail;
-    const secret = 'KVKFKRCPNZQUYMLXOVYDSQKJKZDTSRLD'; //store this locally, keeping here as of now 
-    const approvalID = totp.generate(secret);
+    let patientEmail = req.body.patientEmail;
+    const prng = seedrandom.tychei(new Date().valueOf.toString());
+    let approvalID= prng.int32(); 
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(medEmail);
     if (networkObj.err != null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
@@ -115,7 +117,7 @@ app.post("/generateapproval", async (req: Request, res: Response) => {
       // Transaction error
       throw new Error("Something went wrong, please try again.");
     }
-    //throw new Error("Not implemented");
+    //send email to patient with approvalID and medEmail
   } catch (e) {
     res.status(404).send(e.message);
     return;
