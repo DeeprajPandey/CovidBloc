@@ -2,7 +2,7 @@ import * as dotenv from "dotenv";
 import express, {Request, Response} from "express";
 import cors from "cors";
 import helmet from "helmet";
-
+import { totp } from 'otplib';
 import * as fabric from "./services/fabric";
 import { NetworkObject, GenericResponse } from "./services/fabric.interface";
 
@@ -100,9 +100,25 @@ app.get("/healthofficial/:id", async (req: Request, res: Response) => {
 // POST: Generate an approval for patient
 app.post("/generateapproval", async (req: Request, res: Response) => {
   try {
-    throw new Error("Not implemented");
+    //let patientPhoneNum = req.body.phone; to send sms
+    let medEmail = req.body.medEmail;
+    const secret = 'KVKFKRCPNZQUYMLXOVYDSQKJKZDTSRLD'; //store this locally, keeping here as of now 
+    const approvalID = totp.generate(secret);
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(medEmail);
+    if (networkObj.err != null || !("gateway" in networkObj)) {
+      console.error(networkObj.err);
+      throw new Error("Medical official not registered.");
+    }
+    const contractResponse = await fabric.invoke('addPatientApprovalRecord', [medEmail,approvalID.toString()], false, networkObj);
+    if ("err" in contractResponse) {
+      console.error(contractResponse.err);
+      // Transaction error
+      throw new Error("Something went wrong, please try again.");
+    }
+    //throw new Error("Not implemented");
   } catch (e) {
     res.status(404).send(e.message);
+    return;
   }
 });
 
