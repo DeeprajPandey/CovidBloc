@@ -104,10 +104,6 @@ app.get("/healthofficial/:id", async (req: Request, res: Response) => {
 // POST: Generate an approval for patient
 app.post("/generateapproval", async (req: Request, res: Response) => {
   try {
-<<<<<<< HEAD
-    let medEmail = req.body.medEmail;
-    let approvalID = generateApprovalID();
-=======
     const validBody = Boolean(
       req.body.medEmail &&
       req.body.medID &&
@@ -118,7 +114,6 @@ app.post("/generateapproval", async (req: Request, res: Response) => {
     }
     const medEmail = req.body.medEmail;
     const approvalID = generateApprovalID();
->>>>>>> f7b7eccd6a4edc4c9974e43fe2098995ae45624a
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(medEmail);
     if (networkObj.err != null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
@@ -130,11 +125,7 @@ app.post("/generateapproval", async (req: Request, res: Response) => {
       // Transaction error
       throw new Error("Something went wrong, please try again.");
     }
-<<<<<<< HEAD
-    //send email to patient with approvalID and medEmail
-=======
     // Send sms to patient with approvalID and medEmail
->>>>>>> f7b7eccd6a4edc4c9974e43fe2098995ae45624a
     await sendSMS(req.body.patientContact, medEmail, approvalID.toString());
     res.status(200).send("Keys uploaded.");
   } catch (e) {
@@ -226,8 +217,8 @@ function generateApprovalID() {
 
 async function sendSMS(to: string, from: string, approvalID: string): Promise<void> {
 
-  const accountSid = 'ACb2efca540cecefc4ab3862199d7bbca9';
-  const authToken = '0a95945c043ce4db6a3dd60a5cc95431';
+  const accountSid = '';
+  const authToken = '';
   const msg = "Please enter these details on the app to send your last 14 days' daily keys to the server.\n\n";
   const client = twilio(accountSid, authToken);
   await client.messages.create({
