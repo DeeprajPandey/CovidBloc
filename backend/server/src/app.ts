@@ -1,5 +1,5 @@
 import * as dotenv from "dotenv";
-import express, {Request, Response} from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import seedrandom from "seedrandom";
@@ -28,33 +28,9 @@ app.use(express.json());
 // Routes
 
 // GET: Hello
-
-function generateApprovalID() {
-  const prng = seedrandom.tychei(new Date().valueOf().toString());
-  let approvalID= prng.int32();
-  if (approvalID<0) {
-    approvalID= approvalID * -1;
-  }
-
-  return approvalID;
-}
-
-function sendSMS(to:string,from:string,approvalID:string) {
-
-  const accountSid = '';
-  const authToken = '';
-  const client = twilio(accountSid, authToken);
-  client.messages.create({
-      body: 'Approval ID - '+ approvalID + '\n Medical ID - '+ from,
-      from: '+12058914938',
-      to: to
-    })
-    .then(message => console.log(message.sid));
-}
-
-app.get("/", async(req: Request, res: Response) => {
+app.get("/", async (req: Request, res: Response) => {
   try {
-    sendSMS('9312266033','try@sms','31625647527');
+    sendSMS('9312266033', 'try@sms', '31625647527');
     let num = generateApprovalID();
     const msg: string = `Random number: ${num}`;
     res.status(200).send(msg);
@@ -66,33 +42,33 @@ app.get("/", async(req: Request, res: Response) => {
 // POST: Register a new official
 app.post("/healthofficial", async (req: Request, res: Response) => {
   let medicalOfficial = new Map<string, string>();
-  medicalOfficial.set('m1@apollo.com','3425');
-  medicalOfficial.set('doc232@max.com','2367');
-  medicalOfficial.set('hosp123@fortis.in','3821');
-  
+  medicalOfficial.set('m1@apollo.com', '3425');
+  medicalOfficial.set('doc232@max.com', '2367');
+  medicalOfficial.set('hosp123@fortis.in', '3821');
+
   try {
     let medObj = req.body;
-    let medEmail  = medObj.medEmail;
+    let medEmail = medObj.medEmail;
     delete medObj.medEmail;
 
-    if (medicalOfficial.has(medEmail) && medicalOfficial.get(medEmail)==medObj.medID) {
-        const responeObj: GenericResponse = await fabric.registerUser(medEmail,true);
-        if (responeObj.err != null) {
-            console.error(responeObj.err);
+    if (medicalOfficial.has(medEmail) && medicalOfficial.get(medEmail) == medObj.medID) {
+      const responeObj: GenericResponse = await fabric.registerUser(medEmail, true);
+      if (responeObj.err != null) {
+        console.error(responeObj.err);
+      }
+      else {
+        const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(medEmail);
+        if (networkObj.err != null || !("gateway" in networkObj)) {
+          console.error(networkObj.err);
+          throw new Error("Medical official not registered.");
         }
-        else {
-            const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(medEmail);
-            if (networkObj.err != null || !("gateway" in networkObj)) {
-                console.error(networkObj.err);
-                throw new Error("Medical official not registered.");
-            }
-            const contractResponse = await fabric.invoke('addHealthOfficer', [medEmail,JSON.stringify(medObj)], false, networkObj);
-            if ("err" in contractResponse) {
-                console.error(contractResponse.err);
-                // Transaction error
-                throw new Error("Something went wrong, please try again.");
-            }
+        const contractResponse = await fabric.invoke('addHealthOfficer', [medEmail, JSON.stringify(medObj)], false, networkObj);
+        if ("err" in contractResponse) {
+          console.error(contractResponse.err);
+          // Transaction error
+          throw new Error("Something went wrong, please try again.");
         }
+      }
     }
   } catch (e) {
     res.status(404).send(e.message);
@@ -125,7 +101,7 @@ app.get("/healthofficial/:id", async (req: Request, res: Response) => {
 });
 
 // POST: Generate an approval for patient
-app.post("/generateapproval", async (req: Request, res: Response) => {
+app.get("/generateapproval", async (req: Request, res: Response) => {
   try {
     let medEmail = req.body.medEmail;
     let patientPhoneNum = req.body.patientEmail;
@@ -135,15 +111,15 @@ app.post("/generateapproval", async (req: Request, res: Response) => {
       console.error(networkObj.err);
       throw new Error("Medical official not registered.");
     }
-    const contractResponse = await fabric.invoke('addPatientApprovalRecord', [medEmail,approvalID.toString()], false, networkObj);
+    const contractResponse = await fabric.invoke('addPatientApprovalRecord', [medEmail, approvalID.toString()], false, networkObj);
     if ("err" in contractResponse) {
       console.error(contractResponse.err);
       // Transaction error
       throw new Error("Something went wrong, please try again.");
     }
     //send email to patient with approvalID and medEmail
-    sendSMS(patientPhoneNum,medEmail,approvalID.toString());
-
+    await sendSMS(req.body.patientContact, req.body.medID, approvalID.toString());
+    res.status(200).send("Keys uploaded.");
   } catch (e) {
     res.status(404).send(e.message);
     return;
@@ -163,7 +139,7 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
     if (!validBody || !validKeys) {
       throw new Error("Invalid request.");
     }
-    
+
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
     if (networkObj.err != null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
@@ -173,7 +149,7 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
     if ("err" in validateResponse) {
       throw new Error(validateResponse.err);
     }
-    const contractResponse = await fabric. invoke('addPatient', [JSON.stringify(req.body)], false, networkObj);
+    const contractResponse = await fabric.invoke('addPatient', [JSON.stringify(req.body)], false, networkObj);
     if ("err" in contractResponse) {
       throw new Error(contractResponse.err);
     }
@@ -221,7 +197,31 @@ const server = app.listen(PORT, () => {
  * Utility Functions
  */
 
- function normalisePort(val: string) {
+function generateApprovalID() {
+  const prng = seedrandom.tychei(new Date().valueOf().toString());
+  let approvalID = prng.int32();
+  if (approvalID < 0) {
+    approvalID = approvalID * -1;
+  }
+
+  return approvalID;
+}
+
+async function sendSMS(to: string, from: string, approvalID: string): Promise<void> {
+
+  const accountSid = 'ACb2efca540cecefc4ab3862199d7bbca9';
+  const authToken = '0a95945c043ce4db6a3dd60a5cc95431';
+  const msg = "Please enter these details on the app to send your last 14 days' daily keys to the server.\n\n";
+  const client = twilio(accountSid, authToken);
+  await client.messages.create({
+    body: `${msg}Approval ID: ${approvalID}\n Medical ID: ${from}`,
+    from: '+12058914938',
+    to: to
+  })
+    .then(message => console.log(message.sid));
+}
+
+function normalisePort(val: string) {
   const num = parseInt(val as string, 10);
 
   if (isNaN(num)) {
@@ -263,7 +263,7 @@ async function keyValidity(keyArray: any[]) {
     i: number;
   };
 
-  const properKey:Validate<DailyKey> = (key) => {
+  const properKey: Validate<DailyKey> = (key) => {
     const valid = Boolean(
       key.hexkey !== "" &&
       typeof key.i === "number"
@@ -271,7 +271,7 @@ async function keyValidity(keyArray: any[]) {
     return valid ? key : new Invalid("Invalid key");
   };
 
-  await asyncForEach(keyArray, async(element: any) => {
+  await asyncForEach(keyArray, async (element: any) => {
     const result: InvalidOr<DailyKey> = properKey(element);
     if (isInvalid(result)) {
       return false;
