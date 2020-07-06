@@ -217,8 +217,8 @@ function generateApprovalID() {
 
 async function sendSMS(to: string, from: string, approvalID: string): Promise<void> {
 
-  const accountSid = '';
-  const authToken = '';
+  const accountSid = TWIL_SID;
+  const authToken = TWIL_AUTH;
   const msg = "Please enter these details on the app to send your last 14 days' daily keys to the server.\n\n";
   const client = twilio(accountSid, authToken);
   await client.messages.create({
