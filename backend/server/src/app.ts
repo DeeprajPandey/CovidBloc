@@ -13,8 +13,8 @@ dotenv.config();
  * Variable
  */
 const PORT = normalisePort(process.env.PORT || '6401');
-const TWIL_SID = process.env.TW_SID || null;
-const TWIL_AUTH = process.env.TW_AUTH || null;
+const TWIL_SID = process.env.TW_SID || undefined;
+const TWIL_AUTH = process.env.TW_AUTH || undefined;
 
 const app = express();
 
@@ -216,7 +216,6 @@ function generateApprovalID() {
 }
 
 async function sendSMS(to: string, from: string, approvalID: string): Promise<void> {
-
   const accountSid = TWIL_SID;
   const authToken = TWIL_AUTH;
   const msg = "Please enter these details on the app to send your last 14 days' daily keys to the server.\n\n";
