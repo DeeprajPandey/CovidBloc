@@ -106,7 +106,7 @@ app.get("/healthofficial/:email", async (req: Request, res: Response) => {
 });
 
 // POST: Generate an approval for patient
-app.post("/generateapproval", async (req: Request, res: Response) => {
+app.get("/generateapproval", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
       req.body.medEmail &&
@@ -226,11 +226,15 @@ async function sendSMS(to: string, from: string, approvalID: string): Promise<vo
   const msg = "Please enter these details on the app to send your daily key from last 14 days to the server.\n\n";
   const client = twilio(TWIL_SID, TWIL_AUTH);
   await client.messages.create({
-    body: `${msg}Approval ID: ${approvalID}\n Medical ID: ${from}`,
+    body: `${msg}Approval ID: ${approvalID}\nMedical ID: ${from}`,
     from: TWIL_NUM,
     to: to
   })
-    .then(message => console.log(message.sid));
+  .then(message => console.log(message.sid))
+  .catch((e) => {
+    console.error(e);
+    throw new Error("Couldn't send SMS");
+  });
 }
 
 function normalisePort(val: string) {
