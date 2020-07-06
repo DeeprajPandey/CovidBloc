@@ -30,7 +30,7 @@ app.use(express.json());
 // GET: Hello
 app.get("/", async (req: Request, res: Response) => {
   try {
-    sendSMS('9312266033', 'try@sms', '31625647527');
+    //sendSMS('someNum', 'try@sms', '31625647527');
     let num = generateApprovalID();
     const msg: string = `Random number: ${num}`;
     res.status(200).send(msg);
@@ -104,7 +104,6 @@ app.get("/healthofficial/:id", async (req: Request, res: Response) => {
 app.get("/generateapproval", async (req: Request, res: Response) => {
   try {
     let medEmail = req.body.medEmail;
-    let patientPhoneNum = req.body.patientEmail;
     let approvalID = generateApprovalID();
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(medEmail);
     if (networkObj.err != null || !("gateway" in networkObj)) {
@@ -118,7 +117,7 @@ app.get("/generateapproval", async (req: Request, res: Response) => {
       throw new Error("Something went wrong, please try again.");
     }
     //send email to patient with approvalID and medEmail
-    await sendSMS(req.body.patientContact, req.body.medID, approvalID.toString());
+    await sendSMS(req.body.patientContact, medEmail, approvalID.toString());
     res.status(200).send("Keys uploaded.");
   } catch (e) {
     res.status(404).send(e.message);
