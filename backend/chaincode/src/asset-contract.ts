@@ -166,7 +166,7 @@ export class AssetContract extends Contract {
         let responseObj = {};
         const medObj = await this.readAsset(ctx, medEmail);
         if (medObj != null) {
-            for (let i = medObj.approvalCtr; i > 0; i--) {
+            for (let i = medObj.approveCtr; i > 0; i--) {
                 const assetKey = medEmail + ":" + i.toString();
                 const approvalObj = await this.readAsset(ctx, assetKey);
                 if (approvalObj != null && approvalObj.approvalID == checkID && approvalObj.patientID == null) {
