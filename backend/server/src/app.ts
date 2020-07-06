@@ -13,8 +13,9 @@ dotenv.config();
  * Variable
  */
 const PORT = normalisePort(process.env.PORT || '6401');
-const TWIL_SID = process.env.TW_SID || undefined;
-const TWIL_AUTH = process.env.TW_AUTH || undefined;
+const TWIL_SID = process.env.TW_SID || null;
+const TWIL_AUTH = process.env.TW_AUTH || null;
+const TWIL_NUM = process.env.TW_NUM || null;
 
 const app = express();
 
@@ -78,23 +79,26 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
 });
 
 // GET: Get an official's profile
-app.get("/healthofficial/:id", async (req: Request, res: Response) => {
+app.get("/healthofficial/:email", async (req: Request, res: Response) => {
   try {
-    const validBody = Boolean(
-      req.params.id
+    const validParams = Boolean(
+      req.params.email
     );
-    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(req.params.id);
+    if (!validParams) {
+      throw new Error("Invalid request");
+    }
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(req.params.email);
     if (networkObj.err != null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
-      throw new Error("Medical official not registered.");
+      throw new Error("Invalid request");
     }
-    const contractResponse = await fabric.invoke('getMedProfile', [req.params.id], true, networkObj);
+    const contractResponse = await fabric.invoke('getMedProfile', [req.params.email], true, networkObj);
     if ("err" in contractResponse) {
       console.error(contractResponse.err);
       // Transaction error
-      throw new Error("Something went wrong, please try again.");
+      throw new Error("Something went wrong, please try again");
     }
-    return contractResponse;
+    res.status(200).send(contractResponse);
   } catch (e) {
     res.status(404).send(e.message);
     return;
@@ -117,7 +121,7 @@ app.post("/generateapproval", async (req: Request, res: Response) => {
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(medEmail);
     if (networkObj.err != null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
-      throw new Error("Medical official not registered");
+      throw new Error("Invalid request");
     }
     const contractResponse = await fabric.invoke('addPatientApprovalRecord', [medEmail, approvalID.toString()], false, networkObj);
     if ("err" in contractResponse) {
@@ -216,13 +220,14 @@ function generateApprovalID() {
 }
 
 async function sendSMS(to: string, from: string, approvalID: string): Promise<void> {
-  const accountSid = TWIL_SID;
-  const authToken = TWIL_AUTH;
-  const msg = "Please enter these details on the app to send your last 14 days' daily keys to the server.\n\n";
-  const client = twilio(accountSid, authToken);
+  if (!TWIL_SID || !TWIL_AUTH || !TWIL_NUM) {
+    throw new Error("Twilio credentials not set");
+  }
+  const msg = "Please enter these details on the app to send your daily key from last 14 days to the server.\n\n";
+  const client = twilio(TWIL_SID, TWIL_AUTH);
   await client.messages.create({
     body: `${msg}Approval ID: ${approvalID}\n Medical ID: ${from}`,
-    from: '+12058914938',
+    from: TWIL_NUM,
     to: to
   })
     .then(message => console.log(message.sid));
