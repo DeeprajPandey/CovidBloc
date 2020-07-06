@@ -117,11 +117,18 @@ app.get("/generateapproval", async (req: Request, res: Response) => {
       throw new Error("Invalid request");
     }
     const medEmail = req.body.medEmail;
-    const approvalID = generateApprovalID();
+    let approvalID = -1;
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(medEmail);
     if (networkObj.err != null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
       throw new Error("Invalid request");
+    }
+    while (true) {
+      approvalID = generateApprovalID();
+      const valid = await fabric.invoke('validApprovalID', [medEmail, approvalID], true, networkObj);
+      if (valid) {
+        break;
+      }
     }
     const contractResponse = await fabric.invoke('addPatientApprovalRecord', [medEmail, approvalID.toString()], false, networkObj);
     if ("err" in contractResponse) {

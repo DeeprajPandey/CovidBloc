@@ -89,8 +89,6 @@ export class AssetContract extends Contract {
         let responseObj = {}
         let official = await this.readAsset(ctx, medEmail) as HealthOfficer;
         if (!official) {
-            // throw new Error("Doc doesnt exist");
-            // TODO: Return to server gracefully
             responseObj["err"] = "Health official with this email doesnt exist";
             return responseObj;
         }
@@ -109,6 +107,24 @@ export class AssetContract extends Contract {
         await this.updateAsset(ctx, medEmail, JSON.stringify(official));
 
         return responseObj;
+    }
+
+    @Transaction(false)
+    public async validApprovalID(ctx: Context, medEmail: string, checkID:string): Promise<boolean> {
+        const medicalOfficial = await this.readAsset(ctx, medEmail) as HealthOfficer;
+        if (!medicalOfficial) {
+            // responseObj["err"] = "Health official with this email doesnt exist";
+            return false;
+        }
+        for (let i = medicalOfficial.approveCtr; i > 0; i--) {
+            const apObjKey = medEmail + ":" + i.toString();
+            const approvalObj = await this.readAsset(ctx, apObjKey);
+            if (approvalObj !== null && approvalObj.approvalID === checkID) {
+                return false; // the ID clashes
+            }
+        }
+        // the ID hasn't been used before, so it's valid
+        return true;
     }
 
     /**
