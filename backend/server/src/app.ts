@@ -102,7 +102,7 @@ app.get("/healthofficial/:id", async (req: Request, res: Response) => {
 });
 
 // POST: Generate an approval for patient
-app.get("/generateapproval", async (req: Request, res: Response) => {
+app.post("/generateapproval", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
       req.body.medEmail &&
