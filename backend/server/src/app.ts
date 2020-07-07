@@ -26,7 +26,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-setTimeout(deleteKeys, 86400000); //24 hours in milliseconds
+setInterval(deleteKeys, 86400000); //24 hours in milliseconds
 
 
 // Routes
