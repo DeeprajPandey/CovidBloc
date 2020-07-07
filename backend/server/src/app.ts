@@ -110,7 +110,7 @@ app.get("/generateapproval", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
       req.body.medEmail &&
-      req.body.medID &&
+      //req.body.medID &&
       req.body.patientContact
     );
     if (!validBody) {
