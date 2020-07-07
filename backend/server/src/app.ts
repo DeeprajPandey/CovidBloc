@@ -204,6 +204,7 @@ app.post("/keys", async (req: Request, res: Response) => {
     return;
   }
 });
+ 
 
 /**
  * Server
@@ -215,6 +216,27 @@ const server = app.listen(PORT, () => {
 /**
  * Utility Functions
  */
+
+async function deleteKeys(){
+  try {
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
+    if (networkObj.err != null || !("gateway" in networkObj)) {
+      console.error(networkObj.err);
+      throw new Error("Admin not registered.");
+    }
+    let currentTime= Math.round((new Date()).getTime()/1000); //current unix timestamp
+    let currentIVal= Math.floor((Math.floor(currentTime/600))/144) * 144;
+    
+    const contractResponse = await fabric.invoke('deleteKeys', [currentIVal.toString()], false, networkObj);
+    if ("err" in contractResponse) {
+      console.error(contractResponse.err);
+      // Transaction error
+      throw new Error("Something went wrong, please try again.");
+    }
+  } catch (e) {
+    return;
+  }
+}
 
 function generateApprovalID() {
   const prng = seedrandom.tychei(new Date().valueOf().toString());
