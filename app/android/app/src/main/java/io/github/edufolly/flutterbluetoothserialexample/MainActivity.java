@@ -97,11 +97,9 @@ public class MainActivity extends FlutterActivity {
       try{
         ConnectThread ct= new ConnectThread(device,msg);
         Thread t=new Thread(ct);
-        //new Thread(ct).start();
         t.start();
         t.join();
         exchanged_key=ct.getKey();
-        //System.out.println("From MainActivityJava, the key is: " + exchanged_key+"\n");
         result.success(exchanged_key);
       } catch(Exception e){
         result.error("Failed to connect to class ConnectThread","Error connecting",null);
@@ -110,14 +108,13 @@ public class MainActivity extends FlutterActivity {
     }
     else{
       result.error("No device found","Error",null);
-      //System.out.println("No device found");
     }
 
     
     
   }
 
-  private void startServer(MethodCall call,Result result) { //Result result,
+  private void startServer(MethodCall call,Result result) { 
     //Activity activity = this;
     //try{
       new Thread(new AcceptThread()).start();

@@ -103,21 +103,17 @@ class DiscoveryPageState extends State<DiscoveryPage> {
 }
 
   Future<void> connectToDevice(BluetoothDevice dev) async {
-    //String connStatus;
-    String exchanged_key;
+    String exchangedKey;
     List<int> rpi= exp.rollingProximityIdentifier;
     String rollingProximityIdentifier=hex.encode(rpi);
     try {
-      exchanged_key =
+      exchangedKey =
           await platform.invokeMethod('customConnectToDevice', {"address": dev.address,"message":rollingProximityIdentifier});
-      // print("Successful to establish connection");
     } on PlatformException catch (e) {
       print("Failed to establish connection: '${e.message}'");
-      //connStatus = "Connection failed";
     }
-    //print("Connection status to ${dev.address}: $connStatus\n");
-    print("From dart: : $exchanged_key\n");
-     _showKeyinDialogue(exchanged_key);
+    print("From dart: : $exchangedKey\n");
+     //_showKeyinDialogue(exchangedKey);
   }
 
   @override
