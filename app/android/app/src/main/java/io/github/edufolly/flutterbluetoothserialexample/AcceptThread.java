@@ -33,6 +33,7 @@ public class AcceptThread extends Thread {
         // The local server socket
         private final BluetoothServerSocket mmServerSocket;
         BluetoothAdapter mBluetoothAdapter = null;
+        private volatile boolean running;
 
         public AcceptThread() {
             mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -47,51 +48,59 @@ public class AcceptThread extends Thread {
         }
 
         public void run() {
-            System.out.println("waiting on accept");
-            BluetoothSocket socket = null;
-            try {
-                // This is a blocking call and will only return on a
-                // successful connection or an exception
-                socket = mmServerSocket.accept();
-            } catch (IOException e) {
-                System.out.println("Failed to accept\n");
-            }
-
-            // If a connection was accepted
-            if (socket != null) {
-                System.out.println("Connection made\n");
-                System.out.println("Remote device address: " + socket.getRemoteDevice().getAddress() + "\n");
-                //Note this is copied from the TCPdemo code.
+            running = true;
+            while(running) {
+                System.out.println("waiting on accept");
+                BluetoothSocket socket = null;
                 try {
-                    System.out.println("Attempting to receive a message ...\n");
-                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    String str = in.readLine();
-                    System.out.println("received a message:\n" + str + "\n");
-
-                    PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-                    System.out.println("Attempting to send message ...\n");
-                    out.println("Hi from Bluetooth Demo Server");
-                    out.flush();
-                    System.out.println("Message sent...\n");
-
-                    System.out.println("We are done, closing connection\n");
-                } catch (Exception e) {
-                    System.out.println("Error happened sending/receiving\n");
-
-                } finally {
-                    try {
-                        socket.close();
-                    } catch (IOException e) {
-                        System.out.println("Unable to close socket" + e.getMessage() + "\n");
-                    }
+                    // This is a blocking call and will only return on a
+                    // successful connection or an exception
+                    socket = mmServerSocket.accept();
+                } catch (IOException e) {
+                    System.out.println("Failed to accept\n");
                 }
-            } else {
-                System.out.println("Made connection, but socket is null\n");
+
+                // If a connection was accepted
+                if (socket != null) {
+                    System.out.println("Connection made\n");
+                    System.out.println("Remote device address: " + socket.getRemoteDevice().getAddress() + "\n");
+                    //Note this is copied from the TCPdemo code.
+                    try {
+                        System.out.println("Attempting to receive a message ...\n");
+                        BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                        String str = in.readLine();
+                        System.out.println("received a message:\n" + str + "\n");
+
+                        PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
+                        System.out.println("Attempting to send message ...\n");
+                        out.println("Hi from Bluetooth Demo Server");
+                        out.flush();
+                        System.out.println("Message sent...\n");
+
+                        System.out.println("We are done, closing connection\n");
+                    } catch (Exception e) {
+                        System.out.println("Error happened sending/receiving\n");
+
+                    } finally {
+                        try {
+                            socket.close();
+                        } catch (IOException e) {
+                            System.out.println("Unable to close socket" + e.getMessage() + "\n");
+                        }
+                    }
+                } else {
+                    System.out.println("Made connection, but socket is null\n");
+                }
+                
+                if (Thread.interrupted()) {
+                    return;
+                }   
             }
             // System.out.println("Server ending \n");
         }
 
         public void cancel() {
+            running=false;
             try {
                 mmServerSocket.close();
             } catch (IOException e) {

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import './keyGen.dart';
 import 'package:convert/convert.dart';
 
+
 class DiscoveryPage extends StatefulWidget {
   /// If true, discovery starts on page start, otherwise user must press action button.
   final bool start;
@@ -74,7 +75,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
     super.dispose();
   }
 
-  Future<void> _showKeyinDialogue(String keyReceived) async {
+  Future<void> _showKeyinDialogue(BuildContext context,String keyReceived) async {
   return showDialog<void>(
     context:context,
     barrierDismissible: false, // user must tap button!
@@ -102,7 +103,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
   );
 }
 
-  Future<void> connectToDevice(BluetoothDevice dev) async {
+  Future<void> connectToDevice(BuildContext context, BluetoothDevice dev) async {
     String exchangedKey;
     List<int> rpi= exp.rollingProximityIdentifier;
     String rollingProximityIdentifier=hex.encode(rpi);
@@ -113,7 +114,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
       print("Failed to establish connection: '${e.message}'");
     }
     print("From dart: : $exchangedKey\n");
-     //_showKeyinDialogue(exchangedKey);
+     _showKeyinDialogue(context,exchangedKey);
   }
 
   @override
@@ -166,7 +167,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
               device: result.device,
               rssi: result.rssi,
               onTap: () {
-                connectToDevice(result.device);
+                connectToDevice(context,result.device);
                 //Navigator.of(context).pop(result.device);
               },
               

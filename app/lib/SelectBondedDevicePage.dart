@@ -124,7 +124,7 @@ class _SelectBondedDevicePage extends State<SelectBondedDevicePage> {
               rssi: _device.rssi,
               enabled: _device.availability == _DeviceAvailability.yes,
               onTap: () {
-                discover.connectToDevice(_device.device);
+                discover.connectToDevice(context,_device.device);
                 //Navigator.of(context).pop(_device.device);
               },
             ))

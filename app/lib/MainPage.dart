@@ -1,17 +1,20 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
-import 'package:scoped_model/scoped_model.dart';
+//import 'package:scoped_model/scoped_model.dart';
 
 import './DiscoveryPage.dart';
 import './SelectBondedDevicePage.dart';
 import './ChatPage.dart';
 import './BackgroundCollectingTask.dart';
-import './BackgroundCollectedPage.dart';
+//import './BackgroundCollectedPage.dart';
 import 'package:flutter/services.dart';
 import './keyGen.dart';
-
 // import './helpers/LineChart.dart';
+
+
+typedef void Listener(dynamic msg);
+typedef void CancelListening();
 
 class MainPage extends StatefulWidget {
   @override
@@ -20,17 +23,18 @@ class MainPage extends StatefulWidget {
 
 class _MainPage extends State<MainPage> {
   BluetoothState _bluetoothState = BluetoothState.UNKNOWN;
+  //static const _channel = const EventChannel('events');
   static const platform = const MethodChannel('samples.flutter.dev/bluetooth');
   
   String _address = "...";
   String _name = "...";
 
-  Timer _discoverableTimeoutTimer;
-  int _discoverableTimeoutSecondsLeft = 0;
+  // Timer _discoverableTimeoutTimer;
+  // int _discoverableTimeoutSecondsLeft = 0;
 
   BackgroundCollectingTask _collectingTask;
 
-  bool _autoAcceptPairingRequests = false;
+  //bool _autoAcceptPairingRequests = false;
   final bool isThreeLine=true;
 
   var e = new ExposureNotification();
@@ -38,6 +42,7 @@ class _MainPage extends State<MainPage> {
   @override
   void initState() {
     super.initState();
+    
 
     // Get current state
     FlutterBluetoothSerial.instance.state.then((state) {
@@ -76,17 +81,16 @@ class _MainPage extends State<MainPage> {
         _bluetoothState = state;
 
         // Discoverable mode is disabled when Bluetooth gets disabled
-        _discoverableTimeoutTimer = null;
-        _discoverableTimeoutSecondsLeft = 0;
+        // _discoverableTimeoutTimer = null;
+        // _discoverableTimeoutSecondsLeft = 0;
       });
     });
   }
-
   @override
   void dispose() {
     FlutterBluetoothSerial.instance.setPairingRequestHandler(null);
     _collectingTask?.dispose();
-    _discoverableTimeoutTimer?.cancel();
+    //_discoverableTimeoutTimer?.cancel();
     super.dispose();
   }
 
@@ -348,34 +352,35 @@ class _MainPage extends State<MainPage> {
     );
   }
 
-  Future<void> _startBackgroundTask(
-    BuildContext context,
-    BluetoothDevice server,
-  ) async {
-    try {
-      _collectingTask = await BackgroundCollectingTask.connect(server);
-      await _collectingTask.start();
-    } catch (ex) {
-      if (_collectingTask != null) {
-        _collectingTask.cancel();
-      }
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Error occured while connecting'),
-            content: Text("${ex.toString()}"),
-            actions: <Widget>[
-              new FlatButton(
-                child: new Text("Close"),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
+  
+  // Future<void> _startBackgroundTask(
+  //   BuildContext context,
+  //   BluetoothDevice server,
+  // ) async {
+  //   try {
+  //     _collectingTask = await BackgroundCollectingTask.connect(server);
+  //     await _collectingTask.start();
+  //   } catch (ex) {
+  //     if (_collectingTask != null) {
+  //       _collectingTask.cancel();
+  //     }
+  //     showDialog(
+  //       context: context,
+  //       builder: (BuildContext context) {
+  //         return AlertDialog(
+  //           title: const Text('Error occured while connecting'),
+  //           content: Text("${ex.toString()}"),
+  //           actions: <Widget>[
+  //             new FlatButton(
+  //               child: new Text("Close"),
+  //               onPressed: () {
+  //                 Navigator.of(context).pop();
+  //               },
+  //             ),
+  //           ],
+  //         );
+  //       },
+  //     );
+  //   }
+  // }
 }
