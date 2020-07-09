@@ -24,6 +24,7 @@ export class Asset {
 export class Meta {
     @Property()
     public patientCtr: number = 0;
+    public healthOfficialCtr: number = 1024;
 }
 
 /**
@@ -44,7 +45,7 @@ export interface DailyKey {
 export class Patient {
     @Property()
     public approvalID: string;
-    public medEmail: string;
+    public medID: string;
     public ival : string;
     public dailyKeys: Array<DailyKey>;
 }
@@ -56,11 +57,11 @@ export class Patient {
 @Object()
 export class HealthOfficer {
     @Property()
-    public name: string;
-    //public email: string;
-    public hospital: string;
     public medID: string;
     public approveCtr: number = 0;
+    public name: string;
+    public email: string;
+    public hospital: string;
 }
 
 /**

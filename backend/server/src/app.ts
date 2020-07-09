@@ -51,50 +51,61 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
   medicalOfficial.set('hosp123@fortis.in', '3821');
 
   try {
-    let medObj = req.body;
-    let medEmail = medObj.medEmail;
-    delete medObj.medEmail;
+    const validBody = Boolean(
+      req.body.medID &&
+      req.body.approveCtr === 0 &&
+      req.body.name &&
+      req.body.email &&
+      req.body.hospital
+    );
+    if (!validBody) {
+      throw new Error("Invalid request");
+    }
 
-    if (medicalOfficial.has(medEmail) && medicalOfficial.get(medEmail) == medObj.medID) {
-      const responeObj: GenericResponse = await fabric.registerUser(medEmail, true);
-      if (responeObj.err != null) {
-        console.error(responeObj.err);
+    let email = req.body.email;
+
+    if (medicalOfficial.has(email) && medicalOfficial.get(email) === req.body.medID) {
+      const responseObj: GenericResponse = await fabric.registerUser(email, true);
+      if (responseObj.err !== null) {
+        console.error(responseObj.err);
+        throw new Error("CA failure");
       }
-      else {
-        const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(medEmail);
-        if (networkObj.err != null || !("gateway" in networkObj)) {
-          console.error(networkObj.err);
-          throw new Error("Medical official not registered.");
-        }
-        const contractResponse = await fabric.invoke('addHealthOfficer', [medEmail, JSON.stringify(medObj)], false, networkObj);
-        if ("err" in contractResponse) {
-          console.error(contractResponse.err);
-          // Transaction error
-          throw new Error("Something went wrong, please try again.");
-        }
+      const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(email);
+      if (networkObj.err !== null || !("gateway" in networkObj)) {
+        console.error(networkObj.err);
+        throw new Error("CA failure");
       }
+      const contractResponse = await fabric.invoke('addHealthOfficer', [req.body.medID, JSON.stringify(req.body)], false, networkObj);
+      if ("err" in contractResponse) {
+        console.error(contractResponse.err);
+        // Transaction error
+        throw new Error("Something went wrong, please try again.");
+      }
+      res.status(200).send("Registered");
+    } else {
+      throw new Error("Invalid medical official");
     }
   } catch (e) {
-    res.status(404).send(e.message);
+    res.status(400).send(e.message);
     return;
   }
 });
 
 // GET: Get an official's profile
-app.get("/healthofficial/:email", async (req: Request, res: Response) => {
+app.get("/healthofficial/:id", async (req: Request, res: Response) => {
   try {
     const validParams = Boolean(
-      req.params.email
+      req.params.id
     );
     if (!validParams) {
       throw new Error("Invalid request");
     }
-    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(req.params.email);
-    if (networkObj.err != null || !("gateway" in networkObj)) {
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(req.params.id);
+    if (networkObj.err !== null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
       throw new Error("Invalid request");
     }
-    const contractResponse = await fabric.invoke('getMedProfile', [req.params.email], true, networkObj);
+    const contractResponse = await fabric.invoke('getMedProfile', [req.params.id], true, networkObj);
     if ("err" in contractResponse) {
       console.error(contractResponse.err);
       // Transaction error
@@ -111,35 +122,34 @@ app.get("/healthofficial/:email", async (req: Request, res: Response) => {
 app.get("/generateapproval", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
-      req.body.medEmail &&
-      //req.body.medID &&
+      req.body.email &&
+      req.body.medID &&
       req.body.patientContact
     );
     if (!validBody) {
       throw new Error("Invalid request");
     }
-    const medEmail = req.body.medEmail;
     let approvalID = -1;
-    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(medEmail);
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(email);
     if (networkObj.err != null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
       throw new Error("Invalid request");
     }
     while (true) {
       approvalID = generateApprovalID();
-      const valid = await fabric.invoke('validApprovalID', [medEmail, approvalID], true, networkObj);
+      const valid = await fabric.invoke('validApprovalID', [req.body.medID, approvalID], true, networkObj);
       if (valid) {
         break;
       }
     }
-    const contractResponse = await fabric.invoke('addPatientApprovalRecord', [medEmail, approvalID.toString()], false, networkObj);
+    const contractResponse = await fabric.invoke('addPatientApprovalRecord', [req.body.medID, approvalID.toString()], false, networkObj);
     if ("err" in contractResponse) {
       console.error(contractResponse.err);
       // Transaction error
       throw new Error("Something went wrong, please try again.");
     }
-    // Send sms to patient with approvalID and medEmail
-    await sendSMS(req.body.patientContact, medEmail, approvalID.toString());
+    // Send sms to patient with approvalID and medID
+    await sendSMS(req.body.patientContact, req.body.medID, approvalID.toString());
     res.status(200).send("Keys uploaded.");
   } catch (e) {
     res.status(400).send(e.message);
@@ -152,7 +162,7 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
       req.body.approvalID &&
-      req.body.medEmail &&
+      req.body.medID &&
       req.body.ival &&
       req.body.dailyKeys.length > 0
     );
@@ -166,7 +176,7 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
       console.error(networkObj.err);
       throw new Error("Admin not registered.");
     }
-    const validateResponse = await fabric.invoke('validatePatient', [req.body.medEmail, req.body.approvalID], false, networkObj);
+    const validateResponse = await fabric.invoke('validatePatient', [req.body.medID, req.body.approvalID], false, networkObj);
     if ("err" in validateResponse) {
       throw new Error(validateResponse.err);
     }

@@ -30,16 +30,16 @@ export class AssetContract extends Contract {
         const lastPatientID = currMeta.patientCtr;
         const newPKey = "p" + (lastPatientID + 1).toString();
 
-        const healthOfficial = await this.readAsset(ctx, patientObj.medEmail) as HealthOfficer;
+        const healthOfficial = await this.readAsset(ctx, `m${patientObj.medID}`) as HealthOfficer;
 
         if (!healthOfficial) {
-            // TODO: return to server as invalid medical official (medEmail)
+            // TODO: return to server as invalid medical official (medID)
             responseObj["err"] = "Invalid medical official"
             return responseObj;
         }
         // Check from the most recent approval number
         for (let apNum = healthOfficial.approveCtr; apNum > 0; apNum--) {
-            const apKey = patientObj.medEmail + ":" + apNum.toString();
+            const apKey = `m${patientObj.medID}:${apNum.toString()}`;
             let apObj = await this.readAsset(ctx, apKey) as Approval;
 
             // Found valid approval from health official
@@ -65,11 +65,11 @@ export class AssetContract extends Contract {
 
     @Transaction()
 
-    public async addHealthOfficer(ctx: Context, medEmail: string, medObj: HealthOfficer): Promise<any> {
+    public async addHealthOfficer(ctx: Context, medID: string, medObj: HealthOfficer): Promise<any> {
         let responseObj = {};
-        const registered = await this.assetExists(ctx, medEmail);
+        const registered = await this.assetExists(ctx, `m${medID}`);
         if (!registered) {
-            await this.createAsset(ctx, medEmail, JSON.stringify(medObj));
+            await this.createAsset(ctx, `m${medID}`, JSON.stringify(medObj));
             responseObj["msg"] = "Registered successfully";
         } else {
             responseObj["err"] = "User has registered";
@@ -85,9 +85,9 @@ export class AssetContract extends Contract {
      * @param approvalNum The approval ID for this official
      */
     @Transaction()
-    public async addPatientApprovalRecord(ctx: Context, medEmail: string, newApprovalID: string): Promise<any> {
+    public async addPatientApprovalRecord(ctx: Context, medID: string, newApprovalID: string): Promise<any> {
         let responseObj = {}
-        let official = await this.readAsset(ctx, medEmail) as HealthOfficer;
+        let official = await this.readAsset(ctx, `m${medID}`) as HealthOfficer;
         if (!official) {
             responseObj["err"] = "Health official with this email doesnt exist";
             return responseObj;
@@ -95,7 +95,7 @@ export class AssetContract extends Contract {
         const apNum = official.approveCtr + 1;
         official.approveCtr = apNum;
 
-        const key = medEmail + ":" + apNum.toString();
+        const key = `m${medID}:${apNum.toString()}`;
         let apObj = new Approval();
         apObj.approvalID = newApprovalID;
         apObj.patientID = null; // patient hasn't uploaded keys yet
@@ -104,20 +104,20 @@ export class AssetContract extends Contract {
         responseObj["msg"] = "Approval asset created successfully";
 
         // Update health official record with new ctr only if the approval record is created
-        await this.updateAsset(ctx, medEmail, JSON.stringify(official));
+        await this.updateAsset(ctx, `m${medID}`, JSON.stringify(official));
 
         return responseObj;
     }
 
     @Transaction(false)
-    public async validApprovalID(ctx: Context, medEmail: string, checkID:string): Promise<boolean> {
-        const medicalOfficial = await this.readAsset(ctx, medEmail) as HealthOfficer;
+    public async validApprovalID(ctx: Context, medID: string, checkID: string): Promise<boolean> {
+        const medicalOfficial = await this.readAsset(ctx, `m${medID}`) as HealthOfficer;
         if (!medicalOfficial) {
             // responseObj["err"] = "Health official with this email doesnt exist";
             return false;
         }
         for (let i = medicalOfficial.approveCtr; i > 0; i--) {
-            const apObjKey = medEmail + ":" + i.toString();
+            const apObjKey = `m${medID}:${i.toString()}`;
             const approvalObj = await this.readAsset(ctx, apObjKey);
             if (approvalObj !== null && approvalObj.approvalID === checkID) {
                 return false; // the ID clashes
@@ -134,22 +134,23 @@ export class AssetContract extends Contract {
      * @param medID Unique ID of the health officer 
      */
     @Transaction(false)
-    public async getMedProfile(ctx: Context, medEmail: string): Promise<any> {
+    public async getMedProfile(ctx: Context, medID: string): Promise<any> {
         let responseObj = {};
         const cid = new ClientIdentity(ctx.stub);
-        const username=cid.getID()
+        const username = cid.getID()
         const attrCheck: boolean = cid.assertAttributeValue('health-official', 'true');
-        if (attrCheck && username==medEmail) {
-            const medObj = await this.readAsset(ctx, medEmail);
-            if (medObj != null) {
+
+        const medObj = await this.readAsset(ctx, `m${medID}`);
+        if (attrCheck) {
+            if (medObj !== null && username === medObj.email) {
                 responseObj["data"] = medObj;
             }
             else {
-                //throw new Error(`Email ID ${medEmail} is invalid`);
-                responseObj["err"] = "Invalid Email Address";
+                //throw new Error(`Email ID ${medID} is invalid`);
+                responseObj["err"] = "Invalid email";
             }
         } else {
-            responseObj["err"] = "Not allowed to query this profile";
+            responseObj["err"] = "Invalid permissions";
         }
 
         return responseObj;
@@ -162,14 +163,14 @@ export class AssetContract extends Contract {
      * @param medID Unique ID of the health officer 
      * @param checkID ApprovalID of the patient 
      */
-    public async validatePatient(ctx: Context, medEmail: string, checkID: string): Promise<any> {
+    public async validatePatient(ctx: Context, medID: string, checkID: string): Promise<any> {
         let responseObj = {};
-        const medObj = await this.readAsset(ctx, medEmail);
+        const medObj = await this.readAsset(ctx, `m${medID}`);
         if (medObj != null) {
             for (let i = medObj.approveCtr; i > 0; i--) {
-                const assetKey = medEmail + ":" + i.toString();
+                const assetKey = `m${medID}:${i.toString()}`;
                 const approvalObj = await this.readAsset(ctx, assetKey);
-                if (approvalObj != null && approvalObj.approvalID == checkID && approvalObj.patientID == null) {
+                if (approvalObj !== null && approvalObj.approvalID === checkID && approvalObj.patientID === null) {
                     responseObj["msg"] = "Validate patient successful";
                     return responseObj;
                     //return "Validate Patient Successful";
@@ -180,8 +181,8 @@ export class AssetContract extends Contract {
         }
 
         else {
-            //throw new Error(`Email ID ${medEmail} is invalid`);
-            responseObj["err"] = "No medical facility with this email exists";
+            //throw new Error(`Email ID ${medID} is invalid`);
+            responseObj["err"] = "No medical official with this email exists";
         }
 
         return responseObj;
