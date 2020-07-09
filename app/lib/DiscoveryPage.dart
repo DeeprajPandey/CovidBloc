@@ -105,11 +105,17 @@ class DiscoveryPageState extends State<DiscoveryPage> {
 
   Future<void> connectToDevice(BuildContext context, BluetoothDevice dev) async {
     String exchangedKey;
-    //List<int> rpi= exp.rollingProximityIdentifier;
-    //String rollingProximityIdentifier=hex.encode(rpi);
+    String rollingProximityIdentifier;
+    List<int> rpi= exp.rollingProximityIdentifier;
+    if (rpi!=null) {
+      rollingProximityIdentifier= hex.encode(rpi);
+    }
+    else { 
+      rollingProximityIdentifier= "Nothing";
+    }
     try {
       exchangedKey =
-          await platform.invokeMethod('customConnectToDevice', {"address": dev.address,"message":"Hello from client"});
+          await platform.invokeMethod('customConnectToDevice', {"address": dev.address,"message":rollingProximityIdentifier});
     } on PlatformException catch (e) {
       print("Failed to establish connection: '${e.message}'");
       exchangedKey="No key received";

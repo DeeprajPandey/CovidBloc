@@ -25,7 +25,7 @@ class ExposureNotification {
   SecretKey _aemKey; // AssociatedEncryptedMetadataKey
 
   int _eNIntervalNumber;
-  List<int> rollingProximityIdentifier; // to be broadcasted
+  List<int> rollingProximityIdentifier= null; // to be broadcasted
   List<int> associatedEncryptedMetadata; // additional metadata
 
   List<String> dummyRPIs = [
