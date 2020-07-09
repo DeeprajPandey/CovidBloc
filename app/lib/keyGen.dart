@@ -19,7 +19,7 @@ class ExposureNotification {
   // TODO: before pushing these keys to the server, change key to hex first
   Map _temporaryExposureKey = {
     'key': null,
-    'id': null
+    'i': null
   }; // {key: SecretKey, i: uint32_t}
   SecretKey _rpiKey; // RollingProximityIdentifierKey
   SecretKey _aemKey; // AssociatedEncryptedMetadataKey
@@ -262,7 +262,7 @@ class ExposureNotification {
 }
 
 // Using only for debug
-void main() async {
-  var exp = new ExposureNotification();
-  exp.checkExposure();
-}
+// void main() async {
+//   var exp = new ExposureNotification();
+//   exp.checkExposure();
+// }
