@@ -86,13 +86,13 @@ class DiscoveryPageState extends State<DiscoveryPage> {
           child: ListBody(
             children: <Widget>[
               Text(keyReceived),
-              Text('Would you like to store this key?'),
+              Text('Storing this key in your local storage'),
             ],
           ),
         ),
         actions: <Widget>[
           FlatButton(
-            child: Text('Approve'),
+            child: Text('OK'),
             onPressed: () {
               Navigator.of(context).pop();
             },
