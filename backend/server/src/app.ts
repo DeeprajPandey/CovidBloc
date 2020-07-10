@@ -1,6 +1,7 @@
 import * as dotenv from "dotenv";
 import express, { Request, Response } from "express";
 import cors from "cors";
+import { CronJob } from "cron";
 import helmet from "helmet";
 import seedrandom from "seedrandom";
 import twilio from 'twilio';
@@ -26,20 +27,33 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-setInterval(deleteKeys, 86400000); //24 hours in milliseconds
+
+var deleteJob = new CronJob(
+  '00 01 00 * * 1-6',
+  async () => {
+    try {
+      console.log("Deleting keys older than 14 days.");
+      await deleteKeys();
+    } catch (err) {
+      // IMP: assuming this env var is set
+      // @ts-ignore
+      const admins = process.env.ADMIN_NUMS.split(' ');
+      for (let i = 0; i < admins.length; i++) {
+        const msg = `ALERT: Cronjob failed to delete keys. Check error\n${err}`;
+        await sendSMS(admins[i], msg);
+        console.log("Admin alerted.");
+      }
+    }
+  },
+  null,
+  true,
+  'GMT'
+);
+deleteJob.start();
+// setInterval(deleteKeys, 86400000); //24 hours in milliseconds
 
 
 // Routes
-
-// GET: Hello
-// app.get("/", async (req: Request, res: Response) => {
-//   try {
-//     const msg: string = `${req.query.id} ${req.body.em}`;
-//     res.status(200).send(msg);
-//   } catch (e) {
-//     res.status(418).send("I'm a teapot.");
-//   }
-// });
 
 app.get("/", async (req: Request, res: Response) => {
   try {
@@ -174,7 +188,9 @@ app.post("/generateapproval", async (req: Request, res: Response) => {
       throw new Error("Something went wrong, please try again.");
     }
     // Send sms to patient with approvalID and medID
-    await sendSMS(req.body.patientContact, req.body.medID, approvalID.toString());
+    const msgText = `Please enter these details on the app to send your daily keys from the last 14 days to the server.\n\n`
+                    + `Approval ID: ${approvalID}\nMedical ID: ${req.body.medID}`;
+    await sendSMS(req.body.patientContact, msgText);
     res.status(200).send("Keys uploaded.");
   } catch (e) {
     res.status(400).send(e.message);
@@ -258,24 +274,20 @@ const server = app.listen(PORT, () => {
  */
 
 async function deleteKeys() {
-  try {
-    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
-    if (networkObj.err != null || !("gateway" in networkObj)) {
-      console.error(networkObj.err);
-      throw new Error("Admin not registered.");
-    }
-    let currentTime = Math.round((new Date()).getTime() / 1000); //current unix timestamp
-    let currentIVal = Math.floor((Math.floor(currentTime / 600)) / 144) * 144;
+  const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
+  if (networkObj.err != null || !("gateway" in networkObj)) {
+    console.error(networkObj.err);
+    throw new Error("Couldn't connect to network using Admin identity.");
+  }
+  let currentTime = Math.round((new Date()).getTime() / 1000); //current unix timestamp
+  let currentIVal = Math.floor((Math.floor(currentTime / 600)) / 144) * 144;
 
-    const contractResponse = await fabric.invoke('deleteKeys', [currentIVal.toString()], false, networkObj);
-    networkObj.gateway.disconnect();
-    if ("err" in contractResponse) {
-      console.error(contractResponse.err);
-      // Transaction error
-      throw new Error("Something went wrong, please try again.");
-    }
-  } catch (e) {
-    return;
+  const contractResponse = await fabric.invoke('deleteKeys', [currentIVal.toString()], false, networkObj);
+  networkObj.gateway.disconnect();
+  if ("err" in contractResponse) {
+    console.error(contractResponse.err);
+    // Transaction error
+    throw new Error(`Failed to run contract function deleteKeys.\n${contractResponse.err}`);
   }
 }
 
@@ -289,14 +301,13 @@ function generateApprovalID() {
   return approvalID;
 }
 
-async function sendSMS(to: string, from: string, approvalID: string): Promise<void> {
+async function sendSMS(to: string, msg: string): Promise<void> {
   if (!TWIL_SID || !TWIL_AUTH || !TWIL_NUM) {
     throw new Error("Twilio credentials not set");
   }
-  const msg = "Please enter these details on the app to send your daily key from last 14 days to the server.\n\n";
   const client = twilio(TWIL_SID, TWIL_AUTH);
   await client.messages.create({
-    body: `${msg}Approval ID: ${approvalID}\nMedical ID: ${from}`,
+    body: msg,
     from: TWIL_NUM,
     to: to
   })
