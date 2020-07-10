@@ -23,8 +23,8 @@ export class Asset {
 @Object()
 export class Meta {
     @Property()
-    public patientCtr: number = 0;
-    public healthOfficialCtr: number = 1024;
+    public patientCtr: string = "0";
+    public healthOfficialCtr: string = "1024";
 }
 
 /**
@@ -32,7 +32,7 @@ export class Meta {
  */
 export interface DailyKey {
     hexkey: string;
-    i: number;
+    i: string;
 }
 
 
@@ -58,7 +58,7 @@ export class Patient {
 export class HealthOfficer {
     @Property()
     public medID: string;
-    public approveCtr: number = 0;
+    public approveCtr: string = "0";
     public name: string;
     public email: string;
     public hospital: string;

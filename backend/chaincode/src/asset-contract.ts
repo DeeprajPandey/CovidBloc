@@ -27,7 +27,7 @@ export class AssetContract extends Contract {
             return responseObj;
             //throw new Error(`Meta does not exist`);
         }
-        const lastPatientID = currMeta.patientCtr;
+        const lastPatientID = parseInt(currMeta.patientCtr);
         const newPKey = "p" + (lastPatientID + 1).toString();
 
         const healthOfficial = await this.readAsset(ctx, `m${patientObj.medID}`) as HealthOfficer;
@@ -38,7 +38,7 @@ export class AssetContract extends Contract {
             return responseObj;
         }
         // Check from the most recent approval number
-        for (let apNum = healthOfficial.approveCtr; apNum > 0; apNum--) {
+        for (let apNum = parseInt(healthOfficial.approveCtr); apNum > 0; apNum--) {
             const apKey = `m${patientObj.medID}:${apNum.toString()}`;
             let apObj = await this.readAsset(ctx, apKey) as Approval;
 
@@ -51,7 +51,7 @@ export class AssetContract extends Contract {
                 console.log("Creating patient");
                 await this.createAsset(ctx, newPKey, JSON.stringify(patientObj));
 
-                currMeta.patientCtr = lastPatientID + 1;
+                currMeta.patientCtr = (lastPatientID + 1).toString();
                 console.log("Updating meta");
                 await this.updateAsset(ctx, "meta", JSON.stringify(currMeta));
                 console.log("done");
@@ -92,8 +92,8 @@ export class AssetContract extends Contract {
             responseObj["err"] = "Health official with this email doesnt exist";
             return responseObj;
         }
-        const apNum = official.approveCtr + 1;
-        official.approveCtr = apNum;
+        const apNum = parseInt(official.approveCtr) + 1;
+        official.approveCtr = apNum.toString();
 
         const key = `m${medID}:${apNum.toString()}`;
         let apObj = new Approval();
@@ -116,7 +116,7 @@ export class AssetContract extends Contract {
             // responseObj["err"] = "Health official with this email doesnt exist";
             return false;
         }
-        for (let i = medicalOfficial.approveCtr; i > 0; i--) {
+        for (let i = parseInt(medicalOfficial.approveCtr); i > 0; i--) {
             const apObjKey = `m${medID}:${i.toString()}`;
             const approvalObj = await this.readAsset(ctx, apObjKey);
             if (approvalObj !== null && approvalObj.approvalID === checkID) {
@@ -137,12 +137,12 @@ export class AssetContract extends Contract {
     public async getMedProfile(ctx: Context, medID: string): Promise<any> {
         let responseObj = {};
         const cid = new ClientIdentity(ctx.stub);
-        const username = cid.getID()
+        const username = cid.getID();
         const attrCheck: boolean = cid.assertAttributeValue('health-official', 'true');
 
         const medObj = await this.readAsset(ctx, `m${medID}`);
         if (attrCheck) {
-            if (medObj !== null && username === medObj.email) {
+            if (medObj !== null && username.includes(medObj.email)) {
                 responseObj["data"] = medObj;
             }
             else {
@@ -163,11 +163,12 @@ export class AssetContract extends Contract {
      * @param medID Unique ID of the health officer 
      * @param checkID ApprovalID of the patient 
      */
+    @Transaction(false)
     public async validatePatient(ctx: Context, medID: string, checkID: string): Promise<any> {
         let responseObj = {};
         const medObj = await this.readAsset(ctx, `m${medID}`);
         if (medObj != null) {
-            for (let i = medObj.approveCtr; i > 0; i--) {
+            for (let i = parseInt(medObj.approveCtr); i > 0; i--) {
                 const assetKey = `m${medID}:${i.toString()}`;
                 const approvalObj = await this.readAsset(ctx, assetKey);
                 if (approvalObj !== null && approvalObj.approvalID === checkID && approvalObj.patientID === null) {
@@ -194,25 +195,22 @@ export class AssetContract extends Contract {
      * @param ctx Transactional context
      */
     @Transaction(false)
-    public async getKeys(ctx: Context, currentIval: string): Promise<any> {
+    public async getKeys(ctx: Context, currentIval: string, firstCall: boolean): Promise<any> {
         let responseObj = {};
         const allResults = [];
         const key = "meta";
         const metaObj = await this.readAsset(ctx, key);
-        for (let i = metaObj.patientCtr; i > 0; i--) {
+        for (let i = parseInt(metaObj.patientCtr); i > 0; i--) {
             const patientKey = "p" + i.toString();
             const patientObj = await this.readAsset(ctx, patientKey);
-            if (patientObj != null) {
-                if (patientObj.ival == (parseInt(currentIval) - 144).toString()) { //we will call this function when tempkey is gen(so new i val)- need patients who have been added in the last 24hrs
-                    allResults.push(patientObj.dailyKeys);  //if key also needs to sent then {patientKey,patientObj}
-                }
-                else if (parseInt(currentIval) == -1) {       //for first time users
+            if (patientObj !== null) {
+                // first download will get keys that are from last 14 days but not from today
+                if (firstCall && patientObj.ival !== parseInt(currentIval)) {
                     allResults.push(patientObj.dailyKeys);
                 }
-            }
-            else {
-                responseObj["err"] = "Error downloading keys";
-                return responseObj;
+                if (patientObj.ival === (parseInt(currentIval) - 144).toString()) { //we will call this function when tempkey is gen(so new i val)- need patients who have been added in the last 24hrs
+                    allResults.push(patientObj.dailyKeys);  //if key also needs to sent then {patientKey,patientObj}
+                }
             }
         }
         responseObj["data"] = JSON.stringify(allResults);
@@ -231,10 +229,10 @@ export class AssetContract extends Contract {
         const key = "meta";
         const metaObj = await this.readAsset(ctx, key);
         const threshold = parseInt(currentIval) - (144 * 14);
-        for (let i = 1; i <= metaObj.patientCtr; i++) {
+        for (let i = 1; i <= parseInt(metaObj.patientCtr); i++) {
             const patientKey = "p" + i.toString();
             const patientObj = await this.readAsset(ctx, patientKey);
-            if (patientObj != null && patientObj.ival == threshold.toString()) {
+            if (patientObj !== null && parseInt(patientObj.ival) <= threshold) {
                 await this.deleteAsset(ctx, patientKey);
             }
 
@@ -246,15 +244,16 @@ export class AssetContract extends Contract {
 
     @Transaction()
     public async initiateState(ctx: Context): Promise<void> {
-        let temp = new Meta();
-        temp.patientCtr = 0;
-        let str = JSON.stringify(temp);
-        await this.createAsset(ctx, "meta", str);
+        let temp = {
+            patientCtr: "0",
+            healthOfficialCtr: "1024"
+        };
+        await this.createAsset(ctx, "meta", JSON.stringify(temp));
 
-        const meta = await this.readAsset(ctx, "meta");
-        if (!meta) {
-            throw new Error("Meta not there!");
-        }
+        // const meta = await this.readAsset(ctx, "meta");
+        // if (!meta) {
+        //     throw new Error("Meta not there!");
+        // }
         // const patientFromServer = {
         //     approvalID: "1231312",
         //     medID: "m123",
