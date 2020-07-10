@@ -2,14 +2,14 @@ import { FileSystemWallet, Gateway, X509WalletMixin } from 'fabric-network';
 import { GenericResponse, NetworkObject } from './fabric.interface';
 import * as path from 'path';
 
-export const ADMIN = 'org1Admin';
+export const ADMIN = 'admin';
 
 // Create a new file system based wallet for managing identities.
 const walletPath = path.join(process.cwd(), 'Org1Wallet');
 const wallet = new FileSystemWallet(walletPath);
 console.log(`Wallet path: ${walletPath}`);
 
-const connectionProfile = path.resolve(__dirname, '..', 'connection.json');
+const connectionProfile = path.resolve(__dirname, '../..', 'connection.json');
 
 /**
  * Generates a new identity (user)
@@ -60,7 +60,7 @@ export const registerUser = async (newuser: string, medical: boolean): Promise<G
       }
       // Register, enroll, and import new identity to wallet
       const secret = await ca.register({
-        affiliation: "org1.health",
+        affiliation: "org1",
         enrollmentID: newuser,
         role: 'client',
         attrs: attributes
@@ -126,22 +126,21 @@ export const invoke = async (action: string, args: string[], isQuery: boolean, n
   try {
     let result: any;
     if (isQuery) {
-      if (args.length == 0) {
-        result = await networkObj.contract.evaluateTransaction(action, ...args);
-      } else {
+      if (args.length === 0) {
         result = await networkObj.contract.evaluateTransaction(action);
+      } else {
+        result = await networkObj.contract.evaluateTransaction(action, ...args);
       }
     } else {
-      if (args.length == 0) {
-        result = await networkObj.contract.submitTransaction(action, ...args);
-      } else {
+      if (args.length === 0) {
         result = await networkObj.contract.submitTransaction(action);
+      } else {
+        result = await networkObj.contract.submitTransaction(action, ...args);
       }
     }
-    networkObj.gateway.disconnect();
+    // networkObj.gateway.disconnect();
     const respObj = await JSON.parse(result);
     return respObj;
-    
   } catch (e) {
     const errResp: GenericResponse = {err: `fabric.invoke(${action})::${e.message}`};
     return errResp;

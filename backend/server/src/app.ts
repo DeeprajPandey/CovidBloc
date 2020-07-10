@@ -32,12 +32,31 @@ setInterval(deleteKeys, 86400000); //24 hours in milliseconds
 // Routes
 
 // GET: Hello
+// app.get("/", async (req: Request, res: Response) => {
+//   try {
+//     const msg: string = `${req.query.id} ${req.body.em}`;
+//     res.status(200).send(msg);
+//   } catch (e) {
+//     res.status(418).send("I'm a teapot.");
+//   }
+// });
+
 app.get("/", async (req: Request, res: Response) => {
   try {
-    //sendSMS('someNum', 'try@sms', '31625647527');
-    let num = generateApprovalID();
-    const msg: string = `Random number: ${num}`;
-    res.status(200).send(msg);
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
+    if (networkObj.err != null || !("gateway" in networkObj)) {
+      console.error(networkObj.err);
+      throw new Error("Admin not registered.");
+    }
+    const key = JSON.stringify(req.query.key);
+    const contractResponse = await fabric.invoke('readAsset', [req.query.key], true, networkObj);
+    networkObj.gateway.disconnect();
+
+    // if ("err" in contractResponse) {
+    //   console.log(contractResponse);
+    //   throw new Error(contractResponse.err);
+    // }
+    res.status(200).send(JSON.stringify(contractResponse));
   } catch (e) {
     res.status(418).send("I'm a teapot.");
   }
@@ -45,15 +64,15 @@ app.get("/", async (req: Request, res: Response) => {
 
 // POST: Register a new official
 app.post("/healthofficial", async (req: Request, res: Response) => {
-  let medicalOfficial = new Map<string, string>();
-  medicalOfficial.set('m1@apollo.com', '3425');
-  medicalOfficial.set('doc232@max.com', '2367');
-  medicalOfficial.set('hosp123@fortis.in', '3821');
+  let authorisedOfficials = new Map<string, string>();
+  authorisedOfficials.set('m1@apollo.com', '3425');
+  authorisedOfficials.set('doc232@max.com', '2367');
+  authorisedOfficials.set('hosp123@fortis.in', '3821');
 
   try {
     const validBody = Boolean(
       req.body.medID &&
-      req.body.approveCtr === 0 &&
+      req.body.approveCtr === "0" &&
       req.body.name &&
       req.body.email &&
       req.body.hospital
@@ -64,7 +83,7 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
 
     let email = req.body.email;
 
-    if (medicalOfficial.has(email) && medicalOfficial.get(email) === req.body.medID) {
+    if (authorisedOfficials.has(email) && authorisedOfficials.get(email) === req.body.medID) {
       const responseObj: GenericResponse = await fabric.registerUser(email, true);
       if (responseObj.err !== null) {
         console.error(responseObj.err);
@@ -76,6 +95,8 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
         throw new Error("CA failure");
       }
       const contractResponse = await fabric.invoke('addHealthOfficer', [req.body.medID, JSON.stringify(req.body)], false, networkObj);
+      networkObj.gateway.disconnect();
+
       if ("err" in contractResponse) {
         console.error(contractResponse.err);
         // Transaction error
@@ -92,20 +113,22 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
 });
 
 // GET: Get an official's profile
-app.get("/healthofficial/:id", async (req: Request, res: Response) => {
+app.get("/healthofficial", async (req: Request, res: Response) => {
   try {
     const validParams = Boolean(
-      req.params.id
+      req.query.i &&
+      req.query.e
     );
     if (!validParams) {
       throw new Error("Invalid request");
     }
-    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(req.params.id);
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(req.query.e);
     if (networkObj.err !== null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
       throw new Error("Invalid request");
     }
-    const contractResponse = await fabric.invoke('getMedProfile', [req.params.id], true, networkObj);
+    const contractResponse = await fabric.invoke('getMedProfile', [req.query.i], true, networkObj);
+    networkObj.gateway.disconnect();
     if ("err" in contractResponse) {
       console.error(contractResponse.err);
       // Transaction error
@@ -119,7 +142,7 @@ app.get("/healthofficial/:id", async (req: Request, res: Response) => {
 });
 
 // POST: Generate an approval for patient
-app.get("/generateapproval", async (req: Request, res: Response) => {
+app.post("/generateapproval", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
       req.body.email &&
@@ -129,8 +152,9 @@ app.get("/generateapproval", async (req: Request, res: Response) => {
     if (!validBody) {
       throw new Error("Invalid request");
     }
+
     let approvalID = -1;
-    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(email);
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(req.body.email);
     if (networkObj.err != null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
       throw new Error("Invalid request");
@@ -143,6 +167,7 @@ app.get("/generateapproval", async (req: Request, res: Response) => {
       }
     }
     const contractResponse = await fabric.invoke('addPatientApprovalRecord', [req.body.medID, approvalID.toString()], false, networkObj);
+    networkObj.gateway.disconnect();
     if ("err" in contractResponse) {
       console.error(contractResponse.err);
       // Transaction error
@@ -176,11 +201,12 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
       console.error(networkObj.err);
       throw new Error("Admin not registered.");
     }
-    const validateResponse = await fabric.invoke('validatePatient', [req.body.medID, req.body.approvalID], false, networkObj);
+    const validateResponse = await fabric.invoke('validatePatient', [req.body.medID, req.body.approvalID], true, networkObj);
     if ("err" in validateResponse) {
       throw new Error(validateResponse.err);
     }
     const contractResponse = await fabric.invoke('addPatient', [JSON.stringify(req.body)], false, networkObj);
+    networkObj.gateway.disconnect();
     if ("err" in contractResponse) {
       throw new Error(contractResponse.err);
     }
@@ -194,7 +220,8 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
 app.post("/keys", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
-      req.body.currentIval
+      req.body.currentIval &&
+      (req.body.firstCall === true || req.body.firstCall === false)
     );
     if (!validBody) {
       throw new Error("Invalid request");
@@ -204,7 +231,8 @@ app.post("/keys", async (req: Request, res: Response) => {
       console.error(networkObj.err);
       throw new Error("Admin not registered.");
     }
-    const contractResponse = await fabric.invoke('getKeys', [req.body.currentIval], true, networkObj);
+    const contractResponse = await fabric.invoke('getKeys', [req.body.currentIval, req.body.firstCall.toString()], true, networkObj);
+    networkObj.gateway.disconnect();
     if ("err" in contractResponse) {
       console.error(contractResponse.err);
       // Transaction error
@@ -216,7 +244,7 @@ app.post("/keys", async (req: Request, res: Response) => {
     return;
   }
 });
- 
+
 
 /**
  * Server
@@ -229,17 +257,18 @@ const server = app.listen(PORT, () => {
  * Utility Functions
  */
 
-async function deleteKeys(){
+async function deleteKeys() {
   try {
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
     if (networkObj.err != null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
       throw new Error("Admin not registered.");
     }
-    let currentTime= Math.round((new Date()).getTime()/1000); //current unix timestamp
-    let currentIVal= Math.floor((Math.floor(currentTime/600))/144) * 144;
-    
+    let currentTime = Math.round((new Date()).getTime() / 1000); //current unix timestamp
+    let currentIVal = Math.floor((Math.floor(currentTime / 600)) / 144) * 144;
+
     const contractResponse = await fabric.invoke('deleteKeys', [currentIVal.toString()], false, networkObj);
+    networkObj.gateway.disconnect();
     if ("err" in contractResponse) {
       console.error(contractResponse.err);
       // Transaction error
@@ -271,11 +300,11 @@ async function sendSMS(to: string, from: string, approvalID: string): Promise<vo
     from: TWIL_NUM,
     to: to
   })
-  .then(message => console.log(message.sid))
-  .catch((e) => {
-    console.error(e);
-    throw new Error("Couldn't send SMS");
-  });
+    .then(message => console.log(message.sid))
+    .catch((e) => {
+      console.error(e);
+      throw new Error("Couldn't send SMS");
+    });
 }
 
 function normalisePort(val: string) {
