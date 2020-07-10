@@ -1,0 +1,28 @@
+{
+  "name": "exposure-notification-on-fabric",
+  "version": "0.0.1",
+  "description": "A Replica of the Google-Apple Exposure Notification API built on top of Hyperledger Fabric",
+  "main": "index.js",
+  "authors": [
+    {
+      "name": "Deepraj Pandey",
+      "email": "deepraj.pandey@alumni.ashoka.edu.in"
+    },
+    {
+      "name": "Nandini Agrawal",
+      "email": "nandini.agrawal@alumni.ashoka.edu.in"
+    }
+  ],
+  "repository": "https://github.com/DeeprajPandey/fabric-contact-tracing",
+  "scripts": {
+    "dev": "vuepress dev docs",
+    "build": "vuepress build docs"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@vuepress/plugin-back-to-top": "^1.5.2",
+    "@vuepress/plugin-medium-zoom": "^1.3.1",
+    "@vuepress/plugin-pwa": "^1.5.2",
+    "vuepress": "^1.3.1"
+  }
+}
