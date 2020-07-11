@@ -1,1 +1,85 @@
 # Contract
+
+[[toc]]
+
+## Assets
+
+### Meta
+
+There is only one Meta asset on the world state that is updated every time we add either a representation of a diagnosed patient or a health official.
+
+Both the counters are used to keep track of the sets of daily keys pushed to the server and to assign a `medID` to new health officials.
+
+
+
+```JSON
+"meta": {
+  patientCtr: 0,
+  healthOfficialCtr: 1024
+}
+```
+
+### HealthOfficial
+
+We add this asset for every health official registering on the app. The key used for the asset is `m` + `medID` that is assigned based on the `healthOfficialCtr` in `meta`.
+
+It also has the `approveCtr` that is initialised to 0 and incremented every time the official diagnoses a positive user (and generates the approval ID for that patient).
+
+```JSON
+"m1024": {
+  medID: "1024",
+  approveCtr: "0",
+  name: "Pensive Feynman",
+  email: "feynman@reallygoodhospital.org",
+  hospital: "Really Good Hospital"
+}
+```
+
+### Approval
+
+Every time a health official diagnoses a new patient, the chaincode adds a representation of the approval record by creating an Approval asset that uses the official's `medID` + `:` + `approveCtr` as its key.
+
+The approval ID generated on the server is added and the patient ID is initialised to `null`. When the diagnosed user uploads their temporary exposure keys, we update the patientID to the key that is assigned to the Patient asset when it's created.
+
+```JSON
+"m1024:1": {
+  approvalID: "987654321",
+  patientID: null
+}
+```
+
+### Patient
+
+The patient asset stores the temporary exposure keys of a diagnosed user. We represent those keys through the interface `DailyKey` that has the hexadecimal value of the key and the corresponding `i` value for the day the key is valid for.
+
+```ts
+interface DailyKey {
+  hexkey: string;
+  i: string;
+}
+```
+
+To ensure only a diagnosed user uploads the keys, the asset also includes an `approvalID`, the `medID` of the health official who granted the approval, an `ival` which is the value of `i` on the day the keys are uploaded, and an array of temporary exposure keys represented by the interface `DailyKey`.
+
+```JSON
+"p1": {
+  approvalID: "987654321",
+  medID: "1024",
+  ival : "2657504",
+  dailyKeys: [
+    {
+      "hexkey": "33917c36d48744ef3fbc4985188ea9e2",
+      "i": "2655360"
+    },
+    {
+      "hexkey": "d67a4d2c5f44c218e92b03dd99fa3f92",
+      "i": "2655504"
+    },
+    ...
+    ...
+    ...
+  ]
+}
+```
+
+## Functions
