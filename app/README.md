@@ -1,4 +1,4 @@
-# app
+# contact_tracing
 
 A new Flutter project.
 
