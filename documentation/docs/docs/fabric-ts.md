@@ -12,6 +12,7 @@ import * as fabric from "./services/fabric";
 ### registerUser()
 
 - Params
+
   - `username`
   - `isMedicalOfficial`
 
@@ -24,12 +25,16 @@ Add attribute `'health-official: true'` if `isMedicalOfficial` is true for Attri
 Currently, we use this to register only medical professionals but the interface has been left open ended by design in case someone wants to register a representation of diagnosed keys with the CA (instead of adding the keys as admin).
 
 ```ts
-const responseObj: GenericResponse = await fabric.registerUser("new.user@hospital.com", true);
+const responseObj: GenericResponse = await fabric.registerUser(
+  "new.user@hospital.com",
+  true
+);
 ```
 
 ### connectAsUser()
 
 - Params
+
   - `username`
 
 - :rocket: Returns: `Promise<NetoworkObject>`
@@ -37,17 +42,20 @@ const responseObj: GenericResponse = await fabric.registerUser("new.user@hospita
 Connect to the network as `username` (wallet should have identity for `username`) and return the gateway and contract objects that can be used to invoke contract functions.
 
 ```ts
-const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser("registered.user@example.com");
+const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(
+  "registered.user@example.com"
+);
 ```
 
 ### invoke(action, args[], isQuery, networkObj)
 
 - Params
+
   - `action`
   - `args[]`
   - `isQuery`
   - `networkObj`
-  
+
 - :rocket: Returns: `Promise<GenericResponse | any>`
 
 Invoke the function `action` using the contract object in `networkObj` with the string arguments passed as `args`.
@@ -63,7 +71,12 @@ Disconnect the gateway in networkObj after `invoke()` returns.
 This function used to disconnect from the gateway but that didn't allow for multiple calls to `invoke` using the same gateway. Now, it's up to the caller to call `disconnect()`.
 
 ```ts
-const contractResponse = await fabric.invoke('readAsset', ["meta"], true, networkObj);
+const contractResponse = await fabric.invoke(
+  "readAsset",
+  ["meta"],
+  true,
+  networkObj
+);
 networkObj.gateway.disconnect();
 ```
 
@@ -79,12 +92,21 @@ The administrator registered with Fabric Certificate Authority with permissions 
 _Internally, this is the user that enrols amd registers health officials when they sign up on the app._
 
 ::: details Typical Usecase
-```ts{1}
-const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
 
-const contractResponse = await fabric.invoke('addPatient', [JSON.stringify(req.body)], false, networkObj);
+```ts{1-3}
+const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(
+  fabric.ADMIN
+);
+
+const contractResponse = await fabric.invoke(
+  "addPatient",
+  [JSON.stringify(req.body)],
+  false,
+  networkObj
+);
 networkObj.gateway.disconnect();
 ```
+
 :::
 
 ## Interfaces
