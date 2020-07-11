@@ -47,7 +47,7 @@ const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(
 );
 ```
 
-### invoke(action, args[], isQuery, networkObj)
+### invoke()
 
 - Params
 
@@ -115,15 +115,24 @@ The module uses two interfaces as response objects from the methods.
 
 ### GenericResponse
 
-- `err`: `string | null`
+```ts
+interface GenericResponse {
+  err: string | null;
+}
+```
 
 Stores the error message when an exception is caught.
 
 ### NetworkObject
 
-- `gateway`: `Gateway`
-- `contract`: `Contract`
-- `err`: `string | null`
+```ts
+import { Gateway, Contract } from "fabric-network";
+
+interface NetworkObject extends GenericResponse {
+  gateway: Gateway;
+  contract: Contract;
+}
+```
 
 Stores the gateway made with the specified user's wallet identity and the corresponding contract object.
 
@@ -133,7 +142,13 @@ Every time we catch an error (custom or standard alike), the function returns an
 
 ## Internal Methods
 
-### validUsername(username): Promise\<boolean>
+### validUsername()
+
+- Params
+
+  - `username`
+
+- :rocket: Returns: `Promise<boolean>`
 
 Utility function for `username` coherence check.
 
