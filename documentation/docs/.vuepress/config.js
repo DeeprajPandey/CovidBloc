@@ -71,7 +71,8 @@ module.exports = {
           children: [
             '',
             'chaincode',
-            'api',
+            'rest-api',
+            'fabric-ts',
             'app'
           ]
         }
