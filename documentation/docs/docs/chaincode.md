@@ -10,8 +10,6 @@ There is only one Meta asset on the world state that is updated every time we ad
 
 Both the counters are used to keep track of the sets of daily keys pushed to the server and to assign a `medID` to new health officials.
 
-
-
 ```JSON
 "meta": {
   patientCtr: 0,
@@ -82,4 +80,118 @@ To ensure only a diagnosed user uploads the keys, the asset also includes an `ap
 }
 ```
 
-## Functions
+## Methods
+
+### addPatient()
+
+- Params
+  - `patientObj`
+
+- :rocket: Returns: `Promise<any>`
+
+- Transaction Type: `Submit`
+
+Adds a new Patient asset to the world state. The key is set according the current value of `patientCtr` in `meta`.
+
+### addHealthOfficer()
+
+- Params
+  - `medID`
+  - `medObj`
+
+- :rocket: Returns: `Promise<any>`
+
+- Transaction Type: `Submit`
+
+### addPatientApprovalRecord()
+
+- Params
+  - `medID`
+  - `newApprovalID`
+  
+- :rocket: Returns: `Promise<any>`
+
+- Transaction Type: `Submit`
+
+### validApprovalID()
+
+- Params
+  - `medID`
+  - `checkID`
+  
+- :rocket: Returns: `Promise<any>`
+
+- Transaction Type: `Evaluate`
+
+### getMedProfile()
+
+- Params
+  - `medID`
+  
+- :rocket: Returns: `Promise<any>`
+
+- Transaction Type: `Evaluate`
+
+### validatePatient()
+
+- Params
+  - `medID`
+  - `checkID`
+  
+- :rocket: Returns: `Promise<any>`
+
+- Transaction Type: `Evaluate`
+
+### getKeys()
+
+- Params
+  - `currentIval`
+  - `firstCall`
+  
+- :rocket: Returns: `Promise<any>`
+
+- Transaction Type: `Evaluate`
+
+### deleteKeys()
+
+- Params
+  - `currentIval`
+  
+- :rocket: Returns: `Promise<void>`
+
+- Transaction Type: `Submit`
+
+### initiateState()
+  
+- :rocket: Returns: `Promise<void>`
+
+- Transaction Type: `Submit`
+
+## Utility Methods
+
+### assetExists()
+
+- Params
+  - `assetID`
+  
+- :rocket: Returns: `Promise<boolean>`
+
+- Transaction Type: `Evaluate`
+
+### readAsset()
+
+- Params
+  - `assetID`
+  
+- :rocket: Returns: `Promise<any>`
+
+- Transaction Type: `Evaluate`
+
+### deleteAsset()
+
+- Params
+  - `assetID`
+  
+- :rocket: Returns: `Promise<void>`
+
+- Transaction Type: `Submit`
