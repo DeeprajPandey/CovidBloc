@@ -9,7 +9,13 @@ import * as fabric from "./services/fabric";
 
 ## Methods
 
-### registerUser(username, isMedicalOfficial): Promise\<GenericResponse>
+### registerUser()
+
+- Params
+  - `username`
+  - `isMedicalOfficial`
+
+- :rocket: Returns: `Promise<GenericResponse>`
 
 Register, enroll, and import the identity of a new `username` into the wallet.
 
@@ -21,7 +27,12 @@ Currently, we use this to register only medical professionals but the interface 
 const responseObj: GenericResponse = await fabric.registerUser("new.user@hospital.com", true);
 ```
 
-### connectAsUser(username): Promise\<NetworkObject>
+### connectAsUser()
+
+- Params
+  - `username`
+
+- :rocket: Returns: `Promise<NetoworkObject>`
 
 Connect to the network as `username` (wallet should have identity for `username`) and return the gateway and contract objects that can be used to invoke contract functions.
 
@@ -29,7 +40,15 @@ Connect to the network as `username` (wallet should have identity for `username`
 const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser("registered.user@example.com");
 ```
 
-### invoke(action, args[], isQuery, networkObj): Promise\<Generic Response | any>
+### invoke(action, args[], isQuery, networkObj)
+
+- Params
+  - `action`
+  - `args[]`
+  - `isQuery`
+  - `networkObj`
+  
+- :rocket: Returns: `Promise<GenericResponse | any>`
 
 Invoke the function `action` using the contract object in `networkObj` with the string arguments passed as `args`.
 
