@@ -37,8 +37,8 @@ If `isQuery` is set to `false`, it will submit a transaction that will go throug
 
 The function either returns a Generic Response with an error or the object returned from the contract `action` that was invoked.
 
-::: warning ⚠️
-Ensure that the gateway in the networkObj is disconnected after `invoke()` returns.
+::: warning ⚠️ Note
+Disconnect the gateway in networkObj after `invoke()` returns.
 :::
 
 This function used to disconnect from the gateway but that didn't allow for multiple calls to `invoke` using the same gateway. Now, it's up to the caller to call `disconnect()`.
