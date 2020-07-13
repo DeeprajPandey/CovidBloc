@@ -55,7 +55,7 @@ export class Patient {
  * Restricted on the server.
  */
 @Object()
-export class HealthOfficer {
+export class HealthOfficial {
     @Property()
     public medID: string;
     public approveCtr: string = "0";

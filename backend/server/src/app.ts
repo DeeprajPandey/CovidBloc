@@ -108,7 +108,7 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
         console.error(networkObj.err);
         throw new Error("CA failure");
       }
-      const contractResponse = await fabric.invoke('addHealthOfficer', [req.body.medID, JSON.stringify(req.body)], false, networkObj);
+      const contractResponse = await fabric.invoke('addHealthOfficial', [req.body.medID, JSON.stringify(req.body)], false, networkObj);
       networkObj.gateway.disconnect();
 
       if ("err" in contractResponse) {
