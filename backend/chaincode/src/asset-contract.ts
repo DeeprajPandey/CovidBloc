@@ -64,7 +64,6 @@ export class AssetContract extends Contract {
     }
 
     @Transaction()
-
     public async addHealthOfficial(ctx: Context, medObj: HealthOfficial): Promise<any> {
         let responseObj = {};
         let currMeta = await this.readAsset(ctx, "meta") as Meta;
