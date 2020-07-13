@@ -63,6 +63,8 @@ app.get("/", async (req: Request, res: Response) => {
       throw new Error("Admin not registered.");
     }
     const key = JSON.stringify(req.query.key);
+    
+    // @ts-ignore
     const contractResponse = await fabric.invoke('readAsset', [req.query.key], true, networkObj);
     networkObj.gateway.disconnect();
 
@@ -76,7 +78,10 @@ app.get("/", async (req: Request, res: Response) => {
   }
 });
 
-// POST: Register a new official
+/**
+ * POST: Register a new official
+ * Chaincode generates a medID and returns it on successful addition
+ */
 app.post("/healthofficial", async (req: Request, res: Response) => {
   let authorisedOfficials = new Map<string, string>();
   authorisedOfficials.set('m1@apollo.com', '3425');
@@ -85,7 +90,6 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
 
   try {
     const validBody = Boolean(
-      req.body.medID &&
       req.body.approveCtr === "0" &&
       req.body.name &&
       req.body.email &&
@@ -97,7 +101,7 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
 
     let email = req.body.email;
 
-    if (authorisedOfficials.has(email) && authorisedOfficials.get(email) === req.body.medID) {
+    if (authorisedOfficials.has(email)) {
       const responseObj: GenericResponse = await fabric.registerUser(email, true);
       if (responseObj.err !== null) {
         console.error(responseObj.err);
@@ -108,7 +112,10 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
         console.error(networkObj.err);
         throw new Error("CA failure");
       }
-      const contractResponse = await fabric.invoke('addHealthOfficial', [req.body.medID, JSON.stringify(req.body)], false, networkObj);
+      const medObj = Object.assign({}, req.body);
+      medObj.medID = "-1"; // need all the properties as chaincode expects HealthOfficial
+
+      const contractResponse = await fabric.invoke('addHealthOfficial', [JSON.stringify(medObj)], false, networkObj);
       networkObj.gateway.disconnect();
 
       if ("err" in contractResponse) {
@@ -116,7 +123,10 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
         // Transaction error
         throw new Error("Something went wrong, please try again.");
       }
-      res.status(200).send("Registered");
+      // TODO: Send the medID on email
+      const recvID = contractResponse["msg"].split()[0];
+
+      res.status(200).send(`${recvID} registered`);
     } else {
       throw new Error("Invalid medical official");
     }
@@ -136,11 +146,13 @@ app.get("/healthofficial", async (req: Request, res: Response) => {
     if (!validParams) {
       throw new Error("Invalid request");
     }
+    // @ts-ignore
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(req.query.e);
     if (networkObj.err !== null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
       throw new Error("Invalid request");
     }
+    // @ts-ignore
     const contractResponse = await fabric.invoke('getMedProfile', [req.query.i], true, networkObj);
     networkObj.gateway.disconnect();
     if ("err" in contractResponse) {

@@ -65,15 +65,20 @@ export class AssetContract extends Contract {
 
     @Transaction()
 
-    public async addHealthOfficial(ctx: Context, medID: string, medObj: HealthOfficial): Promise<any> {
+    public async addHealthOfficial(ctx: Context, medObj: HealthOfficial): Promise<any> {
         let responseObj = {};
-        const registered = await this.assetExists(ctx, `m${medID}`);
-        if (!registered) {
-            await this.createAsset(ctx, `m${medID}`, JSON.stringify(medObj));
-            responseObj["msg"] = "Registered successfully";
-        } else {
-            responseObj["err"] = "User has registered";
+        let currMeta = await this.readAsset(ctx, "meta") as Meta;
+        if (currMeta == null) {
+            responseObj["err"] = "Meta does not exist";
+            return responseObj;
+            //throw new Error(`Meta does not exist`);
         }
+        const lastMedID = parseInt(currMeta.healthOfficialCtr);
+        const newMKey = "m" + (lastMedID + 1).toString();
+
+        await this.createAsset(ctx, `m${newMKey}`, JSON.stringify(medObj));
+        responseObj["msg"] = `${lastMedID + 1} registered successfully`;
+
         return responseObj;
     }
 
