@@ -16,7 +16,7 @@ dotenv.config();
 
 const env_variables = Boolean(
   process.env.TW_SID && process.env.TW_AUTH && process.env.TW_NUM &&
-  process.env.ADMIN_NUMS && process.env.DB_URI && process.env.PORT
+  process.env.ADMIN_NUMS  && process.env.PORT// && process.env.DB_URI
 );
 if (!env_variables) {
   console.error("Environment variables not found. Shutting down...");
@@ -290,7 +290,7 @@ app.post("/generateapproval", async (req: Request, res: Response) => {
     }
     while (true) {
       approvalID = generateApprovalID();
-      const valid = await fabric.invoke('validApprovalID', [req.body.medID, approvalID], true, networkObj);
+      const valid = await fabric.invoke('validApprovalID', [req.body.medID, approvalID.toString()], true, networkObj);
       if (valid) {
         break;
       }

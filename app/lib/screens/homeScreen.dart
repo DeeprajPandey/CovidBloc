@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:contact_tracing/config/styles.dart';
 import 'package:contact_tracing/widgets/widgets.dart';
+import 'package:dio/dio.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -9,12 +10,40 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
- final prevention = [
-  {'assets/images/distance.png': 'Maintain Social\n Distancing'},
-  {'assets/images/wash_hands.png': 'Clean your\nhands often'},
-  {'assets/images/mask.png': 'Wear a\nfacemask'},
+  final prevention = [
+    {'assets/images/distance.png': 'Maintain Social\n Distancing'},
+    {'assets/images/wash_hands.png': 'Clean your\nhands often'},
+    {'assets/images/mask.png': 'Wear a\nfacemask'},
   
-];
+  ];
+  
+   _HomeScreenState();
+   
+  
+  //new Dio with a BaseOptions instance.
+  static BaseOptions options = new BaseOptions(
+      baseUrl: "http://192.168.0.152:6000/",
+      connectTimeout: 5000,
+      receiveTimeout: 3000,
+  );
+
+  Dio dio=new Dio(options);
+
+  Future<void> _sendKeys() async{
+    
+    Response response = await dio.get("/?key=meta");
+    print(response.data.toString());
+    //var response= await http.get('http://192.168.0.152:6000/?key=meta');
+    //print(response.body);
+    // response = await dio.post("/pushkeys", 
+    // data: {
+    //   "approvalID": "297190941", 
+    //   "medID": "m1025",
+    //   "ival":"2655360",
+    //   "dailyKeys": [{hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360},{hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360}]
+    // });
+    
+  } 
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +117,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         vertical: 10.0,
                         horizontal: 20.0,
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        _sendKeys();
+                      },
                       color: Colors.red,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
