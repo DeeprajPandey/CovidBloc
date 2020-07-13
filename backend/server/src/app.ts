@@ -63,7 +63,7 @@ app.get("/", async (req: Request, res: Response) => {
       throw new Error("Admin not registered.");
     }
     const key = JSON.stringify(req.query.key);
-    const contractResponse = await fabric.invoke('readAsset', [req.query.key], true, networkObj);
+    const contractResponse = await fabric.invoke('readAsset', [key], true, networkObj);
     networkObj.gateway.disconnect();
 
     // if ("err" in contractResponse) {
@@ -136,12 +136,14 @@ app.get("/healthofficial", async (req: Request, res: Response) => {
     if (!validParams) {
       throw new Error("Invalid request");
     }
-    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(req.query.e);
+    const email = JSON.stringify(req.query.e);
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(email);
     if (networkObj.err !== null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
       throw new Error("Invalid request");
     }
-    const contractResponse = await fabric.invoke('getMedProfile', [req.query.i], true, networkObj);
+    const ival = JSON.stringify(req.query.i);
+    const contractResponse = await fabric.invoke('getMedProfile', [ival], true, networkObj);
     networkObj.gateway.disconnect();
     if ("err" in contractResponse) {
       console.error(contractResponse.err);
