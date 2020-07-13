@@ -13,24 +13,18 @@ import healthRoutes from "./routes/HealthOfficial";
 
 dotenv.config();
 
+const env_variables = Boolean(
+  process.env.TW_SID && process.env.TW_AUTH && process.env.TW_NUM &&
+  process.env.ADMIN_NUMS && process.env.DB_URI && process.env.PORT
+);
+if (!env_variables) {
+  console.error("Environment variables not found. Shutting down...");
+  process.exit(1);
+}
+
 /**
- * Variable
+ * Set up Cronjob to delete keys >14 days old
  */
-const PORT = normalisePort(process.env.PORT || '6401');
-const TWIL_SID = process.env.TW_SID || null;
-const TWIL_AUTH = process.env.TW_AUTH || null;
-const TWIL_NUM = process.env.TW_NUM || null;
-
-const app = express();
-
-/**
- * Middleware Configuration
- */
-
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
-
 var deleteJob = new CronJob(
   '00 01 00 * * 1-6',
   async () => {
@@ -53,9 +47,18 @@ var deleteJob = new CronJob(
   'GMT'
 );
 deleteJob.start();
-// setInterval(deleteKeys, 86400000); //24 hours in milliseconds
 
-// Health Official Registration Routes
+/**
+ * Environment Variables
+ */
+const PORT = normalisePort(process.env.PORT || '6401');
+const TWIL_SID = process.env.TW_SID || null;
+const TWIL_AUTH = process.env.TW_AUTH || null;
+const TWIL_NUM = process.env.TW_NUM || null;
+
+/**
+ * Health Official Database
+ */
 // @ts-ignore
 mongoose.connect(process.env.DB_URI, {
   useNewUrlParser: true,
@@ -69,10 +72,20 @@ mongoose.connect(process.env.DB_URI, {
   process.exit();
 });
 
+const app = express();
+
+/**
+ * Middleware Configuration
+ */
+
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+
+// Health Official Registration Routes
 app.use("/officials", healthRoutes);
 
 // Routes
-
 app.get("/", async (req: Request, res: Response) => {
   try {
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
