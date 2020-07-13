@@ -63,15 +63,16 @@ const TWIL_NUM = process.env.TW_NUM || null;
 // @ts-ignore
 mongoose.connect(process.env.DB_URI, {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
+  useFindAndModify: false
 })
-.then(() => {
-  console.log("Connected to DB");
-})
-.catch((err) => {
-  console.log("Connection to DB failed: ", err);
-  process.exit();
-});
+  .then(() => {
+    console.log("Connected to DB");
+  })
+  .catch((err) => {
+    console.log("Connection to DB failed: ", err);
+    process.exit();
+  });
 
 const app = express();
 
@@ -118,7 +119,7 @@ app.get("/", async (req: Request, res: Response) => {
  * POST: Register a new official
  * Chaincode generates a medID and returns it on successful addition
  */
-app.post("/healthofficial", async (req: Request, res: Response) => {
+app.post("/register", async (req: Request, res: Response) => {
   let authorisedOfficials = new Map<string, string>();
   authorisedOfficials.set('m1@apollo.com', '3425');
   authorisedOfficials.set('doc232@max.com', '2367');
@@ -138,9 +139,48 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
     let email = req.body.email;
 
     // Attempt to read this user from the database
-    const dbObj = await HealthOfficialModel.findOne({ "email": email }, { lean: true });
+    const dbObj = await HealthOfficialModel.findOne({ email: email }, { lean: true });
     if (!dbObj) { // returns empty object if not in DB
       throw new Error("You are not an authorised medical official");
+    }
+
+    // @ts-ignore
+    const STAT = dbObj.t_status;
+    switch (STAT) {
+      case "REGISTERED":
+        res.status(400).send("You are already registered");
+        break;
+      case "PENDING":
+        // TODO: check if it has been ten minutes since code generation and resend
+        const currentTime = Math.round((new Date()).getTime() / 1000);
+        // @ts-ignore
+        const diff = (currentTime - parseInt(dbObj.t_timestamp))/60;
+        if (diff > 5) {
+          otpGen(dbObj);
+          res.status(400).send("Your code has expired and new code has been sent to your email.");
+          return;
+        }
+
+        // if it hasn't been 5 minutes, check if it's the correct OTP
+        // ensure the received otp is a string
+        // @ts-ignore
+        if (req.body.otp !== dbObj.t_otp) {
+          res.status(400).send("Incorrect code entered. Please retry.");
+          return;
+        }
+        // res.status(200).send("New OTP sent, please verify your email")
+        otpGen(dbObj);
+        res.status(200).send("You have already requested an OTP. Please check your email for the code.")
+        break;
+
+      case "UNREGISTERED":
+        // Generate otp, send email, and update this collection in DB
+        otpGen(dbObj);
+        res.status(200).send("Please check your inbox for an OTP. The code expires in 5 minutes.");
+        return;
+
+      default:
+        throw new Error("Invalid status. Contact admin.");
     }
 
     const responseObj: GenericResponse = await fabric.registerUser(email, true);
@@ -169,10 +209,35 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
 
     res.status(200).send(`${recvID} registered`);
   } catch (e) {
-    res.status(400).send(e.message);
+    res.status(401).send(e.message);
     return;
   }
 });
+
+async function otpGen(dbObj: any): Promise<void> {
+  try {
+    const OTP = Math.floor(Math.random() * 90000) + 10000;
+    console.log(`OTP: ${OTP}`);
+    // @ts-ignore
+    dbObj.t_status = "PENDING";
+    // @ts-ignore
+    dbObj.t_otp = OTP.toString();
+
+    // TODO: Send email
+    // if email fails
+    // throw new Error("Invalid email ID");
+
+    // If the email was sent, set the timestamp
+    const createdTime = Math.round((new Date()).getTime() / 1000);
+    console.log(createdTime);
+    // @ts-ignore
+    dbObj.t_timestamp = createdTime.toString();
+    // @ts-ignore
+    const response = await HealthOfficialModel.findOneAndUpdate({ email: dbObj.email }, dbObj);
+  } catch (err) {
+    console.error(`otpGen::${err.message}`);
+  }
+}
 
 // GET: Get an official's profile
 app.get("/healthofficial", async (req: Request, res: Response) => {
