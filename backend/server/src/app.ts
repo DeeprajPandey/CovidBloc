@@ -10,6 +10,7 @@ import * as fabric from "./services/fabric";
 import { NetworkObject, GenericResponse } from "./services/fabric.interface";
 import mongoose from "mongoose";
 import healthRoutes from "./routes/HealthOfficial";
+import HealthOfficialModel from "./models/HealthOfficial";
 
 dotenv.config();
 
@@ -85,7 +86,11 @@ app.use(express.json());
 // Health Official Registration Routes
 app.use("/officials", healthRoutes);
 
-// Routes
+/**
+ * Fabric Routes
+ */
+// TODO: Remove this to host webapp
+// Temp use: invoke readAsset
 app.get("/", async (req: Request, res: Response) => {
   try {
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
@@ -132,35 +137,37 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
 
     let email = req.body.email;
 
-    if (authorisedOfficials.has(email)) {
-      const responseObj: GenericResponse = await fabric.registerUser(email, true);
-      if (responseObj.err !== null) {
-        console.error(responseObj.err);
-        throw new Error("CA failure");
-      }
-      const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(email);
-      if (networkObj.err !== null || !("gateway" in networkObj)) {
-        console.error(networkObj.err);
-        throw new Error("CA failure");
-      }
-      const medObj = Object.assign({}, req.body);
-      medObj.medID = "-1"; // need all the properties as chaincode expects HealthOfficial
-
-      const contractResponse = await fabric.invoke('addHealthOfficial', [JSON.stringify(medObj)], false, networkObj);
-      networkObj.gateway.disconnect();
-
-      if ("err" in contractResponse) {
-        console.error(contractResponse.err);
-        // Transaction error
-        throw new Error("Something went wrong, please try again.");
-      }
-      // TODO: Send the medID on email
-      const recvID = contractResponse["msg"].split()[0];
-
-      res.status(200).send(`${recvID} registered`);
-    } else {
-      throw new Error("Invalid medical official");
+    // Attempt to read this user from the database
+    const dbObj = await HealthOfficialModel.findOne({ "email": email }, { lean: true });
+    if (!dbObj) { // returns empty object if not in DB
+      throw new Error("You are not an authorised medical official");
     }
+
+    const responseObj: GenericResponse = await fabric.registerUser(email, true);
+    if (responseObj.err !== null) {
+      console.error(responseObj.err);
+      throw new Error("CA failure");
+    }
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(email);
+    if (networkObj.err !== null || !("gateway" in networkObj)) {
+      console.error(networkObj.err);
+      throw new Error("CA failure");
+    }
+    const medObj = Object.assign({}, req.body);
+    medObj.medID = "-1"; // need all the properties as chaincode expects HealthOfficial
+
+    const contractResponse = await fabric.invoke('addHealthOfficial', [JSON.stringify(medObj)], false, networkObj);
+    networkObj.gateway.disconnect();
+
+    if ("err" in contractResponse) {
+      console.error(contractResponse.err);
+      // Transaction error
+      throw new Error("Something went wrong, please try again.");
+    }
+    // TODO: Send the medID on email
+    const recvID = contractResponse["msg"].split()[0];
+
+    res.status(200).send(`${recvID} registered`);
   } catch (e) {
     res.status(400).send(e.message);
     return;
