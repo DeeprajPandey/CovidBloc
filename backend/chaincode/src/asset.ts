@@ -7,16 +7,6 @@ import { Object, Property } from 'fabric-contract-api';
 ////  Utility classes and interfaces for readability  ////
 
 /**
- * // TODO: remove after migration
- * Default asset.
- */
-@Object()
-export class Asset {
-    @Property()
-    public value: string;
-}
-
-/**
  * Stores the current total positive patients.
  * Use to get upper limit of "p" IDs.
  */
@@ -55,7 +45,7 @@ export class Patient {
  * Restricted on the server.
  */
 @Object()
-export class HealthOfficer {
+export class HealthOfficial {
     @Property()
     public medID: string;
     public approveCtr: string = "0";

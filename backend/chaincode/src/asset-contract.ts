@@ -4,7 +4,7 @@
 
 import { Context, Contract, Info, Returns, Transaction } from 'fabric-contract-api';
 import { Meta, DailyKey } from './asset';
-import { HealthOfficer, Patient, Approval } from './asset';
+import { HealthOfficial, Patient, Approval } from './asset';
 const ClientIdentity = require('fabric-shim').ClientIdentity;
 
 @Info({ title: 'AssetContract', description: 'My Smart Contract' })
@@ -30,7 +30,7 @@ export class AssetContract extends Contract {
         const lastPatientID = parseInt(currMeta.patientCtr);
         const newPKey = "p" + (lastPatientID + 1).toString();
 
-        const healthOfficial = await this.readAsset(ctx, `m${patientObj.medID}`) as HealthOfficer;
+        const healthOfficial = await this.readAsset(ctx, `m${patientObj.medID}`) as HealthOfficial;
 
         if (!healthOfficial) {
             // TODO: return to server as invalid medical official (medID)
@@ -64,16 +64,20 @@ export class AssetContract extends Contract {
     }
 
     @Transaction()
-
-    public async addHealthOfficer(ctx: Context, medID: string, medObj: HealthOfficer): Promise<any> {
+    public async addHealthOfficial(ctx: Context, medObj: HealthOfficial): Promise<any> {
         let responseObj = {};
-        const registered = await this.assetExists(ctx, `m${medID}`);
-        if (!registered) {
-            await this.createAsset(ctx, `m${medID}`, JSON.stringify(medObj));
-            responseObj["msg"] = "Registered successfully";
-        } else {
-            responseObj["err"] = "User has registered";
+        let currMeta = await this.readAsset(ctx, "meta") as Meta;
+        if (currMeta == null) {
+            responseObj["err"] = "Meta does not exist";
+            return responseObj;
+            //throw new Error(`Meta does not exist`);
         }
+        const lastMedID = parseInt(currMeta.healthOfficialCtr);
+        const newMKey = "m" + (lastMedID + 1).toString();
+
+        await this.createAsset(ctx, `m${newMKey}`, JSON.stringify(medObj));
+        responseObj["msg"] = `${lastMedID + 1} registered successfully`;
+
         return responseObj;
     }
 
@@ -87,7 +91,7 @@ export class AssetContract extends Contract {
     @Transaction()
     public async addPatientApprovalRecord(ctx: Context, medID: string, newApprovalID: string): Promise<any> {
         let responseObj = {}
-        let official = await this.readAsset(ctx, `m${medID}`) as HealthOfficer;
+        let official = await this.readAsset(ctx, `m${medID}`) as HealthOfficial;
         if (!official) {
             responseObj["err"] = "Health official with this email doesnt exist";
             return responseObj;
@@ -111,7 +115,7 @@ export class AssetContract extends Contract {
 
     @Transaction(false)
     public async validApprovalID(ctx: Context, medID: string, checkID: string): Promise<boolean> {
-        const medicalOfficial = await this.readAsset(ctx, `m${medID}`) as HealthOfficer;
+        const medicalOfficial = await this.readAsset(ctx, `m${medID}`) as HealthOfficial;
         if (!medicalOfficial) {
             // responseObj["err"] = "Health official with this email doesnt exist";
             return false;
@@ -128,7 +132,7 @@ export class AssetContract extends Contract {
     }
 
     /**
-     * Query a HealthOfficer Asset from the WS.
+     * Query a HealthOfficial Asset from the WS.
      * 
      * @param ctx Transactional context
      * @param medID Unique ID of the health officer 
@@ -264,7 +268,7 @@ export class AssetContract extends Contract {
         // };
 
         //const medObj = {name: "M1",hospital : "Apollo",medID: "123",approveCtr: 0};
-        // await this.addHealthOfficer(ctx,medObj);
+        // await this.addHealthOfficial(ctx,medObj);
 
         // //await this.validatePatient(ctx,"123","1231312")
         // await this.addPatient(ctx, patientFromServer);
