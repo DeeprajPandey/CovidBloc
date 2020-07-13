@@ -1,5 +1,5 @@
 .DS_Store
 node_modules/
 dist/
-backend/server/.env
+.env
 Org1Wallet/
