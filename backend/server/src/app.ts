@@ -5,8 +5,11 @@ import { CronJob } from "cron";
 import helmet from "helmet";
 import seedrandom from "seedrandom";
 import twilio from 'twilio';
+
 import * as fabric from "./services/fabric";
 import { NetworkObject, GenericResponse } from "./services/fabric.interface";
+import mongoose from "mongoose";
+import healthRoutes from "./routes/HealthOfficial";
 
 dotenv.config();
 
@@ -52,6 +55,21 @@ var deleteJob = new CronJob(
 deleteJob.start();
 // setInterval(deleteKeys, 86400000); //24 hours in milliseconds
 
+// Health Official Registration Routes
+// @ts-ignore
+mongoose.connect(process.env.DB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => {
+  console.log("Connected to DB");
+})
+.catch((err) => {
+  console.log("Connection to DB failed: ", err);
+  process.exit();
+});
+
+app.use("/officials", healthRoutes);
 
 // Routes
 
@@ -63,7 +81,7 @@ app.get("/", async (req: Request, res: Response) => {
       throw new Error("Admin not registered.");
     }
     const key = JSON.stringify(req.query.key);
-    
+
     // @ts-ignore
     const contractResponse = await fabric.invoke('readAsset', [req.query.key], true, networkObj);
     networkObj.gateway.disconnect();
@@ -201,7 +219,7 @@ app.post("/generateapproval", async (req: Request, res: Response) => {
     }
     // Send sms to patient with approvalID and medID
     const msgText = `Please enter these details on the app to send your daily keys from the last 14 days to the server.\n\n`
-                    + `Approval ID: ${approvalID}\nMedical ID: ${req.body.medID}`;
+      + `Approval ID: ${approvalID}\nMedical ID: ${req.body.medID}`;
     await sendSMS(req.body.patientContact, msgText);
     res.status(200).send("Keys uploaded.");
   } catch (e) {
