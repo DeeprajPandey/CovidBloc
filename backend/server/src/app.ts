@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as dotenv from "dotenv";
 import express, { Request, Response } from "express";
 import cors from "cors";
@@ -34,7 +35,6 @@ var deleteJob = new CronJob(
       await deleteKeys();
     } catch (err) {
       // IMP: assuming this env var is set
-      // @ts-ignore
       const admins = process.env.ADMIN_NUMS.split(' ');
       for (let i = 0; i < admins.length; i++) {
         const msg = `ALERT: Cronjob failed to delete keys. Check error\n${err}`;
@@ -60,7 +60,6 @@ const TWIL_NUM = process.env.TW_NUM || null;
 /**
  * Health Official Database
  */
-// @ts-ignore
 mongoose.connect(process.env.DB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -101,7 +100,6 @@ app.get("/", async (req: Request, res: Response) => {
     }
     const key = JSON.stringify(req.query.key);
 
-    // @ts-ignore
     const contractResponse = await fabric.invoke('readAsset', [req.query.key], true, networkObj);
     networkObj.gateway.disconnect();
 
@@ -139,7 +137,6 @@ app.post("/register", async (req: Request, res: Response) => {
     if (!dbObj) { // returns empty object if not in DB
       throw new Error("You are not an authorised medical official");
     }
-    // @ts-ignore
     if (dbObj.t_status === "REGISTERED") {
       throw new Error("You have an account. Please log in.");
     }
@@ -186,12 +183,11 @@ app.post("/register", async (req: Request, res: Response) => {
 
 app.post("/login", async (req: Request, res: Response) => {
   // Attempt to read this user from the database
-  const dbObj = await HealthOfficialModel.findOne({ email: email }, { lean: true });
+  const dbObj = await HealthOfficialModel.findOne({ email: req.query.email }, { lean: true });
   if (!dbObj) { // returns empty object if not in DB
     throw new Error("You are not an authorised medical official");
   }
 
-  // @ts-ignore
   const STAT = dbObj.t_status;
   switch (STAT) {
     case "REGISTERED":
@@ -200,7 +196,6 @@ app.post("/login", async (req: Request, res: Response) => {
     case "PENDING":
       // TODO: check if it has been ten minutes since code generation and resend
       const currentTime = Math.round((new Date()).getTime() / 1000);
-      // @ts-ignore
       const diff = (currentTime - parseInt(dbObj.t_timestamp))/60;
       if (diff > 5) {
         otpGen(dbObj);
@@ -210,7 +205,6 @@ app.post("/login", async (req: Request, res: Response) => {
 
       // if it hasn't been 5 minutes, check if it's the correct OTP
       // ensure the received otp is a string
-      // @ts-ignore
       if (req.body.otp !== dbObj.t_otp) {
         res.status(400).send("Incorrect code entered. Please retry.");
         return;
@@ -235,9 +229,7 @@ async function otpGen(dbObj: any): Promise<void> {
   try {
     const OTP = Math.floor(Math.random() * 90000) + 10000;
     console.log(`OTP: ${OTP}`);
-    // @ts-ignore
     dbObj.t_status = "PENDING";
-    // @ts-ignore
     dbObj.t_otp = OTP.toString();
 
     // TODO: Send email
@@ -247,9 +239,7 @@ async function otpGen(dbObj: any): Promise<void> {
     // If the email was sent, set the timestamp
     const createdTime = Math.round((new Date()).getTime() / 1000);
     console.log(createdTime);
-    // @ts-ignore
     dbObj.t_timestamp = createdTime.toString();
-    // @ts-ignore
     const response = await HealthOfficialModel.findOneAndUpdate({ email: dbObj.email }, dbObj);
   } catch (err) {
     console.error(`otpGen::${err.message}`);
@@ -266,13 +256,11 @@ app.get("/healthofficial", async (req: Request, res: Response) => {
     if (!validParams) {
       throw new Error("Invalid request");
     }
-    // @ts-ignore
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(req.query.e);
     if (networkObj.err !== null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
       throw new Error("Invalid request");
     }
-    // @ts-ignore
     const contractResponse = await fabric.invoke('getMedProfile', [req.query.i], true, networkObj);
     networkObj.gateway.disconnect();
     if ("err" in contractResponse) {
