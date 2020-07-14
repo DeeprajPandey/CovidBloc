@@ -127,10 +127,7 @@ app.post("/register", async (req: Request, res: Response) => {
 
   try {
     const validBody = Boolean(
-      req.body.approveCtr === "0" &&
-      req.body.name &&
-      req.body.email &&
-      req.body.hospital
+      req.body.email
     );
     if (!validBody) {
       throw new Error("Invalid request");
@@ -195,6 +192,7 @@ app.post("/register", async (req: Request, res: Response) => {
     }
     const medObj = Object.assign({}, req.body);
     medObj.medID = "-1"; // need all the properties as chaincode expects HealthOfficial
+    medObj.approveCtr = "0";
 
     const contractResponse = await fabric.invoke('addHealthOfficial', [JSON.stringify(medObj)], false, networkObj);
     networkObj.gateway.disconnect();
@@ -205,6 +203,7 @@ app.post("/register", async (req: Request, res: Response) => {
       throw new Error("Something went wrong, please try again.");
     }
     // TODO: Send the medID on email
+    // Update DB to store the medID
     const recvID = contractResponse["msg"].split()[0];
 
     res.status(200).send(`${recvID} registered`);

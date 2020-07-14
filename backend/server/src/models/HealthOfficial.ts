@@ -17,10 +17,10 @@ const HealthSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  approveCtr: {
+  medID: {
     type: String,
     trim: true,
-    default: "0"
+    default: "-1"
   },
   t_status: {
     type: String,
