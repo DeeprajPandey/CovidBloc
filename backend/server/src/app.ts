@@ -135,8 +135,16 @@ app.post("/register", async (req: Request, res: Response) => {
 
     let email = req.body.email;
 
-    
+    const dbObj = await HealthOfficialModel.findOne({ email: email }, { lean: true });
+    if (!dbObj) { // returns empty object if not in DB
+      throw new Error("You are not an authorised medical official");
+    }
+    // @ts-ignore
+    if (dbObj.t_status === "REGISTERED") {
+      throw new Error("You have an account. Please log in.");
+    }
 
+    // Register this user on the chaincode only if unregistered
     const responseObj: GenericResponse = await fabric.registerUser(email, true);
     if (responseObj.err !== null) {
       console.error(responseObj.err);
@@ -147,8 +155,12 @@ app.post("/register", async (req: Request, res: Response) => {
       console.error(networkObj.err);
       throw new Error("CA failure");
     }
-    const medObj = Object.assign({}, req.body);
-    medObj.medID = "-1"; // need all the properties as chaincode expects HealthOfficial
+    const medObj = Object.assign({}, dbObj);
+    // Delete the temp properties
+    delete medObj.t_status;
+    delete medObj.t_authstat;
+    delete medObj.t_otp;
+    delete medObj.t_timestamp;
     medObj.approveCtr = "0";
 
     const contractResponse = await fabric.invoke('addHealthOfficial', [JSON.stringify(medObj)], false, networkObj);
@@ -159,9 +171,11 @@ app.post("/register", async (req: Request, res: Response) => {
       // Transaction error
       throw new Error("Something went wrong, please try again.");
     }
+    const recvID = contractResponse["msg"].split()[0];
     // TODO: Send the medID on email
     // Update DB to store the medID
-    const recvID = contractResponse["msg"].split()[0];
+    dbObj.medID = recvID;
+    const response = await HealthOfficialModel.findOneAndUpdate({ email: dbObj.email }, dbObj);
 
     res.status(200).send(`${recvID} registered`);
   } catch (e) {

@@ -29,10 +29,22 @@ const HealthSchema = new mongoose.Schema({
     default: "UNREGISTERED",
     validate(val: string) {
       const re_u = new RegExp("UNREGISTERED");
-      const re_p = new RegExp("PENDING");
       const re_r = new RegExp("REGISTERED");
-      if (!(re_u.test(val) || re_p.test(val) || re_r.test(val))) {
+      if (!(re_u.test(val) || re_r.test(val))) {
         throw new Error("Invalid status");
+      } else return true;
+    }
+  },
+  t_authstat: {
+    type: String,
+    trim: true,
+    uppercase: true,
+    default: "NA",
+    validate(val: string) {
+      const re_n = new RegExp("NA");
+      const re_i = new RegExp("INITIATED");
+      if (!(re_n.test(val) || re_i.test(val))) {
+        throw new Error("Invalid auth status");
       } else return true;
     }
   },
