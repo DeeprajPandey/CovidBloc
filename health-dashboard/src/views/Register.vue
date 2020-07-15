@@ -2,24 +2,10 @@
     <div class="row justify-content-center">
         <div class="col-lg-5 col-md-7">
             <div class="card bg-secondary shadow border-0">
-                <div class="card-header bg-transparent pb-5">
-                    <div class="text-muted text-center mt-2 mb-3">
-                        <small>Sign up with</small>
-                    </div>
-                    <div class="btn-wrapper text-center">
-                        <a href="#" class="btn btn-neutral btn-icon">
-                            <span class="btn-inner--icon"><img src="img/icons/common/github.svg"></span>
-                            <span class="btn-inner--text">Github</span>
-                        </a>
-                        <a href="#" class="btn btn-neutral btn-icon">
-                            <span class="btn-inner--icon"><img src="img/icons/common/google.svg"></span>
-                            <span class="btn-inner--text">Google</span>
-                        </a>
-                    </div>
-                </div>
+                
                 <div class="card-body px-lg-5 py-lg-5">
                     <div class="text-center text-muted mb-4">
-                        <small>Or sign up with credentials</small>
+                        <small>Sign up with your credentials</small>
                     </div>
                     <form role="form">
 
@@ -36,15 +22,11 @@
                         </base-input>
 
                         <base-input class="input-group-alternative"
-                                    placeholder="Password"
+                                    placeholder="Hospital"
                                     type="password"
-                                    addon-left-icon="ni ni-lock-circle-open"
-                                    v-model="model.password">
+                                    addon-left-icon="ni ni-ambulance"
+                                    v-model="model.Hospital">
                         </base-input>
-
-                        <div class="text-muted font-italic">
-                            <small>password strength: <span class="text-success font-weight-700">strong</span></small>
-                        </div>
 
                         <div class="row my-4">
                             <div class="col-12">
@@ -57,8 +39,12 @@
                             <base-button type="primary" class="my-4">Create account</base-button>
                         </div>
                     </form>
+                    <div class="col-10 text-right">
+                        <router-link to="/login" class="text-blue"><small>Already have an account? Sign in</small></router-link>
+                    </div>
                 </div>
             </div>
+            <!--
             <div class="row mt-3">
                 <div class="col-6">
                     <a href="#" class="text-light">
@@ -71,6 +57,7 @@
                     </router-link>
                 </div>
             </div>
+            -->
         </div>
     </div>
 </template>
@@ -82,7 +69,7 @@
         model: {
           name: '',
           email: '',
-          password: ''
+          Hospital: ''
         }
       }
     }
