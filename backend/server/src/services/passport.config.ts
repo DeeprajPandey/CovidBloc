@@ -10,7 +10,7 @@ import HealthOfficialModel from '../models/HealthOfficial';
 dotenv.config();
 
 const env_variables = Boolean(
-  process.env.JWT_PRIVFILE && process.env.JWT_PUBFILE
+  process.env.JWT_PUBFILE
 );
 if (!env_variables) {
   console.error("Required ENV variables not found. Shutting down...");
