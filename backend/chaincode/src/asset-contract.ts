@@ -224,7 +224,7 @@ export class AssetContract extends Contract {
     }
 
     /**
-    * Deleting old keys from the WS.
+    * Deleting old keys from the WS and corresponding approval asset.
     * 
     * @param ctx Transactional context
     * @param currentIval: i value of current time
@@ -239,9 +239,18 @@ export class AssetContract extends Contract {
             const patientKey = "p" + i.toString();
             const patientObj = await this.readAsset(ctx, patientKey);
             if (patientObj !== null && parseInt(patientObj.ival) <= threshold) {
+                let patientApproval = patientObj.approvalID; 
+                let medId = patientObj.medID; 
                 await this.deleteAsset(ctx, patientKey);
+                const medObj = await this.readAsset(ctx,`m${medId}`); 
+                for (let j=1 ; j<= parseInt(medObj.approveCtr); j++) {
+                    let appKey = "m"+medId + ":"+ j;
+                    const apObj= await this.readAsset(ctx,appKey);
+                    if (apObj!== null && (apObj.approvalID === patientApproval) && (apObj.patientID === patientKey)) {
+                        await this.deleteAsset(ctx,appKey); 
+                    } 
+                }
             }
-
         }
 
         responseObj["msg"] = "Old keys deleted";
