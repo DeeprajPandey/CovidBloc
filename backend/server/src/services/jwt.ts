@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
 import fs from 'fs';
 import jsonwebtoken from 'jsonwebtoken';
+import * as path from 'path';
 
 dotenv.config();
 
@@ -17,7 +18,7 @@ const skeypath = path.join(process.cwd(), process.env.JWT_PRIVFILE);
 const PRIVKEY = fs.readFileSync(skeypath, 'utf-8');
 
 // pass the medical official read from the database to the function
-function newJWT(official: any) {
+export function issueJWT(official: any) {
   const payload = {
     email: official.email,
     iat: Math.floor(Date.now()/1000)

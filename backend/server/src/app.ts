@@ -1,15 +1,17 @@
 // @ts-nocheck
 import * as dotenv from 'dotenv';
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { CronJob } from 'cron';
 import helmet from 'helmet';
+import mongoose from 'mongoose';
+import passport from 'passport';
 import seedrandom from 'seedrandom';
 import twilio from 'twilio';
 
 import * as fabric from './services/fabric';
 import { NetworkObject, GenericResponse } from './services/fabric.interface';
-import mongoose from 'mongoose';
+import * as utils from './services/jwt';
 import healthRoutes from './routes/HealthOfficial';
 import HealthOfficialModel from './models/HealthOfficial';
 
@@ -131,7 +133,7 @@ app.post("/register", async (req: Request, res: Response) => {
     const dbObj = await HealthOfficialModel.findOne({ email: email });
     if (!dbObj) { // returns empty object if not in DB
       // res.status(401);
-      // res.redirect("/register?r=unauthorised");
+      // res.redirect("/login?r=unauthorised");
       // return;
       throw new Error("You are not an authorised medical official");
     }
@@ -187,11 +189,11 @@ app.post("/register", async (req: Request, res: Response) => {
   }
 });
 
-app.post("/login", async (req: Request, res: Response) => {
+app.post("/login", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validBody = Boolean(
       req.body.email &&
-      req.body.medID
+      req.body.otp
     );
     if (!validBody) {
       throw new Error("Invalid request");
@@ -200,43 +202,45 @@ app.post("/login", async (req: Request, res: Response) => {
     // Attempt to read this user from the database
     const dbObj = await HealthOfficialModel.findOne({ email: req.body.email });
     if (!dbObj) { // returns empty object if not in DB
+      // res.status(401);
+      // res.redirect("/login?r=unauthorised");
+      // return;
       throw new Error("You are not an authorised medical official");
     }
+    if (dbObj.t_status === "UNREGISTERED") {
+      // res.status(400);
+      // res.redirect("/register?r=unregistered");
+      // return;
+      throw new Error("Please register first.");
+    }
+    if (dbObj.t_authstat === "NA") { // otp not requested
+    // res.status(400);
+    // res.redirect("/login?r=nootp");
+    // return;
+      throw new Error("Please request for an OTP first.");
+    }
 
-    const STAT = dbObj.t_status;
-    switch (STAT) {
-      case "REGISTERED":
-        res.status(400).send("You are already registered");
-        break;
-      case "PENDING":
-        // TODO: check if it has been ten minutes since code generation and resend
-        const currentTime = Math.floor(Date.now()/1000);
-        const diff = (currentTime - parseInt(dbObj.t_timestamp))/60;
-        if (diff > 5) {
-          otpGen(dbObj);
-          res.status(400).send("Your code has expired and new code has been sent to your email.");
-          return;
-        }
+    // If user didn't enter code within 5 mins, send new code
+    const currentTime = Math.floor(Date.now()/1000);
+    const diff = (currentTime - parseInt(dbObj.t_timestamp))/60;
+    if (diff > 5) {
+      otpGen(dbObj);
+      // res.status(400);
+      // res.redirect("/login?r=timeout");
+      // return;
+      throw new Error("Your code has expired and a new code has been sent to your email.");
+    }
 
-        // if it hasn't been 5 minutes, check if it's the correct OTP
-        // ensure the received otp is a string
-        if (req.body.otp !== dbObj.t_otp) {
-          res.status(400).send("Incorrect code entered. Please retry.");
-          return;
-        }
-        // res.status(200).send("New OTP sent, please verify your email")
-        otpGen(dbObj);
-        res.status(200).send("You have already requested an OTP. Please check your email for the code.")
-        break;
-
-      case "UNREGISTERED":
-        // Generate otp, send email, and update this collection in DB
-        otpGen(dbObj);
-        res.status(200).send("Please check your inbox for an OTP. The code expires in 5 minutes.");
-        return;
-
-      default:
-        throw new Error("Invalid status. Contact admin.");
+    // if within timeslot, check if the correct code was entered
+    // ensure frontend sends a string and not number
+    if (req.body.otp !== dbObj.t_otp) {
+      // res.status(400);
+      // res.redirect("/login?r=incorrect");
+      // return;
+      throw new Error("Incorrect code entered. Please retry.");
+    } else if (req.body.otp === dbObj.t_otp) { // correct otp
+      const tokenObj = utils.issueJWT(dbObj);
+      res.status(200).json({ token: tokenObject.token, expiresIn: tokenObject.expires });
     }
   } catch (e) {
     res.status(400).send(e.message);
@@ -247,7 +251,7 @@ async function otpGen(dbObj: any): Promise<void> {
   try {
     const OTP = Math.floor(Math.random() * 90000) + 10000;
     console.log(`OTP: ${OTP}`);
-    dbObj.t_status = "PENDING";
+    dbObj.t_authstat = "INITIATED";
     dbObj.t_otp = OTP.toString();
 
     // TODO: Send email
