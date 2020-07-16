@@ -157,7 +157,7 @@ app.post("/register", async (req: Request, res: Response) => {
     delete medObj.t_otp;
     delete medObj.t_timestamp;
     medObj.approveCtr = "0";
-    console.log(medObj);
+    
     const contractResponse = await fabric.invoke('addHealthOfficial', [JSON.stringify(medObj)], false, networkObj);
     networkObj.gateway.disconnect();
 
