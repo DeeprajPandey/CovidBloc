@@ -118,11 +118,6 @@ app.get("/", async (req: Request, res: Response) => {
  * Chaincode generates a medID and returns it on successful addition
  */
 app.post("/register", async (req: Request, res: Response) => {
-  let authorisedOfficials = new Map<string, string>();
-  authorisedOfficials.set('m1@apollo.com', '3425');
-  authorisedOfficials.set('doc232@max.com', '2367');
-  authorisedOfficials.set('hosp123@fortis.in', '3821');
-
   try {
     const validBody = Boolean(
       req.body.email
@@ -133,7 +128,7 @@ app.post("/register", async (req: Request, res: Response) => {
 
     let email = req.body.email;
 
-    const dbObj = await HealthOfficialModel.findOne({ email: email }, { lean: true });
+    const dbObj = await HealthOfficialModel.findOne({ email: email });
     if (!dbObj) { // returns empty object if not in DB
       throw new Error("You are not an authorised medical official");
     }
@@ -182,46 +177,58 @@ app.post("/register", async (req: Request, res: Response) => {
 });
 
 app.post("/login", async (req: Request, res: Response) => {
-  // Attempt to read this user from the database
-  const dbObj = await HealthOfficialModel.findOne({ email: req.query.email }, { lean: true });
-  if (!dbObj) { // returns empty object if not in DB
-    throw new Error("You are not an authorised medical official");
-  }
+  try {
+    const validBody = Boolean(
+      req.body.email &&
+      req.body.medID
+    );
+    if (!validBody) {
+      throw new Error("Invalid request");
+    }
 
-  const STAT = dbObj.t_status;
-  switch (STAT) {
-    case "REGISTERED":
-      res.status(400).send("You are already registered");
-      break;
-    case "PENDING":
-      // TODO: check if it has been ten minutes since code generation and resend
-      const currentTime = Math.round((new Date()).getTime() / 1000);
-      const diff = (currentTime - parseInt(dbObj.t_timestamp))/60;
-      if (diff > 5) {
+    // Attempt to read this user from the database
+    const dbObj = await HealthOfficialModel.findOne({ email: req.body.email });
+    if (!dbObj) { // returns empty object if not in DB
+      throw new Error("You are not an authorised medical official");
+    }
+
+    const STAT = dbObj.t_status;
+    switch (STAT) {
+      case "REGISTERED":
+        res.status(400).send("You are already registered");
+        break;
+      case "PENDING":
+        // TODO: check if it has been ten minutes since code generation and resend
+        const currentTime = Math.round((new Date()).getTime() / 1000);
+        const diff = (currentTime - parseInt(dbObj.t_timestamp))/60;
+        if (diff > 5) {
+          otpGen(dbObj);
+          res.status(400).send("Your code has expired and new code has been sent to your email.");
+          return;
+        }
+
+        // if it hasn't been 5 minutes, check if it's the correct OTP
+        // ensure the received otp is a string
+        if (req.body.otp !== dbObj.t_otp) {
+          res.status(400).send("Incorrect code entered. Please retry.");
+          return;
+        }
+        // res.status(200).send("New OTP sent, please verify your email")
         otpGen(dbObj);
-        res.status(400).send("Your code has expired and new code has been sent to your email.");
+        res.status(200).send("You have already requested an OTP. Please check your email for the code.")
+        break;
+
+      case "UNREGISTERED":
+        // Generate otp, send email, and update this collection in DB
+        otpGen(dbObj);
+        res.status(200).send("Please check your inbox for an OTP. The code expires in 5 minutes.");
         return;
-      }
 
-      // if it hasn't been 5 minutes, check if it's the correct OTP
-      // ensure the received otp is a string
-      if (req.body.otp !== dbObj.t_otp) {
-        res.status(400).send("Incorrect code entered. Please retry.");
-        return;
-      }
-      // res.status(200).send("New OTP sent, please verify your email")
-      otpGen(dbObj);
-      res.status(200).send("You have already requested an OTP. Please check your email for the code.")
-      break;
-
-    case "UNREGISTERED":
-      // Generate otp, send email, and update this collection in DB
-      otpGen(dbObj);
-      res.status(200).send("Please check your inbox for an OTP. The code expires in 5 minutes.");
-      return;
-
-    default:
-      throw new Error("Invalid status. Contact admin.");
+      default:
+        throw new Error("Invalid status. Contact admin.");
+    }
+  } catch (e) {
+    res.status(400).send(e.message);
   }
 });
 
