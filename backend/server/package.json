@@ -28,6 +28,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@types/cron": "^1.7.2",
+    "@types/jsonwebtoken": "^8.5.0",
     "@types/mongoose": "^5.7.31",
     "@types/passport": "^1.0.4",
     "@types/passport-jwt": "^3.0.3",
@@ -38,6 +39,7 @@
     "express": "^4.17.1",
     "fabric-network": "~1.4.0",
     "helmet": "^3.23.3",
+    "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.9.23",
     "passport": "^0.4.1",
     "passport-jwt": "^4.0.0",
