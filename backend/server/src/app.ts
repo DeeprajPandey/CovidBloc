@@ -130,9 +130,15 @@ app.post("/register", async (req: Request, res: Response) => {
 
     const dbObj = await HealthOfficialModel.findOne({ email: email });
     if (!dbObj) { // returns empty object if not in DB
+      // res.status(401);
+      // res.redirect("/register?r=unauthorised");
+      // return;
       throw new Error("You are not an authorised medical official");
     }
     if (dbObj.t_status === "REGISTERED") {
+      // res.status(400);
+      // res.redirect("/login?r=registered");
+      // return;
       throw new Error("You have an account. Please log in.");
     }
 
@@ -157,7 +163,7 @@ app.post("/register", async (req: Request, res: Response) => {
     delete medObj.t_otp;
     delete medObj.t_timestamp;
     medObj.approveCtr = "0";
-    
+
     const contractResponse = await fabric.invoke('addHealthOfficial', [JSON.stringify(medObj)], false, networkObj);
     networkObj.gateway.disconnect();
 
@@ -173,9 +179,10 @@ app.post("/register", async (req: Request, res: Response) => {
     dbObj.t_status = "REGISTERED";
     const response = await HealthOfficialModel.findOneAndUpdate({ email: dbObj.email }, dbObj);
 
+    // res.status(200).redirect("/login?r=success");
     res.status(200).send(`${recvID} registered`);
   } catch (e) {
-    res.status(401).send(e.message);
+    res.status(400).send(e.message);
     return;
   }
 });
