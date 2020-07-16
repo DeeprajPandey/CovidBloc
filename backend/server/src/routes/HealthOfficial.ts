@@ -1,5 +1,5 @@
-import { Request, Response, Router } from "express";
-import HealthOfficialModel from "../models/HealthOfficial";
+import { Request, Response, Router } from 'express';
+import HealthOfficialModel from '../models/HealthOfficial';
 
 const healthRoutes = Router();
 

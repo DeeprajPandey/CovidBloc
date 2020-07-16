@@ -1,17 +1,17 @@
 // @ts-nocheck
-import * as dotenv from "dotenv";
-import express, { Request, Response } from "express";
-import cors from "cors";
-import { CronJob } from "cron";
-import helmet from "helmet";
-import seedrandom from "seedrandom";
+import * as dotenv from 'dotenv';
+import express, { Request, Response } from 'express';
+import cors from 'cors';
+import { CronJob } from 'cron';
+import helmet from 'helmet';
+import seedrandom from 'seedrandom';
 import twilio from 'twilio';
 
-import * as fabric from "./services/fabric";
-import { NetworkObject, GenericResponse } from "./services/fabric.interface";
-import mongoose from "mongoose";
-import healthRoutes from "./routes/HealthOfficial";
-import HealthOfficialModel from "./models/HealthOfficial";
+import * as fabric from './services/fabric';
+import { NetworkObject, GenericResponse } from './services/fabric.interface';
+import mongoose from 'mongoose';
+import healthRoutes from './routes/HealthOfficial';
+import HealthOfficialModel from './models/HealthOfficial';
 
 dotenv.config();
 
