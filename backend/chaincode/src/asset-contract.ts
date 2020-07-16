@@ -73,13 +73,15 @@ export class AssetContract extends Contract {
             //throw new Error(`Meta does not exist`);
         }
         const lastMedID = parseInt(currMeta.healthOfficialCtr);
-        const newMKey = (lastMedID + 1).toString();
+        const newMedID = (lastMedID + 1).toString();
 
-        await this.createAsset(ctx, `m${newMKey}`, JSON.stringify(medObj));
-        responseObj["msg"] = `${lastMedID + 1} registered successfully`;
-        currMeta.healthOfficialCtr = newMKey;
+        medObj.medID = newMedID;
+        await this.createAsset(ctx, `m${newMedID}`, JSON.stringify(medObj));
+
+        currMeta.healthOfficialCtr = newMedID;
         await this.updateAsset(ctx,"meta",JSON.stringify(currMeta));
         
+        responseObj["msg"] = `${newMedID} registered successfully`;        
         return responseObj;
     }
 
