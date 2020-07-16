@@ -137,24 +137,27 @@ app.post("/register", async (req: Request, res: Response) => {
     }
 
     // Register this user on the chaincode only if unregistered
-    const responseObj: GenericResponse = await fabric.registerUser(email, true);
-    if (responseObj.err !== null) {
-      console.error(responseObj.err);
-      throw new Error("CA failure");
-    }
+    // const responseObj: GenericResponse = await fabric.registerUser(email, true);
+    // if (responseObj.err !== null) {
+    //   console.error(responseObj.err);
+    //   throw new Error("CA failure");
+    // }
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(email);
     if (networkObj.err !== null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
       throw new Error("CA failure");
     }
-    const medObj = Object.assign({}, dbObj);
+    // Extract the asset obj from database entry
+    const medObj = Object.assign({}, dbObj._doc);
     // Delete the temp properties
+    delete medObj._id;
+    delete medObj.__v;
     delete medObj.t_status;
     delete medObj.t_authstat;
     delete medObj.t_otp;
     delete medObj.t_timestamp;
     medObj.approveCtr = "0";
-
+    console.log(medObj);
     const contractResponse = await fabric.invoke('addHealthOfficial', [JSON.stringify(medObj)], false, networkObj);
     networkObj.gateway.disconnect();
 
