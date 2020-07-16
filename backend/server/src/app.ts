@@ -137,11 +137,11 @@ app.post("/register", async (req: Request, res: Response) => {
     }
 
     // Register this user on the chaincode only if unregistered
-    // const responseObj: GenericResponse = await fabric.registerUser(email, true);
-    // if (responseObj.err !== null) {
-    //   console.error(responseObj.err);
-    //   throw new Error("CA failure");
-    // }
+    const responseObj: GenericResponse = await fabric.registerUser(email, true);
+    if (responseObj.err !== null) {
+      console.error(responseObj.err);
+      throw new Error("CA failure");
+    }
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(email);
     if (networkObj.err !== null || !("gateway" in networkObj)) {
       console.error(networkObj.err);
@@ -166,10 +166,11 @@ app.post("/register", async (req: Request, res: Response) => {
       // Transaction error
       throw new Error("Something went wrong, please try again.");
     }
-    const recvID = contractResponse["msg"].split()[0];
+    const recvID = contractResponse["msg"].split(" ")[0];
     // TODO: Send the medID on email
     // Update DB to store the medID
     dbObj.medID = recvID;
+    dbObj.t_status = "REGISTERED";
     const response = await HealthOfficialModel.findOneAndUpdate({ email: dbObj.email }, dbObj);
 
     res.status(200).send(`${recvID} registered`);
