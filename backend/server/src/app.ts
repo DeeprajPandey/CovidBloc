@@ -210,7 +210,7 @@ app.post("/login", async (req: Request, res: Response) => {
         break;
       case "PENDING":
         // TODO: check if it has been ten minutes since code generation and resend
-        const currentTime = Math.round((new Date()).getTime() / 1000);
+        const currentTime = Math.floor(Date.now()/1000);
         const diff = (currentTime - parseInt(dbObj.t_timestamp))/60;
         if (diff > 5) {
           otpGen(dbObj);
@@ -255,7 +255,7 @@ async function otpGen(dbObj: any): Promise<void> {
     // throw new Error("Invalid email ID");
 
     // If the email was sent, set the timestamp
-    const createdTime = Math.round((new Date()).getTime() / 1000);
+    const createdTime = Math.floor(Date.now()/1000);
     console.log(createdTime);
     dbObj.t_timestamp = createdTime.toString();
     const response = await HealthOfficialModel.findOneAndUpdate({ email: dbObj.email }, dbObj);
@@ -417,7 +417,7 @@ async function deleteKeys() {
     console.error(networkObj.err);
     throw new Error("Couldn't connect to network using Admin identity.");
   }
-  let currentTime = Math.round((new Date()).getTime() / 1000); //current unix timestamp
+  let currentTime = Math.floor(Date.now()/1000); //current unix timestamp
   let currentIVal = Math.floor((Math.floor(currentTime / 600)) / 144) * 144;
 
   const contractResponse = await fabric.invoke('deleteKeys', [currentIVal.toString()], false, networkObj);
