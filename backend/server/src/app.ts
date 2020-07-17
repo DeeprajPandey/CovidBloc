@@ -5,6 +5,7 @@ import cors from 'cors';
 import { CronJob } from 'cron';
 import helmet from 'helmet';
 import mongoose from 'mongoose';
+import nodemailer from 'nodemailer';
 import passport from 'passport';
 import seedrandom from 'seedrandom';
 import twilio from 'twilio';
@@ -179,7 +180,19 @@ app.post("/register", async (req: Request, res: Response) => {
       throw new Error("Something went wrong, please try again.");
     }
     const recvID = contractResponse["msg"].split(" ")[0];
-    // TODO: Send the medID on email
+    
+    // Send the medID on email
+    const text = `Hey there, Please store the ID somewhere safe as you will need it to log
+    into the portal later. ${recvID}`;
+    const html = `<b>Hey there! </b><br><br>Please store the ID somewhere safe as you will need it to log
+    into the portal later.<br>Medical ID: ${recvID}`;
+    try {
+      // TODO: change the receiver to dbObj.email
+      await sendEmail(process.env.EM_RECVR, "Your Medical ID", text, html);
+    } catch (e) {
+      throw new Error("Couldn't send medID to the specified email.");
+    }
+
     // Update DB to store the medID
     dbObj.medID = recvID;
     dbObj.t_status = "REGISTERED";
@@ -282,7 +295,7 @@ app.post("/login", async (req: Request, res: Response, next: NextFunction) => {
       throw new Error("Incorrect code entered. Please retry.");
     } else if (req.body.otp === dbObj.t_otp) { // correct otp
       const tokenObj = utils.issueJWT(dbObj);
-      res.status(200).json({ token: tokenObject.token, expiresIn: tokenObject.expires });
+      res.status(200).json({ token: tokenObj.token, expiresIn: tokenObj.expires });
     }
   } catch (e) {
     res.status(400).send(e.message);
@@ -297,8 +310,14 @@ async function otpGen(dbObj: any): Promise<void> {
     dbObj.t_otp = OTP.toString();
 
     // TODO: Send email
-    // if email fails
-    // throw new Error("Invalid email ID");
+    const text = `Hey there,\nYour login code is ${OTP}\n\nEnter this code on the login page.`;
+    const html = `<b>Hey there!</b><br>Your login code is ${OTP}<br><br>Enter this code on the login page.`;
+    try {
+      // TODO: change sending address to dbObj.email
+      await sendEmail(process.env.EM_RECVR, "Your Login OTP", text, html);
+    } catch (e) {
+      throw new Error("Couldn't send email.");
+    }
 
     // If the email was sent, set the timestamp
     const createdTime = Math.floor(Date.now()/1000);
@@ -456,6 +475,40 @@ const server = app.listen(PORT, () => {
 /**
  * Utility Functions
  */
+
+async function sendEmail(toEmail: string, sub: string, msgText: string, msgHtml: string): Promise<void> {
+  try {
+    let transporter = nodemailer.createTransport({
+      service: "gmail",
+      // host: "smtp.mailtrap.io",
+      // port: 2525,
+      auth: {
+        user: process.env.EM_USR,
+        pass: process.env.EM_PASS
+      }
+    });
+    transporter.verify(function(error, success) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log('Server is ready for emails.');
+      }
+    });
+    
+    let mailOptions = {
+      from: `"Development Team" <${process.env.EM_USR}>`,
+      to: toEmail,
+      subject: sub,
+      text: msgText, 
+      html: msgHtml
+    };
+
+    let info = await transporter.sendMail(mailOptions);
+    console.log(`Email sent: ${info.messageId}`);
+  } catch (e) {
+    console.error(e);
+  }
+}
 
 async function deleteKeys() {
   const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
