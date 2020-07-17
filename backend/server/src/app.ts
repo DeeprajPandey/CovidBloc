@@ -189,6 +189,44 @@ app.post("/register", async (req: Request, res: Response) => {
   }
 });
 
+app.post("/requestotp", async(req: Request, res:Response, next: NextFunction) => {
+  try {
+    const validBody = Boolean(
+      req.body.email &&
+      req.body.medID
+    );
+    if (!validBody) {
+      throw new Error("Invalid request");
+    }
+    // Attempt to read this user from the database
+    const dbObj = await HealthOfficialModel.findOne({ email: req.body.email });
+    if (!dbObj || (dbObj.medID !== req.body.medID)) { // returns empty object if not in DB
+      // res.status(401);
+      // res.redirect("/login?r=unauthorised");
+      // return;
+      throw new Error("Incorrect credentials.");
+    }
+    if (dbObj.t_status === "UNREGISTERED") {
+      // res.status(400);
+      // res.redirect("/register?r=unregistered");
+      // return;
+      throw new Error("Please register first.");
+    }
+    if (dbObj.t_authstat === "INITIATED") { // otp requested, show modal on frontend
+      // res.status(400);
+      // res.redirect("/login?r=otpinit");
+      // return;
+      throw new Error("You have requested for a code already. Please log in.");
+    }
+
+    // If everything checks out, generate OTP
+    await otpGen(dbObj);
+    res.status(200).send("Please check your email ID for the OTP.");
+  } catch (e) {
+    res.status(400).send(e.message);
+  }
+});
+
 app.post("/login", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validBody = Boolean(
@@ -214,9 +252,9 @@ app.post("/login", async (req: Request, res: Response, next: NextFunction) => {
       throw new Error("Please register first.");
     }
     if (dbObj.t_authstat === "NA") { // otp not requested
-    // res.status(400);
-    // res.redirect("/login?r=nootp");
-    // return;
+      // res.status(400);
+      // res.redirect("/login?r=nootp");
+      // return;
       throw new Error("Please request for an OTP first.");
     }
 
@@ -224,7 +262,7 @@ app.post("/login", async (req: Request, res: Response, next: NextFunction) => {
     const currentTime = Math.floor(Date.now()/1000);
     const diff = (currentTime - parseInt(dbObj.t_timestamp))/60;
     if (diff > 5) {
-      otpGen(dbObj);
+      await otpGen(dbObj);
       // res.status(400);
       // res.redirect("/login?r=timeout");
       // return;
