@@ -302,35 +302,8 @@ app.post("/login", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-async function otpGen(dbObj: any): Promise<void> {
-  try {
-    const OTP = Math.floor(Math.random() * 90000) + 10000;
-    console.log(`OTP: ${OTP}`);
-    dbObj.t_authstat = "INITIATED";
-    dbObj.t_otp = OTP.toString();
-
-    // TODO: Send email
-    const text = `Hey there,\nYour login code is ${OTP}\n\nEnter this code on the login page.`;
-    const html = `<b>Hey there!</b><br>Your login code is ${OTP}<br><br>Enter this code on the login page.`;
-    try {
-      // TODO: change sending address to dbObj.email
-      await sendEmail(process.env.EM_RECVR, "Your Login OTP", text, html);
-    } catch (e) {
-      throw new Error("Couldn't send email.");
-    }
-
-    // If the email was sent, set the timestamp
-    const createdTime = Math.floor(Date.now()/1000);
-    console.log(createdTime);
-    dbObj.t_timestamp = createdTime.toString();
-    const response = await HealthOfficialModel.findOneAndUpdate({ email: dbObj.email }, dbObj);
-  } catch (err) {
-    console.error(`otpGen::${err.message}`);
-  }
-}
-
 // GET: Get an official's profile
-app.get("/healthofficial", async (req: Request, res: Response) => {
+app.get("/healthofficial", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
   try {
     const validParams = Boolean(
       req.query.i &&
@@ -359,7 +332,7 @@ app.get("/healthofficial", async (req: Request, res: Response) => {
 });
 
 // POST: Generate an approval for patient
-app.post("/generateapproval", async (req: Request, res: Response) => {
+app.post("/generateapproval", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
       req.body.email &&
@@ -475,6 +448,33 @@ const server = app.listen(PORT, () => {
 /**
  * Utility Functions
  */
+async function otpGen(dbObj: any): Promise<void> {
+  try {
+    const OTP = Math.floor(Math.random() * 90000) + 10000;
+    console.log(`OTP: ${OTP}`);
+    dbObj.t_authstat = "INITIATED";
+    dbObj.t_otp = OTP.toString();
+
+    // TODO: Send email
+    const text = `Hey there,\nYour login code is ${OTP}\n\nEnter this code on the login page.`;
+    const html = `<b>Hey there!</b><br>Your login code is ${OTP}<br><br>Enter this code on the login page.`;
+    try {
+      // TODO: change sending address to dbObj.email
+      await sendEmail(process.env.EM_RECVR, "Your Login OTP", text, html);
+    } catch (e) {
+      throw new Error("Couldn't send email.");
+    }
+
+    // If the email was sent, set the timestamp
+    const createdTime = Math.floor(Date.now()/1000);
+    console.log(createdTime);
+    dbObj.t_timestamp = createdTime.toString();
+    const response = await HealthOfficialModel.findOneAndUpdate({ email: dbObj.email }, dbObj);
+  } catch (err) {
+    console.error(`otpGen::${err.message}`);
+  }
+}
+
 
 async function sendEmail(toEmail: string, sub: string, msgText: string, msgHtml: string): Promise<void> {
   try {
