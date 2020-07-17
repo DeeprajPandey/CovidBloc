@@ -15,6 +15,8 @@ import * as utils from './services/jwt';
 import healthRoutes from './routes/HealthOfficial';
 import HealthOfficialModel from './models/HealthOfficial';
 
+require('./services/passport.config')(passport);
+
 dotenv.config();
 
 const env_variables = Boolean(
@@ -76,6 +78,8 @@ mongoose.connect(process.env.DB_URI, {
   });
 
 const app = express();
+
+app.use(passport.initialize());
 
 /**
  * Middleware Configuration

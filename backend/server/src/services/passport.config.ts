@@ -75,6 +75,7 @@ async function getMedProfile(email: string, med_id: string) {
   return contractResponse.data;
 }
 
-export = async (passport: any) => {
+export = (passport: any) => {
+  console.log("Initialising passport");
   passport.use(new JwtStrategy(options, verifyCallback));
 };
