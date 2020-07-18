@@ -213,7 +213,7 @@ export class AssetContract extends Contract {
             const patientObj = await this.readAsset(ctx, patientKey);
             if (patientObj !== null) {
                 // first download will get keys that are from last 14 days but not from today
-                if (firstCall && patientObj.ival !== parseInt(currentIval)) {
+                if (firstCall && parseInt(patientObj.ival) !== parseInt(currentIval)) {
                     allResults.push(patientObj.dailyKeys);
                 }
                 if (patientObj.ival === (parseInt(currentIval) - 144).toString()) { //we will call this function when tempkey is gen(so new i val)- need patients who have been added in the last 24hrs
