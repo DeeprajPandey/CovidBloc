@@ -6,8 +6,8 @@ import 'package:contact_tracing/widgets/widgets.dart';
 import 'package:dio/dio.dart';
 import '../keyGen.dart';
 import '../storage.dart';
-import 'dart:convert';
-import 'package:path_provider/path_provider.dart';
+// import 'dart:convert';
+// import 'package:path_provider/path_provider.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -41,35 +41,39 @@ class _HomeScreenState extends State<HomeScreen> {
       connectTimeout: 5000,
       receiveTimeout: 3000,
   );
+  //Response response = await dio.get("/?key=meta");
+  //print(response.data.toString());
 
   Dio dio=new Dio(options);
+  final Storage s = new Storage();
 
   Future<void> _sendKeys(BuildContext context, final approvalID, final medID) async{
-    final Storage s = new Storage();
-    s.writeKey("9ebdbf89c635baefbca229fcbb2971f1", "2658240");
-    //print(s.localPath);
-    final data = await s.readKeys();
-    print(data[0]['hexkey']);
-
-    //s.delete(); //to delete the file
-    //print(await s.readKeys());
-    //Response response = await dio.get("/?key=meta");
-    //print(response.data.toString());
-    // print(new DateTime.now());
+    List dailyKeys=[];
     int currIval;
-    currIval= e.iVal;
-    print(currIval);
+    // s.delete(); //to delete file
     try {
+      dailyKeys = await s.readKeys();
+      print(dailyKeys);
+      
+      if(dailyKeys==null) {
+        return _validationPopUp(context,'Error',"No daily keys found");
+      }
+
+      currIval= e.iVal;
+      if(currIval==null) { 
+        return _validationPopUp(context,'Error',"Current i value not retrieved");
+      }
+
       Response response = await dio.post("/pushkeys", 
       data: {
         "approvalID": approvalID, 
         "medID": medID,
         "ival": currIval.toString(),
-        "dailyKeys": data,
+        "dailyKeys": dailyKeys,
       });
 
-      //print(response.data.toString());
       _validationPopUp(context,'Successful',response.data.toString());
+
     } catch(e) {
       _validationPopUp(context,'Error',e.message);
     }

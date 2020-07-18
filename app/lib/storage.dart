@@ -18,8 +18,13 @@ class Storage {
     try {
       final file = await localFile;
       // Read the file
-      List contents = await file.readAsLines();
-      return contents;
+      List contents = await file.readAsLines(); //list of strings
+      final keys = [];
+      for (var i=0;i<contents.length;i++) {
+        final jsonObj = json.decode(contents[i]);
+        keys.add(jsonObj);
+      }
+      return keys;  //returning list of json objects
 
     } catch (e) {
       // If encountering an error, return 0
@@ -35,8 +40,9 @@ class Storage {
       'i': ival
     };
     final val = (json.encode(tempKey));
+    //print(val[0]);
     // Write the file
-    return file.writeAsString('$val\n',mode: FileMode.append, encoding: utf8,flush: false);
+    return file.writeAsString('$val\n',mode: FileMode.append, encoding: utf8,flush: true);
   }
 
   Future<void> delete() async {

@@ -57,7 +57,7 @@ class ExposureNotification {
   ];
   // Generate a HashMap from the list of RPIs
   HashMap contactRPIs = HashMap();
-
+  final Storage s = new Storage();
   ExposureNotification() {
     // This dummy code is how we will add new RPIs to the hashmap
     for (var hexString in this.dummyRPIs) {
@@ -215,12 +215,12 @@ class ExposureNotification {
         this._temporaryExposureKey['i'] != currIval) {
       this._temporaryExposureKey['i'] = currIval;
       this._temporaryExposureKey['key'] = this._dailyKeygen();
-      
+      //get keys from server and checkExposure
     
       var tempKeyHex =
           hex.encode(await this._temporaryExposureKey['key'].extract());
 
-      final Storage s = new Storage();
+      
       s.writeKey(tempKeyHex,this._temporaryExposureKey['i'].toString());
       
       print('(_scheduler) Generated new TempExpKey: $tempKeyHex');
@@ -253,7 +253,7 @@ class ExposureNotification {
     int exposedCtr = 0;
     for (var positiveKey in this.diagnosisKeys) {
       // We received the keys as hex strings. Convert them to bytes and create a SecretKey instance.
-      var tempKey = SecretKey(hex.decode(positiveKey['key']));
+      var tempKey = SecretKey(hex.decode(positiveKey['hexkey']));
       var tempIval = positiveKey['i'];
       var tempRPIKey =
           await this._secondaryKeygen(tempKey, stringData: 'EN-RPIK');
