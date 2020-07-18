@@ -1,25 +1,40 @@
+
+
 import 'package:flutter/material.dart';
 import 'package:contact_tracing/config/styles.dart';
 import 'package:contact_tracing/widgets/widgets.dart';
 import 'package:dio/dio.dart';
+import '../keyGen.dart';
+import '../storage.dart';
+import 'dart:convert';
+import 'package:path_provider/path_provider.dart';
 
 
 class HomeScreen extends StatefulWidget {
+  final ExposureNotification e;
+
+  const HomeScreen({
+    @required this.e,
+  }):assert(e!=null);
+
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  _HomeScreenState createState() => _HomeScreenState(e:e);
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final ExposureNotification e;
+
+  _HomeScreenState({
+    @required this.e,
+  }):assert(e!=null);
+
   final prevention = [
     {'assets/images/distance.png': 'Maintain Social\n Distancing'},
     {'assets/images/wash_hands.png': 'Clean your\nhands often'},
     {'assets/images/mask.png': 'Wear a\nfacemask'},
   
   ];
-  
-   _HomeScreenState();
-   
-  
+    
   //new Dio with a BaseOptions instance.
   static BaseOptions options = new BaseOptions(
       baseUrl: "http://192.168.0.152:6000/",
@@ -29,21 +44,104 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Dio dio=new Dio(options);
 
-  Future<void> _sendKeys() async{
-    
-    Response response = await dio.get("/?key=meta");
-    print(response.data.toString());
-    //var response= await http.get('http://192.168.0.152:6000/?key=meta');
-    //print(response.body);
-    // response = await dio.post("/pushkeys", 
-    // data: {
-    //   "approvalID": "297190941", 
-    //   "medID": "m1025",
-    //   "ival":"2655360",
-    //   "dailyKeys": [{hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360},{hexkey: "33917c36d48744ef3fbc4985188ea9e2", i: 2655360}]
-    // });
-    
-  } 
+  Future<void> _sendKeys(BuildContext context, final approvalID, final medID) async{
+    final Storage s = new Storage();
+    s.writeKey("9ebdbf89c635baefbca229fcbb2971f1", "2658240");
+    //print(s.localPath);
+    final data = await s.readKeys();
+    print(data[0]['hexkey']);
+
+    //s.delete(); //to delete the file
+    //print(await s.readKeys());
+    //Response response = await dio.get("/?key=meta");
+    //print(response.data.toString());
+    // print(new DateTime.now());
+    int currIval;
+    currIval= e.iVal;
+    print(currIval);
+    try {
+      Response response = await dio.post("/pushkeys", 
+      data: {
+        "approvalID": approvalID, 
+        "medID": medID,
+        "ival": currIval.toString(),
+        "dailyKeys": data,
+      });
+
+      //print(response.data.toString());
+      _validationPopUp(context,'Successful',response.data.toString());
+    } catch(e) {
+      _validationPopUp(context,'Error',e.message);
+    }
+
+  }
+
+  Future<List> _showPopUp(BuildContext context) async {
+    TextEditingController approvalController = TextEditingController();
+    TextEditingController medController = TextEditingController();
+    final credentials = [];
+    return showDialog(
+      context:context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Enter the Credentials'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextFormField(
+                decoration: InputDecoration(icon: Icon(Icons.perm_identity),labelText: 'Approval ID'),
+                controller: approvalController,
+                ), 
+              TextFormField(
+                decoration: InputDecoration(icon: Icon(Icons.local_hospital),labelText: 'Medical ID'),
+                controller: medController,
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('Submit'),
+              onPressed: () {
+                credentials.add(approvalController.text.toString());
+                credentials.add(medController.text.toString());
+                Navigator.of(context).pop(credentials);
+              },
+            ),
+          ],
+        );
+      },
+    );
+} 
+
+  Future<void> _validationPopUp(BuildContext context,String title,String errorMsg) async{
+    return showDialog(
+    context:context,
+    barrierDismissible: false, // user must tap button!
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text(title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+              Text(errorMsg,
+              textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        actions: <Widget>[
+          FlatButton(
+            child: Text('OK'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: CustomScrollView(
         physics: ClampingScrollPhysics(),
         slivers: <Widget>[
-          _buildHeader(screenHeight),
+          _buildHeader(context,screenHeight),
           _buildPreventionTips(screenHeight),
           _buildStaySafe(screenHeight),
         ],
@@ -61,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  SliverToBoxAdapter _buildHeader(double screenHeight) {
+  SliverToBoxAdapter _buildHeader(BuildContext context,double screenHeight) {
     return SliverToBoxAdapter(
       child: Container(
         padding: const EdgeInsets.all(20.0),
@@ -118,7 +216,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         horizontal: 20.0,
                       ),
                       onPressed: () {
-                        _sendKeys();
+                        _showPopUp(context).then((val) {
+                          if(val[0]!='' && val[1]!='') {
+                            print('Credentials recieved');
+                            _sendKeys(context, val[0], val[1]);
+                          }
+                          else
+                            _validationPopUp(context,'Error','Invalid Credentials'); 
+                        });
                       },
                       color: Colors.red,
                       shape: RoundedRectangleBorder(

@@ -30,8 +30,8 @@ dependencies:
   laksadart: ^0.1.19
   cryptography: ^1.4.0
   encrypt: ^4.0.2
-  scoped_model: ^1.0.1
   dio: ^3.0.8
+  path_provider: ^1.6.11
 
   #bubble_tap_indicator: "^0.1.4" #for bubble tap on tab bars
   

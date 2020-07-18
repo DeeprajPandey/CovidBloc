@@ -11,6 +11,7 @@ import "dart:typed_data";
 import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:encrypt/encrypt.dart';
+import './storage.dart';
 
 class ExposureNotification {
   final _eKRollingPeriod = 144;
@@ -25,6 +26,7 @@ class ExposureNotification {
   SecretKey _aemKey; // AssociatedEncryptedMetadataKey
 
   int _eNIntervalNumber;
+  int iVal;
   List<int> rollingProximityIdentifier = null; // to be broadcasted
   List<int> associatedEncryptedMetadata; // additional metadata
 
@@ -65,9 +67,12 @@ class ExposureNotification {
 
     // TODO: First try reading from storage, if empty, run this
     // with firstRun: true
+    this.iVal = _getIval(timestamp: new DateTime.now());
     this._eNIntervalNumber =
         this._getIntervalNumber(timestamp: new DateTime.now());
     print('(constructor) Intialised ENIntervalNum');
+    print('(constructor) TempKey ${this._temporaryExposureKey['i']}');
+    //print('Initialised iVal $iVal');
 
     // TODO: Find when the next interval starts and set up one-shot
     // scheduler to do this.
@@ -210,12 +215,18 @@ class ExposureNotification {
         this._temporaryExposureKey['i'] != currIval) {
       this._temporaryExposureKey['i'] = currIval;
       this._temporaryExposureKey['key'] = this._dailyKeygen();
-
+      
+    
       var tempKeyHex =
           hex.encode(await this._temporaryExposureKey['key'].extract());
+
+      final Storage s = new Storage();
+      s.writeKey(tempKeyHex,this._temporaryExposureKey['i'].toString());
+      
       print('(_scheduler) Generated new TempExpKey: $tempKeyHex');
       print('(_scheduler) i: ${this._temporaryExposureKey['i']}');
     }
+
 
     this._rpiKey = await this
         ._secondaryKeygen(_temporaryExposureKey['key'], stringData: 'EN-RPIK');
