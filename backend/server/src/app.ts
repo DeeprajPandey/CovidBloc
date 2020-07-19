@@ -363,13 +363,14 @@ app.post("/keys", async (req: Request, res: Response) => {
       throw new Error("Admin not registered.");
     }
     const contractResponse = await fabric.invoke('getKeys', [req.body.currentIval, req.body.firstCall.toString()], true, networkObj);
+    //console.log(contractResponse["data"]);
     networkObj.gateway.disconnect();
     if ("err" in contractResponse) {
       console.error(contractResponse.err);
       // Transaction error
       throw new Error("Something went wrong, please try again.");
     }
-    res.status(200).send(contractResponse);
+    res.status(200).send(contractResponse["data"]);
   } catch (e) {
     res.status(400).send(e.message);
     return;

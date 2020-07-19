@@ -350,13 +350,14 @@ app.post("/keys", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             throw new Error("Admin not registered.");
         }
         const contractResponse = yield fabric.invoke('getKeys', [req.body.currentIval, req.body.firstCall.toString()], true, networkObj);
+        //console.log(contractResponse["data"]);
         networkObj.gateway.disconnect();
         if ("err" in contractResponse) {
             console.error(contractResponse.err);
             // Transaction error
             throw new Error("Something went wrong, please try again.");
         }
-        res.status(200).send(contractResponse);
+        res.status(200).send(contractResponse["data"]);
     }
     catch (e) {
         res.status(400).send(e.message);
