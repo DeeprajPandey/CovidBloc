@@ -219,7 +219,6 @@ class ExposureNotification {
     
       var tempKeyHex =
           hex.encode(await this._temporaryExposureKey['key'].extract());
-
       
       s.writeKey(tempKeyHex,this._temporaryExposureKey['i'].toString());
       

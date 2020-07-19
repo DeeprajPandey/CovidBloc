@@ -9,14 +9,15 @@ class Storage {
     return directory.path;
   }
 
-  Future<File> get localFile async {
+  Future<File> localFile(String filename) async {
     final path = await localPath;
-    return File('$path/TempKey.json');
+    //return File('$path/TempKey.json');
+    return File('$path/$filename');
   }
 
   Future<List> readKeys() async {
     try {
-      final file = await localFile;
+      final file = await localFile('TempKey.json');
       // Read the file
       List contents = await file.readAsLines(); //list of strings
       final keys = [];
@@ -34,7 +35,7 @@ class Storage {
   }
 
   Future<File> writeKey(String tempKeyHex, String ival) async {
-    final file = await localFile;
+    final file = await localFile('TempKey.json');
      Map tempKey = {
       'hexkey':tempKeyHex,
       'i': ival
