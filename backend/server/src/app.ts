@@ -13,7 +13,6 @@ import twilio from 'twilio';
 import * as fabric from './services/fabric';
 import { NetworkObject, GenericResponse } from './services/fabric.interface';
 import * as utils from './services/jwt';
-import healthRoutes from './routes/HealthOfficial';
 import HealthOfficialModel from './models/HealthOfficial';
 
 require('./services/passport.config')(passport);
@@ -90,8 +89,6 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-// Health Official Registration Routes
-app.use("/officials", healthRoutes);
 
 /**
  * Fabric Routes
