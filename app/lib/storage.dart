@@ -21,7 +21,13 @@ class Storage {
       // Read the file
       List contents = await file.readAsLines(); //list of strings
       final keys = [];
-      for (var i=0;i<contents.length;i++) {
+      //to ensure latest 14 keys are put up
+      final length = contents.length;
+      var start=0; 
+      if (length>14) {
+        start = length - 14;
+      }
+      for (var i=start;i<length;i++) {
         final jsonObj = json.decode(contents[i]);
         keys.add(jsonObj);
       }

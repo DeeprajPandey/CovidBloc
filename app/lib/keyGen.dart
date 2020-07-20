@@ -7,7 +7,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert' show utf8;
 import "dart:typed_data";
-
+import 'package:dio/dio.dart';
 import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:encrypt/encrypt.dart';
@@ -17,19 +17,29 @@ class ExposureNotification {
   final _eKRollingPeriod = 144;
 
   /// Secret Keys
-  // TODO: before pushing these keys to the server, change key to hex first
+  /// {key: SecretKey, i: uint32_t}
   Map _temporaryExposureKey = {
     'key': null,
     'i': null
-  }; // {key: SecretKey, i: uint32_t}
+  }; 
+
   SecretKey _rpiKey; // RollingProximityIdentifierKey
   SecretKey _aemKey; // AssociatedEncryptedMetadataKey
+
+  //connection to server
+  static BaseOptions options = new BaseOptions(
+      baseUrl: "http://192.168.0.152:6000/",
+  );
+
+  //Dio object
+  Dio dio=new Dio(options);
 
   int _eNIntervalNumber;
   int iVal;
   List<int> rollingProximityIdentifier = null; // to be broadcasted
   List<int> associatedEncryptedMetadata; // additional metadata
 
+  //will be in a file
   List<String> dummyRPIs = [
     '41e9f07b40e2cab25a1c6c31f83d6b45',
     '02940563c5c9ea374595d65c57e120e3',
@@ -50,29 +60,42 @@ class ExposureNotification {
     '391e63bfe98f7d6a59d6c5aaf4d167b6',
     'cc317cd860395bec3315a4f2b9929feb'
   ];
+
   // Fetched from the server periodically
-  List<Map> diagnosisKeys = [
-    {'key': '33917c36d48744ef3fbc4985188ea9e2', 'i': 2655360},
-    {'key': 'd67a4d2c5f44c218e92b03dd99fa3f92', 'i': 2655504}
-  ];
+  // List<Map> diagnosisKeys = [
+  //   {'key': '33917c36d48744ef3fbc4985188ea9e2', 'i': 2655360},
+  //   {'key': 'd67a4d2c5f44c218e92b03dd99fa3f92', 'i': 2655504}
+  // ];
+
   // Generate a HashMap from the list of RPIs
   HashMap contactRPIs = HashMap();
+  //Make a storage class object to write temporary keys to the file
   final Storage s = new Storage();
+
   ExposureNotification() {
+  
     // This dummy code is how we will add new RPIs to the hashmap
     for (var hexString in this.dummyRPIs) {
       // only add an RPI if it's not already in the hashmap
       this.contactRPIs.putIfAbsent(hexString, () => 1);
     }
 
-    // TODO: First try reading from storage, if empty, run this
-    // with firstRun: true
+    //updating current temporaryExposureKey map from file. 
+    s.readKeys().then((keys) {  
+    if(keys!=null) {
+      int length = keys.length;
+      this._temporaryExposureKey['key'] = SecretKey(hex.decode(keys[length-1]['hexkey'])); 
+      this._temporaryExposureKey['i'] = int.parse(keys[length-1]['i']);
+      print('(constructor) TemporaryExposureKey i value ${this._temporaryExposureKey['i']}');
+      print(keys[length-1]['hexkey']);
+    }
+    });
+
     this.iVal = _getIval(timestamp: new DateTime.now());
     this._eNIntervalNumber =
         this._getIntervalNumber(timestamp: new DateTime.now());
     print('(constructor) Intialised ENIntervalNum');
-    print('(constructor) TempKey ${this._temporaryExposureKey['i']}');
-    //print('Initialised iVal $iVal');
+    
 
     // TODO: Find when the next interval starts and set up one-shot
     // scheduler to do this.
@@ -82,15 +105,13 @@ class ExposureNotification {
 
     // const timeToInitiate = const Duration(seconds: 60);
     const tenMins = const Duration(minutes: 10);
-
     // 3:04
     // new Timer(
     //     timeToInitiate,
     //     () async => await this._scheduler(firstRun: true)); // 3:10
 
     new Timer.periodic(
-        tenMins, (timer) async => await this._scheduler(firstRun: true));
-
+      tenMins, (timer) async => await this._scheduler());
     print('\n');
   }
 
@@ -202,7 +223,7 @@ class ExposureNotification {
   }
 
   /// The driver/scheduler function
-  Future<void> _scheduler({bool firstRun = false}) async {
+  Future<void> _scheduler() async {
     int currInterval = this._getIntervalNumber(timestamp: new DateTime.now());
     this._eNIntervalNumber = currInterval;
     print('(_scheduler) Updated ENIntervalNum: $currInterval');
@@ -211,19 +232,38 @@ class ExposureNotification {
 
     // If tempKey hasn't been set yet
     // or if it's been more than 24 hours since last keygen (i value must have changed)
+    
     if (this._temporaryExposureKey['i'] == null ||
         this._temporaryExposureKey['i'] != currIval) {
-      this._temporaryExposureKey['i'] = currIval;
-      this._temporaryExposureKey['key'] = this._dailyKeygen();
-      //get keys from server and checkExposure
+        
+        bool firstRun = (this._temporaryExposureKey['i']==null);
+
+        this._temporaryExposureKey['i'] = currIval;
+        this._temporaryExposureKey['key'] = this._dailyKeygen();
+
     
-      var tempKeyHex =
+        var tempKeyHex =
           hex.encode(await this._temporaryExposureKey['key'].extract());
       
-      s.writeKey(tempKeyHex,this._temporaryExposureKey['i'].toString());
+        s.writeKey(tempKeyHex,this._temporaryExposureKey['i'].toString());
       
-      print('(_scheduler) Generated new TempExpKey: $tempKeyHex');
-      print('(_scheduler) i: ${this._temporaryExposureKey['i']}');
+        print('(_scheduler) Generated new TempExpKey: $tempKeyHex');
+        print('(_scheduler) i: ${this._temporaryExposureKey['i']}');
+        
+        Response response;
+        //get keys from server and checkExposure
+        try {
+          response  = await dio.post("/keys",
+          data: {
+              "currentIval": "2658672",//currIval,
+              "firstCall": firstRun
+          });
+        } catch (e) {
+          print(e.message);
+        }
+        print(response.data);
+        checkExposure(response.data);
+
     }
 
 
@@ -248,27 +288,30 @@ class ExposureNotification {
   }
 
   /// Check for exposures
-  Future<void> checkExposure() async {
+  Future<void> checkExposure(List diagnosisKeys) async {
     int exposedCtr = 0;
-    for (var positiveKey in this.diagnosisKeys) {
-      // We received the keys as hex strings. Convert them to bytes and create a SecretKey instance.
-      var tempKey = SecretKey(hex.decode(positiveKey['hexkey']));
-      var tempIval = positiveKey['i'];
-      var tempRPIKey =
-          await this._secondaryKeygen(tempKey, stringData: 'EN-RPIK');
+    for (var patientKey in diagnosisKeys) {
+      for (var positiveKey in patientKey) {
+        // We received the keys as hex strings. Convert them to bytes and create a SecretKey instance.
+        var tempKey = SecretKey(hex.decode(positiveKey['hexkey']));
+        var tempIval = int.parse(positiveKey['i']);
+        var tempRPIKey =
+            await this._secondaryKeygen(tempKey, stringData: 'EN-RPIK');
 
-      // Generate an RPI for all intervals during the day
-      for (var i = tempIval; i < tempIval + 144; i++) {
-        var tempRPIHex =
-            await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
-        // Now check if we ever came in contact with this rolling proximity identifier
-        if (this.contactRPIs.containsKey(tempRPIHex)) {
-          exposedCtr++;
+        // Generate an RPI for all intervals during the day
+        for (var i = tempIval; i < tempIval + 144; i++) {
+          var tempRPIHex =
+              await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
+          // Now check if we ever came in contact with this rolling proximity identifier
+          if (this.contactRPIs.containsKey(tempRPIHex)) {
+            exposedCtr++;
+          }
         }
       }
     }
     print('\n\nExposed counter: $exposedCtr\n\n'); // should be 5
   }
+
 }
 
 // Using only for debug

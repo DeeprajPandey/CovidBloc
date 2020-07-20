@@ -38,10 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   //new Dio with a BaseOptions instance.
   static BaseOptions options = new BaseOptions(
       baseUrl: "http://192.168.0.152:6000/",
-      connectTimeout: 5000,
-      receiveTimeout: 3000,
   );
-  //Response response = await dio.get("/?key=meta");
   //print(response.data.toString());
 
   Dio dio=new Dio(options);
@@ -50,11 +47,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _sendKeys(BuildContext context, final approvalID, final medID) async{
     List dailyKeys=[];
     int currIval;
-    // s.delete(); //to delete file
+    //s.delete(); //to delete file
     try {
       dailyKeys = await s.readKeys();
       print(dailyKeys);
-      
       if(dailyKeys==null) {
         return _validationPopUp(context,'Error',"No daily keys found");
       }
