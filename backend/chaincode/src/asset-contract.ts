@@ -4,7 +4,7 @@
 
 import { Context, Contract, Info, Returns, Transaction } from 'fabric-contract-api';
 import { Meta, DailyKey } from './asset';
-import { HealthOfficer, Patient, Approval } from './asset';
+import { HealthOfficial, Patient, Approval } from './asset';
 const ClientIdentity = require('fabric-shim').ClientIdentity;
 
 @Info({ title: 'AssetContract', description: 'My Smart Contract' })
@@ -30,7 +30,7 @@ export class AssetContract extends Contract {
         const lastPatientID = parseInt(currMeta.patientCtr);
         const newPKey = "p" + (lastPatientID + 1).toString();
 
-        const healthOfficial = await this.readAsset(ctx, `m${patientObj.medID}`) as HealthOfficer;
+        const healthOfficial = await this.readAsset(ctx, `m${patientObj.medID}`) as HealthOfficial;
 
         if (!healthOfficial) {
             // TODO: return to server as invalid medical official (medID)
@@ -64,16 +64,24 @@ export class AssetContract extends Contract {
     }
 
     @Transaction()
-
-    public async addHealthOfficer(ctx: Context, medID: string, medObj: HealthOfficer): Promise<any> {
+    public async addHealthOfficial(ctx: Context, medObj: HealthOfficial): Promise<any> {
         let responseObj = {};
-        const registered = await this.assetExists(ctx, `m${medID}`);
-        if (!registered) {
-            await this.createAsset(ctx, `m${medID}`, JSON.stringify(medObj));
-            responseObj["msg"] = "Registered successfully";
-        } else {
-            responseObj["err"] = "User has registered";
+        let currMeta = await this.readAsset(ctx, "meta") as Meta;
+        if (currMeta == null) {
+            responseObj["err"] = "Meta does not exist";
+            return responseObj;
+            //throw new Error(`Meta does not exist`);
         }
+        const lastMedID = parseInt(currMeta.healthOfficialCtr);
+        const newMedID = (lastMedID + 1).toString();
+
+        medObj.medID = newMedID;
+        await this.createAsset(ctx, `m${newMedID}`, JSON.stringify(medObj));
+
+        currMeta.healthOfficialCtr = newMedID;
+        await this.updateAsset(ctx,"meta",JSON.stringify(currMeta));
+        
+        responseObj["msg"] = `${newMedID} registered successfully`;        
         return responseObj;
     }
 
@@ -87,7 +95,7 @@ export class AssetContract extends Contract {
     @Transaction()
     public async addPatientApprovalRecord(ctx: Context, medID: string, newApprovalID: string): Promise<any> {
         let responseObj = {}
-        let official = await this.readAsset(ctx, `m${medID}`) as HealthOfficer;
+        let official = await this.readAsset(ctx, `m${medID}`) as HealthOfficial;
         if (!official) {
             responseObj["err"] = "Health official with this email doesnt exist";
             return responseObj;
@@ -111,7 +119,7 @@ export class AssetContract extends Contract {
 
     @Transaction(false)
     public async validApprovalID(ctx: Context, medID: string, checkID: string): Promise<boolean> {
-        const medicalOfficial = await this.readAsset(ctx, `m${medID}`) as HealthOfficer;
+        const medicalOfficial = await this.readAsset(ctx, `m${medID}`) as HealthOfficial;
         if (!medicalOfficial) {
             // responseObj["err"] = "Health official with this email doesnt exist";
             return false;
@@ -128,7 +136,7 @@ export class AssetContract extends Contract {
     }
 
     /**
-     * Query a HealthOfficer Asset from the WS.
+     * Query a HealthOfficial Asset from the WS.
      * 
      * @param ctx Transactional context
      * @param medID Unique ID of the health officer 
@@ -205,7 +213,7 @@ export class AssetContract extends Contract {
             const patientObj = await this.readAsset(ctx, patientKey);
             if (patientObj !== null) {
                 // first download will get keys that are from last 14 days but not from today
-                if (firstCall && patientObj.ival !== parseInt(currentIval)) {
+                if (firstCall && parseInt(patientObj.ival) !== parseInt(currentIval)) {
                     allResults.push(patientObj.dailyKeys);
                 }
                 if (patientObj.ival === (parseInt(currentIval) - 144).toString()) { //we will call this function when tempkey is gen(so new i val)- need patients who have been added in the last 24hrs
@@ -218,7 +226,7 @@ export class AssetContract extends Contract {
     }
 
     /**
-    * Deleting old keys from the WS.
+    * Deleting old keys from the WS and corresponding approval asset.
     * 
     * @param ctx Transactional context
     * @param currentIval: i value of current time
@@ -233,9 +241,18 @@ export class AssetContract extends Contract {
             const patientKey = "p" + i.toString();
             const patientObj = await this.readAsset(ctx, patientKey);
             if (patientObj !== null && parseInt(patientObj.ival) <= threshold) {
+                let patientApproval = patientObj.approvalID; 
+                let medId = patientObj.medID; 
                 await this.deleteAsset(ctx, patientKey);
+                const medObj = await this.readAsset(ctx,`m${medId}`); 
+                for (let j=1 ; j<= parseInt(medObj.approveCtr); j++) {
+                    let appKey = "m"+medId + ":"+ j;
+                    const apObj= await this.readAsset(ctx,appKey);
+                    if (apObj!== null && (apObj.approvalID === patientApproval) && (apObj.patientID === patientKey)) {
+                        await this.deleteAsset(ctx,appKey); 
+                    } 
+                }
             }
-
         }
 
         responseObj["msg"] = "Old keys deleted";
@@ -264,7 +281,7 @@ export class AssetContract extends Contract {
         // };
 
         //const medObj = {name: "M1",hospital : "Apollo",medID: "123",approveCtr: 0};
-        // await this.addHealthOfficer(ctx,medObj);
+        // await this.addHealthOfficial(ctx,medObj);
 
         // //await this.validatePatient(ctx,"123","1231312")
         // await this.addPatient(ctx, patientFromServer);

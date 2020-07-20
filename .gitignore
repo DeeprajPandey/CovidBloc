@@ -3,3 +3,5 @@ node_modules/
 dist/
 .env
 Org1Wallet/
+jwt_rs256.privkey.pem
+jwt_rs256.pubkey.pem

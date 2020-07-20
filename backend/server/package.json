@@ -28,6 +28,11 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@types/cron": "^1.7.2",
+    "@types/jsonwebtoken": "^8.5.0",
+    "@types/mongoose": "^5.7.31",
+    "@types/nodemailer": "^6.4.0",
+    "@types/passport": "^1.0.4",
+    "@types/passport-jwt": "^3.0.3",
     "@types/seedrandom": "^2.4.28",
     "cors": "^2.8.5",
     "cron": "^1.8.2",
@@ -35,6 +40,11 @@
     "express": "^4.17.1",
     "fabric-network": "~1.4.0",
     "helmet": "^3.23.3",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.9.23",
+    "nodemailer": "^6.4.10",
+    "passport": "^0.4.1",
+    "passport-jwt": "^4.0.0",
     "seedrandom": "^3.0.5",
     "twilio": "^3.47.0"
   },

@@ -1,33 +1,36 @@
-import * as dotenv from "dotenv";
-import express, { Request, Response } from "express";
-import cors from "cors";
-import { CronJob } from "cron";
-import helmet from "helmet";
-import seedrandom from "seedrandom";
+// @ts-nocheck
+import * as dotenv from 'dotenv';
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import { CronJob } from 'cron';
+import helmet from 'helmet';
+import mongoose from 'mongoose';
+import nodemailer from 'nodemailer';
+import passport from 'passport';
+import seedrandom from 'seedrandom';
 import twilio from 'twilio';
-import * as fabric from "./services/fabric";
-import { NetworkObject, GenericResponse } from "./services/fabric.interface";
+
+import * as fabric from './services/fabric';
+import { NetworkObject, GenericResponse } from './services/fabric.interface';
+import * as utils from './services/jwt';
+import HealthOfficialModel from './models/HealthOfficial';
+
+require('./services/passport.config')(passport);
 
 dotenv.config();
 
+const env_variables = Boolean(
+  process.env.TW_SID && process.env.TW_AUTH && process.env.TW_NUM &&
+  process.env.ADMIN_NUMS && process.env.DB_URI && process.env.PORT
+);
+if (!env_variables) {
+  console.error("Environment variables not found. Shutting down...");
+  process.exit(1);
+}
+
 /**
- * Variable
+ * Set up Cronjob to delete keys >14 days old
  */
-const PORT = normalisePort(process.env.PORT || '6401');
-const TWIL_SID = process.env.TW_SID || null;
-const TWIL_AUTH = process.env.TW_AUTH || null;
-const TWIL_NUM = process.env.TW_NUM || null;
-
-const app = express();
-
-/**
- * Middleware Configuration
- */
-
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
-
 var deleteJob = new CronJob(
   '00 01 00 * * 1-6',
   async () => {
@@ -36,7 +39,6 @@ var deleteJob = new CronJob(
       await deleteKeys();
     } catch (err) {
       // IMP: assuming this env var is set
-      // @ts-ignore
       const admins = process.env.ADMIN_NUMS.split(' ');
       for (let i = 0; i < admins.length; i++) {
         const msg = `ALERT: Cronjob failed to delete keys. Check error\n${err}`;
@@ -50,11 +52,49 @@ var deleteJob = new CronJob(
   'GMT'
 );
 deleteJob.start();
-// setInterval(deleteKeys, 86400000); //24 hours in milliseconds
+
+/**
+ * Environment Variables
+ */
+const PORT = normalisePort(process.env.PORT || '6000');
+const TWIL_SID = process.env.TW_SID || null;
+const TWIL_AUTH = process.env.TW_AUTH || null;
+const TWIL_NUM = process.env.TW_NUM || null;
+
+/**
+ * Health Official Database
+ */
+mongoose.connect(process.env.DB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  useFindAndModify: false
+})
+  .then(() => {
+    console.log("Connected to DB");
+  })
+  .catch((err) => {
+    console.log("Connection to DB failed: ", err);
+    process.exit();
+  });
+
+const app = express();
+
+app.use(passport.initialize());
+
+/**
+ * Middleware Configuration
+ */
+
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
 
 
-// Routes
-
+/**
+ * Fabric Routes
+ */
+// TODO: Remove this to host webapp
+// Temp use: invoke readAsset
 app.get("/", async (req: Request, res: Response) => {
   try {
     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
@@ -63,6 +103,7 @@ app.get("/", async (req: Request, res: Response) => {
       throw new Error("Admin not registered.");
     }
     const key = JSON.stringify(req.query.key);
+
     const contractResponse = await fabric.invoke('readAsset', [req.query.key], true, networkObj);
     networkObj.gateway.disconnect();
 
@@ -76,20 +117,14 @@ app.get("/", async (req: Request, res: Response) => {
   }
 });
 
-// POST: Register a new official
-app.post("/healthofficial", async (req: Request, res: Response) => {
-  let authorisedOfficials = new Map<string, string>();
-  authorisedOfficials.set('m1@apollo.com', '3425');
-  authorisedOfficials.set('doc232@max.com', '2367');
-  authorisedOfficials.set('hosp123@fortis.in', '3821');
-
+/**
+ * POST: Register a new official
+ * Chaincode generates a medID and returns it on successful addition
+ */
+app.post("/register", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
-      req.body.medID &&
-      req.body.approveCtr === "0" &&
-      req.body.name &&
-      req.body.email &&
-      req.body.hospital
+      req.body.email
     );
     if (!validBody) {
       throw new Error("Invalid request");
@@ -97,37 +132,175 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
 
     let email = req.body.email;
 
-    if (authorisedOfficials.has(email) && authorisedOfficials.get(email) === req.body.medID) {
-      const responseObj: GenericResponse = await fabric.registerUser(email, true);
-      if (responseObj.err !== null) {
-        console.error(responseObj.err);
-        throw new Error("CA failure");
-      }
-      const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(email);
-      if (networkObj.err !== null || !("gateway" in networkObj)) {
-        console.error(networkObj.err);
-        throw new Error("CA failure");
-      }
-      const contractResponse = await fabric.invoke('addHealthOfficer', [req.body.medID, JSON.stringify(req.body)], false, networkObj);
-      networkObj.gateway.disconnect();
-
-      if ("err" in contractResponse) {
-        console.error(contractResponse.err);
-        // Transaction error
-        throw new Error("Something went wrong, please try again.");
-      }
-      res.status(200).send("Registered");
-    } else {
-      throw new Error("Invalid medical official");
+    const dbObj = await HealthOfficialModel.findOne({ email: email });
+    if (!dbObj) { // returns empty object if not in DB
+      // res.status(401);
+      // res.redirect("/login?r=unauthorised");
+      // return;
+      throw new Error("You are not an authorised medical official");
     }
+    if (dbObj.t_status === "REGISTERED") {
+      // res.status(400);
+      // res.redirect("/login?r=registered");
+      // return;
+      throw new Error("You have an account. Please log in.");
+    }
+
+    // Register this user on the chaincode only if unregistered
+    const responseObj: GenericResponse = await fabric.registerUser(email, true);
+    if (responseObj.err !== null) {
+      console.error(responseObj.err);
+      throw new Error("CA failure");
+    }
+    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(email);
+    if (networkObj.err !== null || !("gateway" in networkObj)) {
+      console.error(networkObj.err);
+      throw new Error("CA failure");
+    }
+    // Extract the asset obj from database entry
+    const medObj = Object.assign({}, dbObj._doc);
+    // Delete the temp properties
+    delete medObj._id;
+    delete medObj.__v;
+    delete medObj.t_status;
+    delete medObj.t_authstat;
+    delete medObj.t_otp;
+    delete medObj.t_timestamp;
+    medObj.approveCtr = "0";
+
+    const contractResponse = await fabric.invoke('addHealthOfficial', [JSON.stringify(medObj)], false, networkObj);
+    networkObj.gateway.disconnect();
+
+    if ("err" in contractResponse) {
+      console.error(contractResponse.err);
+      // Transaction error
+      throw new Error("Something went wrong, please try again.");
+    }
+    const recvID = contractResponse["msg"].split(" ")[0];
+    
+    // Send the medID on email
+    const text = `Hey there, Please store the ID somewhere safe as you will need it to log
+    into the portal later. ${recvID}`;
+    const html = `<b>Hey there! </b><br><br>Please store the ID somewhere safe as you will need it to log
+    into the portal later.<br>Medical ID: ${recvID}`;
+    try {
+      // TODO: change the receiver to dbObj.email
+      await sendEmail(process.env.EM_RECVR, "Your Medical ID", text, html);
+    } catch (e) {
+      throw new Error("Couldn't send medID to the specified email.");
+    }
+
+    // Update DB to store the medID
+    dbObj.medID = recvID;
+    dbObj.t_status = "REGISTERED";
+    const response = await HealthOfficialModel.findOneAndUpdate({ email: dbObj.email }, dbObj);
+
+    // res.status(200).redirect("/login?r=success");
+    res.status(200).send(`${recvID} registered`);
   } catch (e) {
     res.status(400).send(e.message);
     return;
   }
 });
 
+app.post("/requestotp", async(req: Request, res:Response, next: NextFunction) => {
+  try {
+    const validBody = Boolean(
+      req.body.email &&
+      req.body.medID
+    );
+    if (!validBody) {
+      throw new Error("Invalid request");
+    }
+    // Attempt to read this user from the database
+    const dbObj = await HealthOfficialModel.findOne({ email: req.body.email });
+    if (!dbObj || (dbObj.medID !== req.body.medID)) { // returns empty object if not in DB
+      // res.status(401);
+      // res.redirect("/login?r=unauthorised");
+      // return;
+      throw new Error("Incorrect credentials.");
+    }
+    if (dbObj.t_status === "UNREGISTERED") {
+      // res.status(400);
+      // res.redirect("/register?r=unregistered");
+      // return;
+      throw new Error("Please register first.");
+    }
+    if (dbObj.t_authstat === "INITIATED") { // otp requested, show modal on frontend
+      // res.status(400);
+      // res.redirect("/login?r=otpinit");
+      // return;
+      throw new Error("You have requested for a code already. Please log in.");
+    }
+
+    // If everything checks out, generate OTP
+    await otpGen(dbObj);
+    res.status(200).send("Please check your email ID for the OTP.");
+  } catch (e) {
+    res.status(400).send(e.message);
+  }
+});
+
+app.post("/login", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const validBody = Boolean(
+      req.body.email &&
+      req.body.otp
+    );
+    if (!validBody) {
+      throw new Error("Invalid request");
+    }
+
+    // Attempt to read this user from the database
+    const dbObj = await HealthOfficialModel.findOne({ email: req.body.email });
+    if (!dbObj) { // returns empty object if not in DB
+      // res.status(401);
+      // res.redirect("/login?r=unauthorised");
+      // return;
+      throw new Error("You are not an authorised medical official");
+    }
+    if (dbObj.t_status === "UNREGISTERED") {
+      // res.status(400);
+      // res.redirect("/register?r=unregistered");
+      // return;
+      throw new Error("Please register first.");
+    }
+    if (dbObj.t_authstat === "NA") { // otp not requested
+      // res.status(400);
+      // res.redirect("/login?r=nootp");
+      // return;
+      throw new Error("Please request for an OTP first.");
+    }
+
+    // If user didn't enter code within 5 mins, send new code
+    const currentTime = Math.floor(Date.now()/1000);
+    const diff = (currentTime - parseInt(dbObj.t_timestamp))/60;
+    if (diff > 5) {
+      await otpGen(dbObj);
+      // res.status(400);
+      // res.redirect("/login?r=timeout");
+      // return;
+      throw new Error("Your code has expired and a new code has been sent to your email.");
+    }
+
+    // if within timeslot, check if the correct code was entered
+    // ensure frontend sends a string and not number
+    if (req.body.otp !== dbObj.t_otp) {
+      // res.status(400);
+      // res.redirect("/login?r=incorrect");
+      // return;
+      throw new Error("Incorrect code entered. Please retry.");
+    } else if (req.body.otp === dbObj.t_otp) { // correct otp
+      const tokenObj = utils.issueJWT(dbObj);
+      res.status(200).json({ token: tokenObj.token, expiresIn: tokenObj.expires });
+    }
+  } catch (e) {
+    res.status(400).send(e.message);
+  }
+});
+
 // GET: Get an official's profile
-app.get("/healthofficial", async (req: Request, res: Response) => {
+app.get("/healthofficial", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
   try {
     const validParams = Boolean(
       req.query.i &&
@@ -156,7 +329,7 @@ app.get("/healthofficial", async (req: Request, res: Response) => {
 });
 
 // POST: Generate an approval for patient
-app.post("/generateapproval", async (req: Request, res: Response) => {
+app.post("/generateapproval", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
       req.body.email &&
@@ -189,7 +362,7 @@ app.post("/generateapproval", async (req: Request, res: Response) => {
     }
     // Send sms to patient with approvalID and medID
     const msgText = `Please enter these details on the app to send your daily keys from the last 14 days to the server.\n\n`
-                    + `Approval ID: ${approvalID}\nMedical ID: ${req.body.medID}`;
+      + `Approval ID: ${approvalID}\nMedical ID: ${req.body.medID}`;
     await sendSMS(req.body.patientContact, msgText);
     res.status(200).send("Keys uploaded.");
   } catch (e) {
@@ -272,6 +445,67 @@ const server = app.listen(PORT, () => {
 /**
  * Utility Functions
  */
+async function otpGen(dbObj: any): Promise<void> {
+  try {
+    const OTP = Math.floor(Math.random() * 90000) + 10000;
+    console.log(`OTP: ${OTP}`);
+    dbObj.t_authstat = "INITIATED";
+    dbObj.t_otp = OTP.toString();
+
+    // TODO: Send email
+    const text = `Hey there,\nYour login code is ${OTP}\n\nEnter this code on the login page.`;
+    const html = `<b>Hey there!</b><br>Your login code is ${OTP}<br><br>Enter this code on the login page.`;
+    try {
+      // TODO: change sending address to dbObj.email
+      await sendEmail(process.env.EM_RECVR, "Your Login OTP", text, html);
+    } catch (e) {
+      throw new Error("Couldn't send email.");
+    }
+
+    // If the email was sent, set the timestamp
+    const createdTime = Math.floor(Date.now()/1000);
+    console.log(createdTime);
+    dbObj.t_timestamp = createdTime.toString();
+    const response = await HealthOfficialModel.findOneAndUpdate({ email: dbObj.email }, dbObj);
+  } catch (err) {
+    console.error(`otpGen::${err.message}`);
+  }
+}
+
+
+async function sendEmail(toEmail: string, sub: string, msgText: string, msgHtml: string): Promise<void> {
+  try {
+    let transporter = nodemailer.createTransport({
+      service: "gmail",
+      // host: "smtp.mailtrap.io",
+      // port: 2525,
+      auth: {
+        user: process.env.EM_USR,
+        pass: process.env.EM_PASS
+      }
+    });
+    transporter.verify(function(error, success) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log('Server is ready for emails.');
+      }
+    });
+    
+    let mailOptions = {
+      from: `"Development Team" <${process.env.EM_USR}>`,
+      to: toEmail,
+      subject: sub,
+      text: msgText, 
+      html: msgHtml
+    };
+
+    let info = await transporter.sendMail(mailOptions);
+    console.log(`Email sent: ${info.messageId}`);
+  } catch (e) {
+    console.error(e);
+  }
+}
 
 async function deleteKeys() {
   const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
@@ -279,7 +513,7 @@ async function deleteKeys() {
     console.error(networkObj.err);
     throw new Error("Couldn't connect to network using Admin identity.");
   }
-  let currentTime = Math.round((new Date()).getTime() / 1000); //current unix timestamp
+  let currentTime = Math.floor(Date.now()/1000); //current unix timestamp
   let currentIVal = Math.floor((Math.floor(currentTime / 600)) / 144) * 144;
 
   const contractResponse = await fabric.invoke('deleteKeys', [currentIVal.toString()], false, networkObj);
