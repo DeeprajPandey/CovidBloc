@@ -348,7 +348,7 @@ app.post("/generateapproval", passport.authenticate('jwt', { session: false }), 
     }
     while (true) {
       approvalID = generateApprovalID();
-      const valid = await fabric.invoke('validApprovalID', [req.body.medID, approvalID], true, networkObj);
+      const valid = await fabric.invoke('validApprovalID', [req.body.medID, approvalID.toString()], true, networkObj);
       if (valid) {
         break;
       }
@@ -427,7 +427,7 @@ app.post("/keys", async (req: Request, res: Response) => {
       // Transaction error
       throw new Error("Something went wrong, please try again.");
     }
-    res.status(200).send(contractResponse);
+    res.status(200).send(contractResponse["data"]);
   } catch (e) {
     res.status(400).send(e.message);
     return;

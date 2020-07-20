@@ -1,4 +1,4 @@
-# `flutter_bluetooth_serial_example`
+# contact_tracing
 
 Example application demonstrates key features of the `flutter_bluetooth_serial` plugin:
 

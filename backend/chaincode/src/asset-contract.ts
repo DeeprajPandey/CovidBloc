@@ -216,12 +216,12 @@ export class AssetContract extends Contract {
                 if (firstCall && parseInt(patientObj.ival) !== parseInt(currentIval)) {
                     allResults.push(patientObj.dailyKeys);
                 }
-                if (patientObj.ival === (parseInt(currentIval) - 144).toString()) { //we will call this function when tempkey is gen(so new i val)- need patients who have been added in the last 24hrs
+                else if (patientObj.ival === (parseInt(currentIval) - 144).toString()) { //we will call this function when tempkey is gen(so new i val)- need patients who have been added in the last 24hrs
                     allResults.push(patientObj.dailyKeys);  //if key also needs to sent then {patientKey,patientObj}
                 }
             }
         }
-        responseObj["data"] = JSON.stringify(allResults);
+        responseObj["data"] = allResults;
         return responseObj;
     }
 
