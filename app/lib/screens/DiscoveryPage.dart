@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:contact_tracing/config/Styles.dart';
+import 'package:contact_tracing/storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:progress_indicators/progress_indicators.dart';
@@ -30,6 +31,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
   StreamSubscription<BluetoothDiscoveryResult> _streamSubscription;
   List<BluetoothDiscoveryResult> results = List<BluetoothDiscoveryResult>();
   bool isDiscovering;
+  final Storage s = new Storage();
   // String _statusMsg = 'Waiting for response';
 
   DiscoveryPageState({@required this.exp,}):assert(exp!=null);
@@ -124,6 +126,10 @@ class DiscoveryPageState extends State<DiscoveryPage> {
     }
     print("From dart: : $exchangedKey\n");
      _showKeyinDialogue(context,exchangedKey);
+     if(exchangedKey!='Hi from Bluetooth Demo Server') {
+      s.writeRPI(exchangedKey);
+     }
+    
   }
 
   @override

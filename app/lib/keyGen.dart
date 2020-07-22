@@ -12,6 +12,7 @@ import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:encrypt/encrypt.dart';
 import './storage.dart';
+import 'package:flutter/services.dart';
 
 class ExposureNotification {
   final _eKRollingPeriod = 144;
@@ -33,33 +34,33 @@ class ExposureNotification {
 
   //Dio object
   Dio dio=new Dio(options);
-
+  static const platform = const MethodChannel('samples.flutter.dev/bluetooth');
   int _eNIntervalNumber;
   int iVal;
   List<int> rollingProximityIdentifier = null; // to be broadcasted
   List<int> associatedEncryptedMetadata; // additional metadata
 
   //will be in a file
-  List<String> dummyRPIs = [
-    '41e9f07b40e2cab25a1c6c31f83d6b45',
-    '02940563c5c9ea374595d65c57e120e3',
-    '0b98bc8f903b5257c8affff791b527fd',
-    '70d3b09c746de08732df5e7a03c1a904',
-    '2a11bae1e0d913ec0cad0661dfa43c00',
-    '79621740d9728794f2f84e19a7d62654',
-    'c0dfd971a99aadd40914daa31eeb0d0b',
-    '83ad49d35c03cbfc59d48ee3f7cb4fcb', // end of first key
-    '6c608c78470d0f32c68284fa836be237',
-    'e16f9262233ed0c66adc733d279c029a',
-    '9013b1fe47ae0a5667fcd2c23c0e37ce',
-    '73c90e63003745e219ab2682f26239a4',
-    '40be8d9a145ac51487a5e7c61b3f211d',
-    '3f911893239b71d0dd577f203e99f689',
-    '4eeed4f8fb6ac91bc2d4fe1b277c6050',
-    '41ad948180f5737e0412a6cbc2e9de47',
-    '391e63bfe98f7d6a59d6c5aaf4d167b6',
-    'cc317cd860395bec3315a4f2b9929feb'
-  ];
+  // List<String> dummyRPIs = [
+  //   '41e9f07b40e2cab25a1c6c31f83d6b45',
+  //   '02940563c5c9ea374595d65c57e120e3',
+  //   '0b98bc8f903b5257c8affff791b527fd',
+  //   '70d3b09c746de08732df5e7a03c1a904',
+  //   '2a11bae1e0d913ec0cad0661dfa43c00',
+  //   '79621740d9728794f2f84e19a7d62654',
+  //   'c0dfd971a99aadd40914daa31eeb0d0b',
+  //   '83ad49d35c03cbfc59d48ee3f7cb4fcb', // end of first key
+  //   '6c608c78470d0f32c68284fa836be237',
+  //   'e16f9262233ed0c66adc733d279c029a',
+  //   '9013b1fe47ae0a5667fcd2c23c0e37ce',
+  //   '73c90e63003745e219ab2682f26239a4',
+  //   '40be8d9a145ac51487a5e7c61b3f211d',
+  //   '3f911893239b71d0dd577f203e99f689',
+  //   '4eeed4f8fb6ac91bc2d4fe1b277c6050',
+  //   '41ad948180f5737e0412a6cbc2e9de47',
+  //   '391e63bfe98f7d6a59d6c5aaf4d167b6',
+  //   'cc317cd860395bec3315a4f2b9929feb'
+  // ];
 
   // Fetched from the server periodically
   // List<Map> diagnosisKeys = [
@@ -68,17 +69,17 @@ class ExposureNotification {
   // ];
 
   // Generate a HashMap from the list of RPIs
-  HashMap contactRPIs = HashMap();
+  //HashMap contactRPIs = HashMap();
   //Make a storage class object to write temporary keys to the file
   final Storage s = new Storage();
 
   ExposureNotification() {
   
     // This dummy code is how we will add new RPIs to the hashmap
-    for (var hexString in this.dummyRPIs) {
-      // only add an RPI if it's not already in the hashmap
-      this.contactRPIs.putIfAbsent(hexString, () => 1);
-    }
+    // for (var hexString in this.dummyRPIs) {
+    //   // only add an RPI if it's not already in the hashmap
+    //   this.contactRPIs.putIfAbsent(hexString, () => 1);
+    // }
 
     //updating current temporaryExposureKey map from file. 
     s.readKeys().then((keys) {  
@@ -250,19 +251,23 @@ class ExposureNotification {
         print('(_scheduler) Generated new TempExpKey: $tempKeyHex');
         print('(_scheduler) i: ${this._temporaryExposureKey['i']}');
         
-        Response response;
-        //get keys from server and checkExposure
-        try {
-          response  = await dio.post("/keys",
-          data: {
-              "currentIval": currIval,
-              "firstCall": firstRun
-          });
-        } catch (e) {
-          print(e.message);
+        if(!firstRun) {
+
+          Response response;
+          //get keys from server and checkExposure
+          try {
+            response  = await dio.post("/keys",
+            data: {
+                "currentIval": currIval,
+                "firstCall": firstRun
+            });
+          } catch (e) {
+            print(e.message);
+          }
+          //print(response.data);
+          HashMap contactRPI = await s.readRPIs();
+          checkExposure(response.data,contactRPI);
         }
-        print(response.data);
-        checkExposure(response.data);
 
     }
 
@@ -276,6 +281,15 @@ class ExposureNotification {
         ._rpiGen(localRPIKey: this._rpiKey, interval: this._eNIntervalNumber);
     print('(_scheduler) RPI Hex: $rpiHex');
 
+    try {
+      String data= await platform.invokeMethod("messageForServer", {
+        "message": rpiHex.toString(),
+        });
+    } on PlatformException catch (e) {
+      print('Unable to send the rpi to android native side');
+      print(e.message);
+    }
+
     this._aemKey = await this
         ._secondaryKeygen(_temporaryExposureKey['key'], stringData: 'CT-AEMK');
     print('(_scheduler) Updated AEM Key');
@@ -288,7 +302,7 @@ class ExposureNotification {
   }
 
   /// Check for exposures
-  Future<void> checkExposure(List diagnosisKeys) async {
+  Future<void> checkExposure(List diagnosisKeys, HashMap contactRPIs) async {
     int exposedCtr = 0;
     for (var patientKey in diagnosisKeys) {
       for (var positiveKey in patientKey) {
@@ -303,7 +317,7 @@ class ExposureNotification {
           var tempRPIHex =
               await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
           // Now check if we ever came in contact with this rolling proximity identifier
-          if (this.contactRPIs.containsKey(tempRPIHex)) {
+          if (contactRPIs.containsKey(tempRPIHex)) {
             exposedCtr++;
           }
         }

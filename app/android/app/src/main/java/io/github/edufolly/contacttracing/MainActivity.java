@@ -42,6 +42,7 @@ public class MainActivity extends FlutterActivity {
   public static final String NAME = "BluetoothDemo";
   private static final String CHANNEL = "samples.flutter.dev/bluetooth";
   BluetoothAdapter bluetoothAdapter = null;
+  AcceptThread obj=null;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +58,14 @@ public class MainActivity extends FlutterActivity {
 
             if (call.method.equals("customStartServer")){
               startServer(call,result);
+            }
+            if (call.method.equals("messageForServer")) {
+               if(!call.hasArgument("message")){
+                result.error("invalid_argument", "argument 'message' not found", null);
+              }
+              String msg = call.argument("message");
+              messageForServer(call,result,msg);
+
             }
             if (call.method.equals("customConnectToDevice")) {
               if (!call.hasArgument("address")) {
@@ -115,15 +124,19 @@ public class MainActivity extends FlutterActivity {
     
   }
 
+  private void messageForServer(MethodCall call,Result result,String msg) {
+    System.out.println("From Native Android!");
+    System.out.println(msg);
+    obj.setRPI(msg);
+    result.success("Got the rpi!!");
+  }
+
   private void startServer(MethodCall call,Result result) { 
-    //Activity activity = this;
-    //try{
-      new Thread(new AcceptThread()).start();
+      //new Thread(new AcceptThread());
+      obj= new AcceptThread();
+      Thread at = new Thread(obj);
+      at.start();
       result.success("Calling Server Class successful");
-    //} 
-    //catch(IOException e){
-    //  result.error("Error calling server class","Error",null);
-    //}
   }
 
 }

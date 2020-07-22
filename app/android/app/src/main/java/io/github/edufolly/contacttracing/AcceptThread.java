@@ -35,6 +35,7 @@ public class AcceptThread extends Thread {
         private final BluetoothServerSocket mmServerSocket;
         BluetoothAdapter mBluetoothAdapter = null;
         private volatile boolean running;
+        private volatile String rpi; 
 
         public AcceptThread() {
             mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -49,6 +50,7 @@ public class AcceptThread extends Thread {
         }
 
         public void run() {
+            System.out.println("RPI is "+ this.rpi);
             running = true;
             while(running) {
                 System.out.println("waiting on accept");
@@ -74,8 +76,14 @@ public class AcceptThread extends Thread {
 
                         PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
                         System.out.println("Attempting to send message ...\n");
-                        out.println("Hi from Bluetooth Demo Server");
-                        out.flush();
+                        if(this.rpi!=null){
+                            out.println(this.rpi);
+                            out.flush();
+                        }
+                        else {
+                            out.println("Hi from Bluetooth Demo Server");
+                            out.flush();
+                        }
                         System.out.println("Message sent...\n");
 
                         System.out.println("We are done, closing connection\n");
@@ -98,6 +106,12 @@ public class AcceptThread extends Thread {
                 }   
             }
             // System.out.println("Server ending \n");
+        }
+
+        public void setRPI(String rollingProximityIdentifier)
+        {
+            this.rpi = rollingProximityIdentifier;
+            System.out.println("From setRPI " + rpi);
         }
 
         public void cancel() {
