@@ -255,7 +255,7 @@ class ExposureNotification {
         try {
           response  = await dio.post("/keys",
           data: {
-              "currentIval": "2658672",//currIval,
+              "currentIval": currIval,
               "firstCall": firstRun
           });
         } catch (e) {

@@ -12,7 +12,7 @@ import '../storage.dart';
 
 class HomeScreen extends StatefulWidget {
   final ExposureNotification e;
-
+  
   const HomeScreen({
     @required this.e,
   }):assert(e!=null);
@@ -43,11 +43,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Dio dio=new Dio(options);
   final Storage s = new Storage();
+  
 
   Future<void> _sendKeys(BuildContext context, final approvalID, final medID) async{
+    //s.delete(); //to delete file
     List dailyKeys=[];
     int currIval;
-    //s.delete(); //to delete file
+    
     try {
       dailyKeys = await s.readKeys();
       print(dailyKeys);
