@@ -6,15 +6,21 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert' show utf8;
+// import 'dart:io';
 import "dart:typed_data";
 import 'package:dio/dio.dart';
 import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart';
-import 'package:encrypt/encrypt.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 import './storage.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+// import 'package:provider/provider.dart';
+// import './main.dart';
+// import 'package:workmanager/workmanager.dart';
 
-class ExposureNotification {
+class ExposureNotification extends ChangeNotifier{
   final _eKRollingPeriod = 144;
 
   /// Secret Keys
@@ -26,6 +32,9 @@ class ExposureNotification {
 
   SecretKey _rpiKey; // RollingProximityIdentifierKey
   SecretKey _aemKey; // AssociatedEncryptedMetadataKey
+  int exposedCounter=0;
+  int get counter => exposedCounter;
+
 
   //connection to server
   static BaseOptions options = new BaseOptions(
@@ -34,52 +43,21 @@ class ExposureNotification {
 
   //Dio object
   Dio dio=new Dio(options);
+
+  //to connect to server thread
   static const platform = const MethodChannel('samples.flutter.dev/bluetooth');
+
+
   int _eNIntervalNumber;
   int iVal;
   List<int> rollingProximityIdentifier = null; // to be broadcasted
   List<int> associatedEncryptedMetadata; // additional metadata
 
-  //will be in a file
-  // List<String> dummyRPIs = [
-  //   '41e9f07b40e2cab25a1c6c31f83d6b45',
-  //   '02940563c5c9ea374595d65c57e120e3',
-  //   '0b98bc8f903b5257c8affff791b527fd',
-  //   '70d3b09c746de08732df5e7a03c1a904',
-  //   '2a11bae1e0d913ec0cad0661dfa43c00',
-  //   '79621740d9728794f2f84e19a7d62654',
-  //   'c0dfd971a99aadd40914daa31eeb0d0b',
-  //   '83ad49d35c03cbfc59d48ee3f7cb4fcb', // end of first key
-  //   '6c608c78470d0f32c68284fa836be237',
-  //   'e16f9262233ed0c66adc733d279c029a',
-  //   '9013b1fe47ae0a5667fcd2c23c0e37ce',
-  //   '73c90e63003745e219ab2682f26239a4',
-  //   '40be8d9a145ac51487a5e7c61b3f211d',
-  //   '3f911893239b71d0dd577f203e99f689',
-  //   '4eeed4f8fb6ac91bc2d4fe1b277c6050',
-  //   '41ad948180f5737e0412a6cbc2e9de47',
-  //   '391e63bfe98f7d6a59d6c5aaf4d167b6',
-  //   'cc317cd860395bec3315a4f2b9929feb'
-  // ];
-
-  // Fetched from the server periodically
-  // List<Map> diagnosisKeys = [
-  //   {'key': '33917c36d48744ef3fbc4985188ea9e2', 'i': 2655360},
-  //   {'key': 'd67a4d2c5f44c218e92b03dd99fa3f92', 'i': 2655504}
-  // ];
-
-  // Generate a HashMap from the list of RPIs
-  //HashMap contactRPIs = HashMap();
+  
   //Make a storage class object to write temporary keys to the file
   final Storage s = new Storage();
 
   ExposureNotification() {
-  
-    // This dummy code is how we will add new RPIs to the hashmap
-    // for (var hexString in this.dummyRPIs) {
-    //   // only add an RPI if it's not already in the hashmap
-    //   this.contactRPIs.putIfAbsent(hexString, () => 1);
-    // }
 
     //updating current temporaryExposureKey map from file. 
     s.readKeys().then((keys) {  
@@ -96,23 +74,12 @@ class ExposureNotification {
     this._eNIntervalNumber =
         this._getIntervalNumber(timestamp: new DateTime.now());
     print('(constructor) Intialised ENIntervalNum');
-    
 
-    // TODO: Find when the next interval starts and set up one-shot
-    // scheduler to do this.
-    // var now = new DateTime.now();
-    // 15 _getIntervalNumber()
-    // 15 +1 -> time - now;
 
-    // const timeToInitiate = const Duration(seconds: 60);
     const tenMins = const Duration(minutes: 10);
-    // 3:04
-    // new Timer(
-    //     timeToInitiate,
-    //     () async => await this._scheduler(firstRun: true)); // 3:10
-
     new Timer.periodic(
-      tenMins, (timer) async => await this._scheduler());
+      tenMins, (timer) async => await this.scheduler());
+
     print('\n');
   }
 
@@ -190,8 +157,8 @@ class ExposureNotification {
     // Add the little endian representation of ENINT to the end of RPI
     List.copyRange(paddedData, 12, this._intToBytes(interval));
 
-    var key = Key(await localRPIKey.extract());
-    var cipher = Encrypter(AES(key, mode: AESMode.ecb, padding: null));
+    var key = encrypt.Key(await localRPIKey.extract());
+    var cipher = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.ecb, padding: null));
     List<int> rpi = cipher.encryptBytes(paddedData, iv: null).bytes;
 
     // print('(_repiGen) RPI Bytes: ${rpi.length}');
@@ -211,10 +178,10 @@ class ExposureNotification {
     // Use placeholder for msg as specsheet has no info on this
     var metadata = utf8.encode("Metadata");
 
-    var key = Key(await this._aemKey.extract());
-    var cipher = Encrypter(AES(key, mode: AESMode.ctr, padding: 'PKCS7'));
+    var key = encrypt.Key(await this._aemKey.extract());
+    var cipher = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.ctr, padding: 'PKCS7'));
     List<int> aem = cipher
-        .encryptBytes(metadata, iv: IV(this.rollingProximityIdentifier))
+        .encryptBytes(metadata, iv: encrypt.IV(this.rollingProximityIdentifier))
         .bytes;
 
     this.associatedEncryptedMetadata = aem;
@@ -224,12 +191,13 @@ class ExposureNotification {
   }
 
   /// The driver/scheduler function
-  Future<void> _scheduler() async {
+  Future<void> scheduler() async {
     int currInterval = this._getIntervalNumber(timestamp: new DateTime.now());
     this._eNIntervalNumber = currInterval;
-    print('(_scheduler) Updated ENIntervalNum: $currInterval');
+    print('(scheduler) Updated ENIntervalNum: $currInterval');
 
     int currIval = this._getIval(timestamp: new DateTime.now());
+    this.iVal = currIval;
 
     // If tempKey hasn't been set yet
     // or if it's been more than 24 hours since last keygen (i value must have changed)
@@ -246,40 +214,43 @@ class ExposureNotification {
         var tempKeyHex =
           hex.encode(await this._temporaryExposureKey['key'].extract());
       
-        s.writeKey(tempKeyHex,this._temporaryExposureKey['i'].toString());
+        await s.writeKey(tempKeyHex,this._temporaryExposureKey['i'].toString());
       
-        print('(_scheduler) Generated new TempExpKey: $tempKeyHex');
-        print('(_scheduler) i: ${this._temporaryExposureKey['i']}');
+        print('(scheduler) Generated new TempExpKey: $tempKeyHex');
+        print('(scheduler) i: ${this._temporaryExposureKey['i']}');
         
+        //get last 24 hour keys from the server
         if(!firstRun) {
 
           Response response;
-          //get keys from server and checkExposure
           try {
             response  = await dio.post("/keys",
             data: {
-                "currentIval": currIval,
-                "firstCall": firstRun
+                "currentIval": currIval.toString(),
+                "firstCall": firstRun,
             });
           } catch (e) {
             print(e.message);
           }
-          //print(response.data);
+          
+
+          // Read the hashmap of RPIs saved in local storage
           HashMap contactRPI = await s.readRPIs();
-          checkExposure(response.data,contactRPI);
+          if(contactRPI!=null && response.data!=null) {
+            checkExposure(response.data,contactRPI);
+          }
+          
         }
 
     }
-
-
     this._rpiKey = await this
         ._secondaryKeygen(_temporaryExposureKey['key'], stringData: 'EN-RPIK');
-    print('(_scheduler) Updated RPI Key');
+    print('(scheduler) Updated RPI Key');
 
     // now generate a new RPI
     var rpiHex = await this
         ._rpiGen(localRPIKey: this._rpiKey, interval: this._eNIntervalNumber);
-    print('(_scheduler) RPI Hex: $rpiHex');
+    print('(scheduler) RPI Hex: $rpiHex');
 
     try {
       String data= await platform.invokeMethod("messageForServer", {
@@ -292,11 +263,11 @@ class ExposureNotification {
 
     this._aemKey = await this
         ._secondaryKeygen(_temporaryExposureKey['key'], stringData: 'CT-AEMK');
-    print('(_scheduler) Updated AEM Key');
+    print('(scheduler) Updated AEM Key');
     // print('AEM Key: ${hex.encode(await aemKey.extract())}');
 
     var aemHex = await this._aemGen();
-    print('(_scheduler) AEM Hex: $aemHex');
+    print('(scheduler) AEM Hex: $aemHex');
 
     print('\n');
   }
@@ -324,6 +295,8 @@ class ExposureNotification {
       }
     }
     print('\n\nExposed counter: $exposedCtr\n\n'); // should be 5
+    this.exposedCounter = exposedCtr;
+    notifyListeners();
   }
 
 }

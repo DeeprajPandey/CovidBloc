@@ -35,14 +35,13 @@ import android.os.Handler;
 import android.os.Message;
 
 
-
-
 public class MainActivity extends FlutterActivity {
   public static final UUID MY_UUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
   public static final String NAME = "BluetoothDemo";
   private static final String CHANNEL = "samples.flutter.dev/bluetooth";
   BluetoothAdapter bluetoothAdapter = null;
   AcceptThread obj=null;
+  Thread at;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -127,16 +126,28 @@ public class MainActivity extends FlutterActivity {
   private void messageForServer(MethodCall call,Result result,String msg) {
     System.out.println("From Native Android!");
     System.out.println(msg);
-    obj.setRPI(msg);
+    if(at!=null && at.isAlive()) {
+      System.out.println("From Native Android : Thread is alive");
+      obj.setRPI(msg);
+    }
+    else {
+      System.out.println("From Native Android : Server not running! Starting again");
+      obj = new AcceptThread();
+      at = new Thread(obj);
+      at.start();
+      obj.setRPI(msg);
+      //startServer(MethodCall call,Result result);
+    }
+    
     result.success("Got the rpi!!");
   }
 
   private void startServer(MethodCall call,Result result) { 
-      //new Thread(new AcceptThread());
-      obj= new AcceptThread();
-      Thread at = new Thread(obj);
-      at.start();
-      result.success("Calling Server Class successful");
+        obj= new AcceptThread();
+        at = new Thread(obj);
+        at.start();
+        result.success("Calling Server Class successful");
+      //}
   }
 
 }

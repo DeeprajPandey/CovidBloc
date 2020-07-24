@@ -79,7 +79,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
     super.dispose();
   }
 
-  Future<void> _showKeyinDialogue(BuildContext context,String keyReceived) async {
+  Future<void> _showKeyinDialogue(BuildContext context,String keyReceived,String msg) async {
   return showDialog<void>(
     context:context,
     barrierDismissible: false, // user must tap button!
@@ -90,7 +90,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
           child: ListBody(
             children: <Widget>[
               Text(keyReceived),
-              Text('Storing this key in your local storage'),
+              Text(msg),
             ],
           ),
         ),
@@ -109,6 +109,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
 
   Future<void> connectToDevice(BuildContext context, BluetoothDevice dev) async {
     String exchangedKey;
+    //not needed now (both devices connect as client to get the other devices's rpi)
     String rollingProximityIdentifier;
     List<int> rpi= exp.rollingProximityIdentifier; //await doesnt matter
     if (rpi!=null) {
@@ -125,10 +126,15 @@ class DiscoveryPageState extends State<DiscoveryPage> {
       exchangedKey="No key received";
     }
     print("From dart: : $exchangedKey\n");
-     _showKeyinDialogue(context,exchangedKey);
-     if(exchangedKey!='Hi from Bluetooth Demo Server') {
+    if( exchangedKey == null || exchangedKey == 'Hi from Bluetooth Demo Server') {
+      if(exchangedKey == null) {
+      _showKeyinDialogue(context,'Key not received','Try again in some time');
+      }
+    }
+    else {
+     _showKeyinDialogue(context,exchangedKey,'Storing this key in your local storage');
       s.writeRPI(exchangedKey);
-     }
+    }
     
   }
 

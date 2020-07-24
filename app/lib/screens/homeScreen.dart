@@ -1,11 +1,16 @@
 
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:contact_tracing/config/styles.dart';
 import 'package:contact_tracing/widgets/widgets.dart';
 import 'package:dio/dio.dart';
 import '../keyGen.dart';
 import '../storage.dart';
+import 'package:badges/badges.dart';
+import 'package:provider/provider.dart';
+
 // import 'dart:convert';
 // import 'package:path_provider/path_provider.dart';
 
@@ -43,6 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Dio dio=new Dio(options);
   final Storage s = new Storage();
+
+  
   
 
   Future<void> _sendKeys(BuildContext context, final approvalID, final medID) async{
@@ -116,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 } 
 
-  Future<void> _validationPopUp(BuildContext context,String title,String errorMsg) async{
+  Future<void> _validationPopUp(BuildContext context,String title,String msg) async{
     return showDialog(
     context:context,
     barrierDismissible: false, // user must tap button!
@@ -127,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-              Text(errorMsg,
+              Text(msg,
               textAlign: TextAlign.center,
               ),
             ],
@@ -145,11 +152,49 @@ class _HomeScreenState extends State<HomeScreen> {
   );
 }
 
+  bool check=false;
+
   @override
   Widget build(BuildContext context) {
+    // final counter = context.select<ExposureNotification,int>(
+    //   (exp) => exp.counter
+    // );
+    final expCtr= Provider.of<ExposureNotification>(context).counter;
+    if(expCtr>0) {
+      check=true;
+    }
     final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: AppBar(
+      backgroundColor: Styles.primaryColor,
+      elevation: 0.0,
+      leading: IconButton(
+        icon: const Icon(Icons.menu),
+        iconSize: 28.0,
+        onPressed: () {},
+      ),
+      actions: <Widget>[
+        Badge(
+          position: BadgePosition.topRight(top: 0, right: 3),
+          showBadge: check,
+          badgeContent: Text(
+            expCtr.toString(),
+            ),
+          child: IconButton(
+            icon: const Icon(Icons.notifications_none),
+            iconSize: 28.0,
+            onPressed: () {
+              if(expCtr>0) {
+              _validationPopUp(context, 'Visit the hospital', 'You have come in contact with people who have tested positive in the last 24 hours');
+              }
+              else {
+                _validationPopUp(context, 'You are Safe', 'You havent come across anyone who has tested postive in the last 24 hours');
+              }
+            },
+          ),
+        )
+      ],
+    ),
       body: CustomScrollView(
         physics: ClampingScrollPhysics(),
         slivers: <Widget>[

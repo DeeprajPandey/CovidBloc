@@ -67,14 +67,19 @@ class Storage {
   }
 
   Future<HashMap> readRPIs() async {
-    final file = await localFile('ExchangedRPI.txt');
-    List rpis = await file.readAsLines();
-    HashMap contactRPIS =HashMap();
-    for (var hexString in rpis) {
-      contactRPIS.putIfAbsent(hexString, () => 1);
+    try{
+      final file = await localFile('ExchangedRPI.txt');
+      List rpis = await file.readAsLines();
+      HashMap contactRPIS =HashMap();
+      for (var hexString in rpis) {
+        contactRPIS.putIfAbsent(hexString, () => 1);
+      }
+      return contactRPIS;
+    } catch(e) {
+      return null;
     }
     
-    return contactRPIS;
+    
   }
     
 
