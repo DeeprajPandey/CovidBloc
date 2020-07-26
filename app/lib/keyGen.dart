@@ -15,9 +15,8 @@ import './storage.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
-// import './main.dart';
-// import 'package:workmanager/workmanager.dart';
+import 'package:cron/cron.dart';
+//import 'package:android_alarm_manager/android_alarm_manager.dart';
 
 class ExposureNotification extends ChangeNotifier{
   final _eKRollingPeriod = 144;
@@ -74,10 +73,16 @@ class ExposureNotification extends ChangeNotifier{
         this._getIntervalNumber(timestamp: new DateTime.now());
     print('(constructor) Intialised ENIntervalNum');
 
+    //print('Running alarm manager');
+    //AndroidAlarmManager.periodic(const Duration(minutes: 1), 0, callback);
+    // const tenMins = const Duration(minutes: 10);
+    // new Timer.periodic(
+    //   tenMins, (timer) async => await this.scheduler());
 
-    const tenMins = const Duration(minutes: 10);
-    new Timer.periodic(
-      tenMins, (timer) async => await this.scheduler());
+    var cron = new Cron();
+    cron.schedule(new Schedule.parse('*/10 * * * *'), () async {
+      this.scheduler();
+  });
 
     print('\n');
   }
@@ -239,10 +244,10 @@ class ExposureNotification extends ChangeNotifier{
             checkExposure(response.data,contactRPI);
           }
           
-          
         }
 
     }
+     
     this._rpiKey = await this
         ._secondaryKeygen(_temporaryExposureKey['key'], stringData: 'EN-RPIK');
     print('(scheduler) Updated RPI Key');
@@ -300,10 +305,11 @@ class ExposureNotification extends ChangeNotifier{
   }
 
   //just to test something
-  // void expDone(){
-  //   this.exposedCounter=2;
-  //   notifyListeners();
-  // }
+  void expDone(){
+    print('I am here !!');
+    this.exposedCounter=2;
+    notifyListeners();
+  }
 
 }
 

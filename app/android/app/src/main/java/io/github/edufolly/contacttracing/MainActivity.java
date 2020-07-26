@@ -1,8 +1,10 @@
-//package io.github.edufolly.flutterbluetoothserialexample;
 package io.github.edufolly.contacttracing;
-import android.os.Bundle;
-import io.flutter.app.FlutterActivity;
+
+// import android.os.Bundle;
+// import io.flutter.app.FlutterActivity;
 import io.flutter.plugins.GeneratedPluginRegistrant;
+import io.flutter.embedding.android.FlutterActivity;
+
 
 import java.util.UUID;
 import java.io.BufferedReader;
@@ -14,7 +16,6 @@ import java.io.PrintWriter;
 import java.util.Set;
 
 import androidx.annotation.NonNull;
-//import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodChannel;
 
@@ -44,11 +45,13 @@ public class MainActivity extends FlutterActivity {
   Thread at;
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    GeneratedPluginRegistrant.registerWith(this);
+  // protected void onCreate(Bundle savedInstanceState) {
+  //   super.onCreate(savedInstanceState);
+  //   GeneratedPluginRegistrant.registerWith(this);
+  public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    super.configureFlutterEngine(flutterEngine);
 
-    new MethodChannel(getFlutterView(), CHANNEL).setMethodCallHandler(
+    new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL).setMethodCallHandler(
         new MethodCallHandler() {
 
           @Override
@@ -131,7 +134,7 @@ public class MainActivity extends FlutterActivity {
       obj.setRPI(msg);
     }
     else {
-      System.out.println("From Native Android : Server not running! Starting again");
+      System.out.println("From Native Android : Server not running! Starting");
       obj = new AcceptThread();
       at = new Thread(obj);
       at.start();
