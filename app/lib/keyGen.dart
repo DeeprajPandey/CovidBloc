@@ -6,7 +6,6 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert' show utf8;
-// import 'dart:io';
 import "dart:typed_data";
 import 'package:dio/dio.dart';
 import 'package:convert/convert.dart';
@@ -240,6 +239,7 @@ class ExposureNotification extends ChangeNotifier{
             checkExposure(response.data,contactRPI);
           }
           
+          
         }
 
     }
@@ -298,6 +298,12 @@ class ExposureNotification extends ChangeNotifier{
     this.exposedCounter = exposedCtr;
     notifyListeners();
   }
+
+  //just to test something
+  // void expDone(){
+  //   this.exposedCounter=2;
+  //   notifyListeners();
+  // }
 
 }
 

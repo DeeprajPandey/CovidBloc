@@ -1,16 +1,12 @@
 
-
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:contact_tracing/config/styles.dart';
-import 'package:contact_tracing/widgets/widgets.dart';
 import 'package:dio/dio.dart';
 import '../keyGen.dart';
 import '../storage.dart';
 import 'package:badges/badges.dart';
 import 'package:provider/provider.dart';
-
+//import 'package:contact_tracing/widgets/widgets.dart';
 // import 'dart:convert';
 // import 'package:path_provider/path_provider.dart';
 

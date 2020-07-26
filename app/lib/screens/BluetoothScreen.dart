@@ -6,7 +6,7 @@ import 'package:contact_tracing/screens/screens.dart';
 //import 'package:contact_tracing/widgets/widgets.dart';
 import 'package:contact_tracing/config/styles.dart';
 import '../keyGen.dart';
-import 'package:provider/provider.dart';
+//import 'package:provider/provider.dart';
 
 
 typedef void Listener(dynamic msg);
