@@ -49,7 +49,7 @@ export default {
     dismissible: {
       type: Boolean,
       default: false,
-      description: "Whether alert is closes when clicking"
+      description: "Whether alert is closed when clicking"
     }
   },
   data() {

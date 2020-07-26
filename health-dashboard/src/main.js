@@ -16,15 +16,22 @@
 
 */
 import Vue from 'vue'
+import Toasted from 'vue-toasted'
 import App from './App.vue'
 import router from './router'
+import { axiosInstance } from './axios'
+import store from './store'
 import './registerServiceWorker'
 import ArgonDashboard from './plugins/argon-dashboard'
 
 Vue.config.productionTip = false
+Vue.prototype.$axios = axiosInstance
+// this.$axios.defaults.headers.common['Authorization'] = this.$store.getters.authToken;
 
+Vue.use(Toasted)
 Vue.use(ArgonDashboard)
-new Vue({
+export default new Vue({
+  store: store,
   router,
   render: h => h(App)
 }).$mount('#app')
