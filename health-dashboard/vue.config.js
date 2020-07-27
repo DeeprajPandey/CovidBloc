@@ -11,7 +11,11 @@ module.exports = {
     ]
   },
   pwa: {
+<<<<<<< HEAD
     name: 'Exposure Notification on Fabric',
+=======
+    name: 'Vue Argon Dashboard',
+>>>>>>> dev-app
     themeColor: '#172b4d',
     msTileColor: '#172b4d',
     appleMobileWebAppCapable: 'yes',

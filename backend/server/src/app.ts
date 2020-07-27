@@ -99,7 +99,6 @@ app.use(express.json());
 /**
  * Fabric Routes
  */
-// TODO: Remove this to host webapp
 app.get("/", (req, res, next) => {
   res.sendFile("index.html", { root: staticRoot })
 });
@@ -192,8 +191,7 @@ app.post("/register", async (req: Request, res: Response) => {
     const html = `<b>Hey there! </b><br><br>Please store the ID somewhere safe as you will need it to log
     into the portal later.<br>Medical ID: ${recvID}`;
     try {
-      // TODO: change the receiver to dbObj.email
-      await sendEmail(process.env.EM_RECVR, "Your Medical ID", text, html);
+      await sendEmail(dbObj.email, "Your Medical ID", text, html);
     } catch (e) {
       throw new Error("Couldn't send medID to the specified email.");
     }
@@ -440,8 +438,7 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
 app.post("/keys", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
-      req.body.currentIval &&
-      (req.body.firstCall === true || req.body.firstCall === false)
+      req.body.currentIval
     );
     if (!validBody) {
       throw new Error("Invalid request");
@@ -451,7 +448,7 @@ app.post("/keys", async (req: Request, res: Response) => {
       console.error(networkObj.err);
       throw new Error("Admin not registered.");
     }
-    const contractResponse = await fabric.invoke('getKeys', [req.body.currentIval, req.body.firstCall.toString()], true, networkObj);
+    const contractResponse = await fabric.invoke('getKeys', [req.body.currentIval], true, networkObj);
     networkObj.gateway.disconnect();
     if ("err" in contractResponse) {
       console.error(contractResponse.err);
@@ -483,15 +480,13 @@ async function otpGen(dbObj: any): Promise<void> {
     dbObj.t_authstat = "INITIATED";
     dbObj.t_otp = OTP.toString();
 
-    // TODO: Uncomment. Send email
-    // const text = `Hey there,\nYour login code is ${OTP}\n\nEnter this code on the login page.`;
-    // const html = `<b>Hey there!</b><br>Your login code is ${OTP}<br><br>Enter this code on the login page.`;
-    // try {
-    //   // TODO: change sending address to dbObj.email
-    //   await sendEmail(process.env.EM_RECVR, "Your Login OTP", text, html);
-    // } catch (e) {
-    //   throw new Error("Couldn't send email.");
-    // }
+    const text = `Hey there,\nYour login code is ${OTP}\n\nEnter this code on the login page.`;
+    const html = `<b>Hey there!</b><br>Your login code is ${OTP}<br><br>Enter this code on the login page.`;
+    try {
+      await sendEmail(dbObj.email, "Your Login OTP", text, html);
+    } catch (e) {
+      throw new Error("Couldn't send email.");
+    }
 
     // If the email was sent, set the timestamp
     const createdTime = Math.floor(Date.now() / 1000);
