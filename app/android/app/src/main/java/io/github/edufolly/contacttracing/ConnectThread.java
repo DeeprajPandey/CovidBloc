@@ -30,7 +30,6 @@ import android.os.Message;
 
 public class ConnectThread extends Thread {
   private BluetoothSocket socket;
-  private final String send_key;
   private final BluetoothDevice mmDevice;
   private volatile String exchanged_key; //Volatile keyword is used to modify the value of a variable by different threads
 //   BluetoothAdapter mBluetoothAdapter = null;
@@ -45,9 +44,8 @@ public class ConnectThread extends Thread {
     //     handler.sendMessage(msg);
     // }
 
-  public ConnectThread(BluetoothDevice device,String msg) {
+  public ConnectThread(BluetoothDevice device) {
     mmDevice = device;
-    send_key=msg;
     BluetoothSocket tmp = null;
     
     // Get a BluetoothSocket for a connection with the
@@ -88,8 +86,7 @@ public class ConnectThread extends Thread {
         try {
             PrintWriter socket_out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
             System.out.println("Attempting to send message ...\n");
-            //socket_out.println("Hello from Bluetooth Client!");
-            socket_out.println(send_key);
+            socket_out.println("Hello from Bluetooth Client!");
             socket_out.flush();
             System.out.println("Message sent...\n");        
 

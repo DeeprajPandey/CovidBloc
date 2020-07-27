@@ -32,7 +32,7 @@ class ExposureNotification extends ChangeNotifier{
   SecretKey _aemKey; // AssociatedEncryptedMetadataKey
   int exposedCounter=0;
   int get counter => exposedCounter;
-
+  //HashMap exposedKeys = new HashMap();
 
   //connection to server
   static BaseOptions options = new BaseOptions(
@@ -75,14 +75,14 @@ class ExposureNotification extends ChangeNotifier{
 
     //print('Running alarm manager');
     //AndroidAlarmManager.periodic(const Duration(minutes: 1), 0, callback);
-    // const tenMins = const Duration(minutes: 10);
-    // new Timer.periodic(
-    //   tenMins, (timer) async => await this.scheduler());
+    const tenMins = const Duration(minutes: 10);
+    new Timer.periodic(
+      tenMins, (timer) async => await this.scheduler());
 
-    var cron = new Cron();
-    cron.schedule(new Schedule.parse('*/10 * * * *'), () async {
-      this.scheduler();
-  });
+  //   var cron = new Cron();
+  //   cron.schedule(new Schedule.parse('*/10 * * * *'), () async {
+  //     this.scheduler();
+  // });
 
     print('\n');
   }
@@ -209,8 +209,6 @@ class ExposureNotification extends ChangeNotifier{
     if (this._temporaryExposureKey['i'] == null ||
         this._temporaryExposureKey['i'] != currIval) {
         
-        bool firstRun = (this._temporaryExposureKey['i']==null);
-
         this._temporaryExposureKey['i'] = currIval;
         this._temporaryExposureKey['key'] = this._dailyKeygen();
 
@@ -222,32 +220,10 @@ class ExposureNotification extends ChangeNotifier{
       
         print('(scheduler) Generated new TempExpKey: $tempKeyHex');
         print('(scheduler) i: ${this._temporaryExposureKey['i']}');
-        
-        //get last 24 hour keys from the server
-        if(!firstRun) {
-
-          Response response;
-          try {
-            response  = await dio.post("/keys",
-            data: {
-                "currentIval": currIval.toString(),
-                "firstCall": firstRun,
-            });
-          } catch (e) {
-            print(e.message);
-          }
-          
-
-          // Read the hashmap of RPIs saved in local storage
-          HashMap contactRPI = await s.readRPIs();
-          if(contactRPI!=null && response.data!=null) {
-            checkExposure(response.data,contactRPI);
-          }
-          
-        }
-
-    }
      
+
+     }
+
     this._rpiKey = await this
         ._secondaryKeygen(_temporaryExposureKey['key'], stringData: 'EN-RPIK');
     print('(scheduler) Updated RPI Key');
@@ -274,6 +250,25 @@ class ExposureNotification extends ChangeNotifier{
     var aemHex = await this._aemGen();
     print('(scheduler) AEM Hex: $aemHex');
 
+    print('(schedular) Checking exposure');
+    //fetching data from server
+    Response response;
+    try {
+      response  = await dio.post("/keys",
+      data: {
+          "currentIval": currIval.toString(),
+          "firstCall": false,
+      });
+    } catch (e) {
+      print(e.message);
+    }
+    
+    // Read the hashmap of RPIs saved in local storage
+    HashMap contactRPI = await s.readRPIs();
+    if(contactRPI!=null && response.data!=null) {
+      checkExposure(response.data,contactRPI);
+    }
+
     print('\n');
   }
 
@@ -294,7 +289,9 @@ class ExposureNotification extends ChangeNotifier{
               await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
           // Now check if we ever came in contact with this rolling proximity identifier
           if (contactRPIs.containsKey(tempRPIHex)) {
+            //exposedKeys.putIfAbsent(positiveKey['hexkey'], () => i);
             exposedCtr++;
+            
           }
         }
       }
@@ -304,12 +301,6 @@ class ExposureNotification extends ChangeNotifier{
     notifyListeners();
   }
 
-  //just to test something
-  void expDone(){
-    print('I am here !!');
-    this.exposedCounter=2;
-    notifyListeners();
-  }
 
 }
 

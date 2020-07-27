@@ -110,26 +110,19 @@ class DiscoveryPageState extends State<DiscoveryPage> {
   Future<void> connectToDevice(BuildContext context, BluetoothDevice dev) async {
     String exchangedKey;
     //not needed now (both devices connect as client to get the other devices's rpi)
-    String rollingProximityIdentifier;
-    List<int> rpi= exp.rollingProximityIdentifier; //await doesnt matter
-    if (rpi!=null) {
-      rollingProximityIdentifier= hex.encode(rpi);
-    }
-    else { 
-      rollingProximityIdentifier= "Nothing";
-    }
+    
     try {
       exchangedKey =
-          await platform.invokeMethod('customConnectToDevice', {"address": dev.address,"message":rollingProximityIdentifier});
+          await platform.invokeMethod('customConnectToDevice', {
+            "address": dev.address
+            });
     } on PlatformException catch (e) {
       print("Failed to establish connection: '${e.message}'");
       exchangedKey="No key received";
     }
     print("From dart: : $exchangedKey\n");
     if( exchangedKey == null || exchangedKey == 'Hi from Bluetooth Demo Server') {
-      if(exchangedKey == null) {
       _showKeyinDialogue(context,'Key not received','Try again in some time');
-      }
     }
     else {
      _showKeyinDialogue(context,exchangedKey,'Storing this key in your local storage');
@@ -187,7 +180,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
             BluetoothDiscoveryResult result = results[index];
             return BluetoothDeviceListEntry(
               device: result.device,
-              rssi: result.rssi,
+              //rssi: result.rssi,
               onTap: () {
                 connectToDevice(context,result.device);
                 //Navigator.of(context).pop(result.device);
