@@ -1,8 +1,10 @@
-//package io.github.edufolly.flutterbluetoothserialexample;
 package io.github.edufolly.contacttracing;
-import android.os.Bundle;
-import io.flutter.app.FlutterActivity;
+
+// import android.os.Bundle;
+// import io.flutter.app.FlutterActivity;
 import io.flutter.plugins.GeneratedPluginRegistrant;
+import io.flutter.embedding.android.FlutterActivity;
+
 
 import java.util.UUID;
 import java.io.BufferedReader;
@@ -14,7 +16,6 @@ import java.io.PrintWriter;
 import java.util.Set;
 
 import androidx.annotation.NonNull;
-//import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodChannel;
 
@@ -35,37 +36,47 @@ import android.os.Handler;
 import android.os.Message;
 
 
-
-
 public class MainActivity extends FlutterActivity {
   public static final UUID MY_UUID = UUID.fromString("fa87c0d0-afac-11de-8a39-0800200c9a66");
   public static final String NAME = "BluetoothDemo";
   private static final String CHANNEL = "samples.flutter.dev/bluetooth";
   BluetoothAdapter bluetoothAdapter = null;
+  AcceptThread obj=null;
+  Thread at;
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    GeneratedPluginRegistrant.registerWith(this);
+  // protected void onCreate(Bundle savedInstanceState) {
+  //   super.onCreate(savedInstanceState);
+  //   GeneratedPluginRegistrant.registerWith(this);
+  public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
+    super.configureFlutterEngine(flutterEngine);
 
-    new MethodChannel(getFlutterView(), CHANNEL).setMethodCallHandler(
+    new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL).setMethodCallHandler(
         new MethodCallHandler() {
 
           @Override
           public void onMethodCall(MethodCall call, Result result) {
             bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-            if (call.method.equals("customStartServer")){
-              startServer(call,result);
+            if (call.method.equals("customStartServer")) {
+              if(!call.hasArgument("message")) {
+                result.error("invalid_argument", "argument 'message' not found", null);
+              }
+              String onOff= call.argument("message");
+              startServer(call,result,onOff);
+            }
+            if (call.method.equals("messageForServer")) {
+               if(!call.hasArgument("message")){
+                result.error("invalid_argument", "argument 'message' not found", null);
+              }
+              String msg = call.argument("message");
+              messageForServer(call,result,msg);
             }
             if (call.method.equals("customConnectToDevice")) {
               if (!call.hasArgument("address")) {
                 result.error("invalid_argument", "argument 'address' not found", null);
               }
-              if(!call.hasArgument("message")){
-                result.error("invalid_argument", "argument 'message' not found", null);
-              }
-
+              
               String address;
               try {
                 address = call.argument("address");
@@ -78,10 +89,9 @@ public class MainActivity extends FlutterActivity {
               }
 
               String addr = call.argument("address");
-              String msg= call.argument("message");
               BluetoothDevice device = bluetoothAdapter.getRemoteDevice(addr);
 
-              connectToDevice(call,result,device,msg);
+              connectToDevice(call,result,device);
             } else {
               result.notImplemented();
               //System.out.println("Not Implemented");
@@ -91,12 +101,12 @@ public class MainActivity extends FlutterActivity {
     );
   }
 
-  private void connectToDevice(MethodCall call,Result result,BluetoothDevice device,String msg) { //Result result,
+  private void connectToDevice(MethodCall call,Result result,BluetoothDevice device) { //Result result,
     //Activity activity = this;
     String exchanged_key;
     if (device != null) {
       try{
-        ConnectThread ct= new ConnectThread(device,msg);
+        ConnectThread ct= new ConnectThread(device);
         Thread t=new Thread(ct);
         t.start();
         t.join();
@@ -115,17 +125,46 @@ public class MainActivity extends FlutterActivity {
     
   }
 
-  private void startServer(MethodCall call,Result result) { 
-    //Activity activity = this;
-    //try{
-      new Thread(new AcceptThread()).start();
-      result.success("Calling Server Class successful");
-    //} 
-    //catch(IOException e){
-    //  result.error("Error calling server class","Error",null);
-    //}
+  private void messageForServer(MethodCall call,Result result,String msg) {
+    System.out.println("From Native Android!");
+    System.out.println(msg);
+    if(at!=null && at.isAlive()) {
+      System.out.println("From Native Android : Thread is alive");
+      obj.setRPI(msg);
+    }
+    else {
+      System.out.println("From Native Android : Server not running! Starting");
+      obj = new AcceptThread();
+      at = new Thread(obj);
+      at.start();
+      obj.setRPI(msg);
+      //startServer(MethodCall call,Result result);
+    }
+    
+    result.success("Got the rpi!!");
   }
 
+  private void startServer(MethodCall call,Result result, String msg) { 
+    if (msg == "shutdown") {
+      if(at!=null && at.isAlive()) {
+        obj.cancel();
+        at.stop();
+      }   
+      result.success("Server turned off");
+    }
+    else {
+        if (at==null) {
+          obj= new AcceptThread();
+          at = new Thread(obj);
+          at.start();
+          result.success("Calling Server Class successful");
+        }
+        else if(at!=null && at.isAlive()) {
+          result.success("Already running");
+        }
+      
+    }
+  }
 }
 
 

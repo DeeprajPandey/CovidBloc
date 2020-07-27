@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:contact_tracing/screens/screens.dart';
 import '../keyGen.dart';
@@ -18,9 +19,9 @@ class BottomNavScreen extends StatefulWidget{
 
 class BottomNavScreenState extends State<BottomNavScreen>{
   final ExposureNotification exp;
-   
+
    BottomNavScreenState({
-    @required this.exp,
+    @required this.exp
   }):assert(exp!=null);
   
   int _currentIndex= 0; //initialise screen index (0 will show homeScreen and so on)

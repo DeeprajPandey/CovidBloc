@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:contact_tracing/config/Styles.dart';
+import 'package:contact_tracing/storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:progress_indicators/progress_indicators.dart';
@@ -30,6 +31,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
   StreamSubscription<BluetoothDiscoveryResult> _streamSubscription;
   List<BluetoothDiscoveryResult> results = List<BluetoothDiscoveryResult>();
   bool isDiscovering;
+  final Storage s = new Storage();
   // String _statusMsg = 'Waiting for response';
 
   DiscoveryPageState({@required this.exp,}):assert(exp!=null);
@@ -77,7 +79,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
     super.dispose();
   }
 
-  Future<void> _showKeyinDialogue(BuildContext context,String keyReceived) async {
+  Future<void> _showKeyinDialogue(BuildContext context,String keyReceived,String msg) async {
   return showDialog<void>(
     context:context,
     barrierDismissible: false, // user must tap button!
@@ -88,7 +90,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
           child: ListBody(
             children: <Widget>[
               Text(keyReceived),
-              Text('Storing this key in your local storage'),
+              Text(msg),
             ],
           ),
         ),
@@ -107,23 +109,26 @@ class DiscoveryPageState extends State<DiscoveryPage> {
 
   Future<void> connectToDevice(BuildContext context, BluetoothDevice dev) async {
     String exchangedKey;
-    String rollingProximityIdentifier;
-    List<int> rpi= exp.rollingProximityIdentifier; //await doesnt matter
-    if (rpi!=null) {
-      rollingProximityIdentifier= hex.encode(rpi);
-    }
-    else { 
-      rollingProximityIdentifier= "Nothing";
-    }
+    //not needed now (both devices connect as client to get the other devices's rpi)
+    
     try {
       exchangedKey =
-          await platform.invokeMethod('customConnectToDevice', {"address": dev.address,"message":rollingProximityIdentifier});
+          await platform.invokeMethod('customConnectToDevice', {
+            "address": dev.address
+            });
     } on PlatformException catch (e) {
       print("Failed to establish connection: '${e.message}'");
       exchangedKey="No key received";
     }
     print("From dart: : $exchangedKey\n");
-     _showKeyinDialogue(context,exchangedKey);
+    if( exchangedKey == null || exchangedKey == 'Hi from Bluetooth Demo Server') {
+      _showKeyinDialogue(context,'Key not received','Try again in some time');
+    }
+    else {
+     _showKeyinDialogue(context,exchangedKey,'Storing this key in your local storage');
+      s.writeRPI(exchangedKey);
+    }
+    
   }
 
   @override
@@ -175,7 +180,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
             BluetoothDiscoveryResult result = results[index];
             return BluetoothDeviceListEntry(
               device: result.device,
-              rssi: result.rssi,
+              //rssi: result.rssi,
               onTap: () {
                 connectToDevice(context,result.device);
                 //Navigator.of(context).pop(result.device);
