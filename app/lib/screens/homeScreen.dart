@@ -6,7 +6,8 @@ import '../storage.dart';
 import 'package:badges/badges.dart';
 import 'package:provider/provider.dart';
 import 'dart:collection';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart'; // for date format
+
 //import 'dart:io';
 //import 'package:contact_tracing/widgets/widgets.dart';
 //import 'dart:convert';
@@ -126,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
  List<Widget> extractTimestamps(HashMap exposed){
   List timestamps;
-  exposed.forEach((k, v) => timestamps.add(DateFormat('dd-MM hh:mm').format(v)));
+  exposed.forEach((k, v) => timestamps.add(DateFormat('yyyy-MM-dd hh:mm:ss').format(v)));
   return timestamps.map((x){
       return Padding(
         padding: EdgeInsets.all(5.0),
