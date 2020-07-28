@@ -1,14 +1,19 @@
-
+import 'package:contact_tracing/config/Styles.dart';
 import 'package:flutter/material.dart';
-import 'package:contact_tracing/config/styles.dart';
 import 'package:dio/dio.dart';
 import '../keyGen.dart';
 import '../storage.dart';
 import 'package:badges/badges.dart';
 import 'package:provider/provider.dart';
+import 'dart:collection';
+import 'package:intl/intl.dart'; 
+//import 'dart:io';
 //import 'package:contact_tracing/widgets/widgets.dart';
-// import 'dart:convert';
+//import 'dart:convert';
 // import 'package:path_provider/path_provider.dart';
+// import 'package:flutter/services.dart';
+// import 'package:cryptography/cryptography.dart';
+
 
 
 class HomeScreen extends StatefulWidget {
@@ -38,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
     
   //new Dio with a BaseOptions instance.
   static BaseOptions options = new BaseOptions(
-      baseUrl: "http://192.168.0.152:6000/",
+      baseUrl: "http://192.168.0.152:6400/",
   );
   //print(response.data.toString());
 
@@ -117,7 +122,76 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
-} 
+}
+
+ List<Widget> extractTimestamps(HashMap exposed){
+  List timestamps;
+  exposed.forEach((k, v) => timestamps.add(DateFormat('dd-MM hh:mm').format(v)));
+  return timestamps.map((x){
+      return Padding(
+        padding: EdgeInsets.all(5.0),
+        child: Row(children: <Widget>[
+          Icon(Icons.access_time),
+          Text(x)
+        ]),
+      );
+    }).toList();
+  }
+
+void _showTimestamps(BuildContext context,HashMap exposed) async{
+    showDialog(
+      context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            titlePadding: EdgeInsets.all(10.0),
+            contentPadding: EdgeInsets.all(0.0),
+            title: Text("Exposed Timestamps"),
+            content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Divider(
+                    height: 1.0,
+                    color: Colors.grey,
+                  ),
+
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: extractTimestamps(exposed)
+                      ),
+                    ),
+                  ),
+
+                  Divider(
+                    color: Colors.grey,
+                    height: 1.0,
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(left: 10.0, right: 10.0, top: 2.0, bottom: 5.0),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: FlatButton(
+                            color: Styles.primaryColor,
+                            textColor: Colors.white,
+                            shape: OutlineInputBorder(
+                                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(4.0), topLeft: Radius.circular(4.0))),
+                            child: Text("OK"),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                ]
+            ),
+          );
+        }
+    );
+  }
 
   Future<void> _validationPopUp(BuildContext context,String title,String msg) async{
     return showDialog(
@@ -155,8 +229,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // final counter = context.select<ExposureNotification,int>(
     //   (exp) => exp.counter
     // );
-    final expCtr= Provider.of<ExposureNotification>(context).counter;
-    if(expCtr>0) {
+    final exposed= Provider.of<ExposureNotification>(context).exposedTimestamps;
+    if(exposed.length>0) {
       check=true;
     }
     final screenHeight = MediaQuery.of(context).size.height;
@@ -174,17 +248,17 @@ class _HomeScreenState extends State<HomeScreen> {
           position: BadgePosition.topRight(top: 0, right: 3),
           showBadge: check,
           badgeContent: Text(
-            expCtr.toString(),
+            (exposed.length).toString(),
             ),
           child: IconButton(
             icon: const Icon(Icons.notifications_none),
             iconSize: 28.0,
             onPressed: () {
-              if(expCtr>0) {
-              _validationPopUp(context, 'Visit the hospital', 'You have come in contact with people who have tested positive in the last 24 hours');
+              if(exposed.length>0) {
+              _showTimestamps(context,exposed);
               }
               else {
-                _validationPopUp(context, 'You are Safe', 'You havent come across anyone who has tested postive in the last 24 hours');
+                _validationPopUp(context, 'You are Safe', 'You havent come across anyone who has tested postive');
               }
             },
           ),
@@ -346,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
         height: screenHeight * 0.15,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFAD9FE4), Styles.primaryColor],
+            colors: [Color(0xFF22aed1), Color(0xFF0AAB67)],
           ),
           borderRadius: BorderRadius.circular(20.0),
         ),

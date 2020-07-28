@@ -15,6 +15,8 @@ import './storage.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:date_format/date_format.dart';
+
 //import 'package:cron/cron.dart';
 //import 'package:android_alarm_manager/android_alarm_manager.dart';
 
@@ -30,13 +32,14 @@ class ExposureNotification extends ChangeNotifier{
 
   SecretKey _rpiKey; // RollingProximityIdentifierKey
   SecretKey _aemKey; // AssociatedEncryptedMetadataKey
-  int exposedCounter=0;
-  int get counter => exposedCounter;
-  //HashMap exposedKeys = new HashMap();
+  // int exposedCounter=0;
+  // int get counter => exposedCounter;
+  HashMap exposedKeys = new HashMap();
+  HashMap get exposedTimestamps => exposedKeys;
 
   //connection to server
   static BaseOptions options = new BaseOptions(
-      baseUrl: "http://192.168.0.152:6000/",
+      baseUrl: "http://192.168.0.152:6400/",
   );
 
   //Dio object
@@ -220,8 +223,9 @@ class ExposureNotification extends ChangeNotifier{
       
         print('(scheduler) Generated new TempExpKey: $tempKeyHex');
         print('(scheduler) i: ${this._temporaryExposureKey['i']}');
-     
 
+        //remove once a day
+        exposedKeys.removeWhere((key, value) => (DateTime.now().difference(value)).inDays>14);        
      }
 
     this._rpiKey = await this
@@ -256,8 +260,7 @@ class ExposureNotification extends ChangeNotifier{
     try {
       response  = await dio.post("/keys",
       data: {
-          "currentIval": currIval.toString(),
-          "firstCall": false,
+          "currentIval": currIval.toString()
       });
     } catch (e) {
       print(e.message);
@@ -274,9 +277,8 @@ class ExposureNotification extends ChangeNotifier{
 
   /// Check for exposures
   Future<void> checkExposure(List diagnosisKeys, HashMap contactRPIs) async {
-    int exposedCtr = 0;
-    for (var patientKey in diagnosisKeys) {
-      for (var positiveKey in patientKey) {
+    //int exposedCtr = 0;
+      for (var positiveKey in diagnosisKeys) {
         // We received the keys as hex strings. Convert them to bytes and create a SecretKey instance.
         var tempKey = SecretKey(hex.decode(positiveKey['hexkey']));
         var tempIval = int.parse(positiveKey['i']);
@@ -289,15 +291,15 @@ class ExposureNotification extends ChangeNotifier{
               await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
           // Now check if we ever came in contact with this rolling proximity identifier
           if (contactRPIs.containsKey(tempRPIHex)) {
-            //exposedKeys.putIfAbsent(positiveKey['hexkey'], () => i);
-            exposedCtr++;
-            
+            //find timestamp in indian standart time for this interval
+            var date = new DateTime.fromMillisecondsSinceEpoch((i*600) * 1000);
+            exposedKeys.putIfAbsent(positiveKey['hexkey'], () => date);
+            break;
+            //exposedCtr++;
           }
-        }
-      }
+        }     
     }
-    print('\n\nExposed counter: $exposedCtr\n\n'); // should be 5
-    this.exposedCounter = exposedCtr;
+   
     notifyListeners();
   }
 
