@@ -92,12 +92,10 @@ class BluetoothScreenState extends State<BluetoothScreen> {
   }
   
   
-  Future<void> _startServer (String onOff) async {
+  Future<void> _startServer () async {
     String connStatus;
     try{
-      connStatus = await platform.invokeMethod('customStartServer',{
-        "message":onOff
-        });
+      connStatus = await platform.invokeMethod("customStartServer");
     }on PlatformException catch(e){
       print("Failed to establish connection: '${e.message}'");
       connStatus = "Connection failed";
@@ -109,6 +107,7 @@ class BluetoothScreenState extends State<BluetoothScreen> {
 
   @override
   Widget build(BuildContext context) {
+    //_startServer();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Flutter Bluetooth Serial'),
@@ -127,11 +126,10 @@ class BluetoothScreenState extends State<BluetoothScreen> {
                   // async lambda seems to not working
                   if (value) {
                     await FlutterBluetoothSerial.instance.requestEnable();
-                    _startServer("start");
+                    await _startServer();
                   }
                   else
                     await FlutterBluetoothSerial.instance.requestDisable();
-                    _startServer("shutdown");
                 }
 
                 future().then((_) {

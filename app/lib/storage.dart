@@ -61,15 +61,28 @@ class Storage {
 
   }
 
-  Future<void> writeRPI(String exchangedRpi) async {
+  Future<String> writeRPI(String exchangedRpi) async {
     final file = await localFile('ExchangedRPI.txt');
-    List rpis= await file.readAsLines();
-    if(rpis.contains(exchangedRpi)!=true) {
-      return file.writeAsString('$exchangedRpi\n',mode:FileMode.append,encoding: utf8,flush:true);
+    List rpis=null;
+    try {
+      rpis= await file.readAsLines();
+    } catch(e) {
+      print("File not read");
     }
-    else {
-      return null;
+    if(rpis!=null) {
+      if(rpis.contains(exchangedRpi)!=true) {
+        await file.writeAsString('$exchangedRpi\n',mode:FileMode.append,encoding: utf8,flush:true);
+        return "Done";
+      }
+      else{ 
+        return null;
+      }
     }
+    else{
+      await file.writeAsString('$exchangedRpi\n',mode:FileMode.append,encoding: utf8,flush:true);
+      return "Done";
+    }
+    
   }
 
   Future<HashMap> readRPIs() async {

@@ -9,7 +9,6 @@ import 'package:contact_tracing/widgets/widgets.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/services.dart';
 import '../keyGen.dart';
-import 'package:convert/convert.dart';
 
 
 class DiscoveryPage extends StatefulWidget {
@@ -121,12 +120,20 @@ class DiscoveryPageState extends State<DiscoveryPage> {
       exchangedKey="No key received";
     }
     print("From dart: : $exchangedKey\n");
-    if( exchangedKey == null || exchangedKey == 'Hi from Bluetooth Demo Server') {
-      _showKeyinDialogue(context,'Key not received','Try again in some time');
+    if(exchangedKey == null || exchangedKey == 'Hi from Bluetooth Demo Server') {
+      if(exchangedKey == null) 
+        _showKeyinDialogue(context,'Key not received','Try again in some time');
+      else
+      _showKeyinDialogue(context, 'Key not received', 'Server is running but unable to get rpi');
     }
     else {
-     _showKeyinDialogue(context,exchangedKey,'Storing this key in your local storage');
-      s.writeRPI(exchangedKey);
+      final data = await s.writeRPI(exchangedKey);
+      print(data);
+      if(data!=null)
+        _showKeyinDialogue(context,exchangedKey,'Stored this key in your local storage');
+      else if(data==null)
+        _showKeyinDialogue(context, exchangedKey, 'Key already in local storage');
+      
     }
     
   }

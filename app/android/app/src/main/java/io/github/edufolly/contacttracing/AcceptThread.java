@@ -28,16 +28,17 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-
+import androidx.annotation.NonNull;
 
 public class AcceptThread extends Thread {
         // The local server socket
         private final BluetoothServerSocket mmServerSocket;
         BluetoothAdapter mBluetoothAdapter = null;
-        private volatile boolean running;
+        private volatile Boolean running;
         private volatile String rpi; 
 
         public AcceptThread() {
+            this.running = true;
             mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
             BluetoothServerSocket tmp = null;
             // Create a new listening server socket
@@ -51,7 +52,6 @@ public class AcceptThread extends Thread {
 
         public void run() {
             System.out.println("RPI is "+ this.rpi);
-            running = true;
             while(running) {
                 System.out.println("waiting on accept");
                 BluetoothSocket socket = null;
@@ -61,6 +61,7 @@ public class AcceptThread extends Thread {
                     socket = mmServerSocket.accept();
                 } catch (IOException e) {
                     System.out.println("Failed to accept\n");
+                    this.running=false;
                 }
 
                 // If a connection was accepted
@@ -99,11 +100,13 @@ public class AcceptThread extends Thread {
                     }
                 } else {
                     System.out.println("Made connection, but socket is null\n");
+                    this.running=false;
+                    
                 }
                 
-                if (Thread.interrupted()) {
-                    return;
-                }   
+                // if (Thread.interrupted()) {
+                //     return;
+                // }   
             }
             // System.out.println("Server ending \n");
         }
@@ -114,12 +117,18 @@ public class AcceptThread extends Thread {
             System.out.println("From setRPI " + rpi);
         }
 
+        public void setRunning()
+        {
+            this.running=true;
+        }
+
         public void cancel() {
-            running=false;
+            this.running = false;
             try {
                 mmServerSocket.close();
             } catch (IOException e) {
                 System.out.println( "close() of connect socket failed: "+e.getMessage() +"\n");
             }
+            
         }
     }

@@ -59,11 +59,7 @@ public class MainActivity extends FlutterActivity {
             bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
             if (call.method.equals("customStartServer")) {
-              if(!call.hasArgument("message")) {
-                result.error("invalid_argument", "argument 'message' not found", null);
-              }
-              String onOff= call.argument("message");
-              startServer(call,result,onOff);
+              startServer(call,result);
             }
             if (call.method.equals("messageForServer")) {
                if(!call.hasArgument("message")){
@@ -131,6 +127,7 @@ public class MainActivity extends FlutterActivity {
     if(at!=null && at.isAlive()) {
       System.out.println("From Native Android : Thread is alive");
       obj.setRPI(msg);
+      obj.setRunning();
     }
     else {
       System.out.println("From Native Android : Server not running! Starting");
@@ -144,26 +141,19 @@ public class MainActivity extends FlutterActivity {
     result.success("Got the rpi!!");
   }
 
-  private void startServer(MethodCall call,Result result, String msg) { 
-    if (msg == "shutdown") {
-      if(at!=null && at.isAlive()) {
-        obj.cancel();
-        at.stop();
-      }   
-      result.success("Server turned off");
+  private void startServer(MethodCall call,Result result) { 
+    if(at!=null && at.isAlive()) {
+      obj.setRunning();
+      result.success("Already running");
+
     }
     else {
-        if (at==null) {
-          obj= new AcceptThread();
-          at = new Thread(obj);
-          at.start();
-          result.success("Calling Server Class successful");
-        }
-        else if(at!=null && at.isAlive()) {
-          result.success("Already running");
-        }
-      
+      obj= new AcceptThread();
+      at = new Thread(obj);
+      at.start();
+      result.success("Calling Server Class successful");
     }
+    
   }
 }
 
