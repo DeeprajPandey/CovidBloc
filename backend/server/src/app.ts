@@ -103,7 +103,13 @@ app.use(express.json());
 app.get("/", (req, res, next) => {
   res.sendFile("index.html", { root: staticRoot })
 });
+
 app.use("/official", healthRoutes);
+
+app.post("/trial", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
+  res.status(200).send("Hi");
+});
+
 // Temp use: invoke readAsset
 // app.get("/", async (req: Request, res: Response) => {
 //   try {
@@ -352,9 +358,6 @@ app.get("/healthofficial", passport.authenticate('jwt', { session: false }), asy
     res.status(404).send(e.message);
     return;
   }
-});
-app.post("/trial", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
-  res.status(200).send("Hi");
 });
 
 // POST: Generate an approval for patient
