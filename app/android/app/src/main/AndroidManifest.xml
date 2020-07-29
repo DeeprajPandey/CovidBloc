@@ -31,8 +31,8 @@
           -->
     <application
         
-        android:label="Contact_Tracing"
-        android:icon="@mipmap/ic_launcher">
+        android:label="CovidBloc"
+        android:icon="@mipmap/covidbloc">
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"

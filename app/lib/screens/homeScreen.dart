@@ -127,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
  List<Widget> extractTimestamps(HashMap exposed){
   List timestamps= new List();
-  exposed.forEach((k, v) => timestamps.add(DateFormat('dd-MM hh:mm').format(v)));
+  exposed.forEach((k, v) => timestamps.add(DateFormat().format(v)));
   return timestamps.map((x){
       return Padding(
         padding: EdgeInsets.all(5.0),
@@ -295,7 +295,7 @@ void _showTimestamps(BuildContext context,HashMap exposed) async{
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Text(
-                  'COVID-19',
+                  'CovidBloc',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 25.0,
