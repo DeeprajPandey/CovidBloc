@@ -4,7 +4,7 @@
       <div class="card bg-secondary shadow border-0">
         <div class="card-body px-lg-5 py-lg-5">
           <div class="text-center text-muted mb-4">
-            <small>Sign up with your credentials</small>
+            <small>Use your assigned email ID to register on the blockchain</small>
           </div>
           <form role="form">
             <!-- <base-input class="input-group-alternative mb-3"
