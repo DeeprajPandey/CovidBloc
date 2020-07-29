@@ -319,7 +319,7 @@ app.post("/login", async (req: Request, res: Response, next: NextFunction) => {
       }
       const tokenObj = utils.issueJWT(dbObj);
       res.status(200).json({ token: tokenObj.token, expiresIn: tokenObj.expires, user: contractResponse.data });
-      
+
       // Reset auth status so request OTP suceeds on next login
       dbObj.t_authstat = "NA";
       await HealthOfficialModel.findOneAndUpdate({ email: dbObj.email }, dbObj);
@@ -365,8 +365,7 @@ app.post("/generateapproval", passport.authenticate('jwt', { session: false }), 
   try {
     const validBody = Boolean(
       req.body.email &&
-      req.body.medID &&
-      req.body.patientContact
+      req.body.medID
     );
     if (!validBody) {
       res.status(401).send("⚠️ Invalid request");
@@ -393,11 +392,23 @@ app.post("/generateapproval", passport.authenticate('jwt', { session: false }), 
       // Transaction error
       throw new Error("Something went wrong, please try again.");
     }
+    let sms_success = false;
+    let err_msg = "";
     // Send sms to patient with approvalID and medID
-    const msgText = `Please enter these details on the app to send your daily keys from the last 14 days to the server.\n\n`
-      + `Approval ID: ${approvalID}\nMedical ID: ${req.body.medID}`;
-    await sendSMS(req.body.patientContact, msgText);
-    res.status(200).send("Approval record generated. Waiting for user keys.");
+    if (req.body.patientContact) {
+      const msgText = `Please enter these details on the app to send your daily keys from the last 14 days to the server.\n\n`
+        + `Approval ID: ${approvalID}\nMedical ID: ${req.body.medID}`;
+      try {
+        await sendSMS(req.body.patientContact, msgText);
+        sms_success = true;
+      } catch (err) {
+        sms_success = false;
+        err_msg = "Approval ID generated but SMS failed. Please enter the code on the patient's app.";
+      }
+    }
+
+    // Send the approval ID to display on the dashboard
+    res.status(200).json({ apID: approvalID, smsErr: err_msg });
   } catch (e) {
     console.error(e);
     res.status(500).send("Server error");
