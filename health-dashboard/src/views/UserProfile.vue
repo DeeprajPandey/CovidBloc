@@ -139,8 +139,9 @@
                     <div class="col-lg-6">
                       <base-input
                         alternative=""
-                        label="Contact Number*"
+                        label="Contact Number"
                         input-classes="form-control-alternative"
+                        required="true"
                         v-model="model.username"
                       />
                     </div>
