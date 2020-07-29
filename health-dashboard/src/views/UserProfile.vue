@@ -1,19 +1,9 @@
 <template>
   <div>
     <base-header
-      class="header pb-8 pt-5 pt-lg-5 d-flex align-items-center"
+      class="header pb-6 pt-5 pt-lg-5 d-flex align-items-center"
       style="min-height: 600px; background-image: url(img/theme/personal_info.svg); background-size: cover; background-position: center top;"
     >
-      <div>
-        Icons made by
-        <a href="https://www.flaticon.com/authors/freepik" title="Freepik"
-          >Freepik</a
-        >
-        from
-        <a href="https://www.flaticon.com/" title="Flaticon"
-          >www.flaticon.com</a
-        >
-      </div>
       <!-- Mask -->
       <span class="mask bg-gradient-success opacity-8"></span>
       <!-- Header container -->

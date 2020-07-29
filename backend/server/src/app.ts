@@ -15,6 +15,7 @@ import * as fabric from './services/fabric';
 import { NetworkObject, GenericResponse } from './services/fabric.interface';
 import * as utils from './services/jwt';
 import HealthOfficialModel from './models/HealthOfficial';
+import healthRoutes from './routes/HealthOfficial';
 
 require('./services/passport.config')(passport);
 
@@ -102,6 +103,7 @@ app.use(express.json());
 app.get("/", (req, res, next) => {
   res.sendFile("index.html", { root: staticRoot })
 });
+app.use("/official", healthRoutes);
 // Temp use: invoke readAsset
 // app.get("/", async (req: Request, res: Response) => {
 //   try {
