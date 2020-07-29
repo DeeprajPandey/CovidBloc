@@ -69,7 +69,7 @@
                   <h3 class="mb-0">Generate Code</h3>
                 </div>
                 <div class="col-4 text-right">
-                  <h1 style="letter-spacing: 0.15em;">012345</h1>
+                  <h1 style="letter-spacing: 0.15em;">{{ approvalID }}</h1>
                 </div>
               </div>
             </div>
@@ -77,10 +77,18 @@
               <div class="pl-lg-4">
                 <div class="row">
                   <div class="col-lg-12">
+                    <div class="mb-3">
+                      <p class="text-muted">
+                        The contact number is <mark>optional</mark> and we only ask for
+                        it to send the patient an SMS with the code for their
+                        convenience. You can generate an approval without their
+                        number if they do not wish to disclose it.
+                      </p>
+                    </div>
                     <base-input
                       alternative=""
-                      label="Contact Number"
-                      placeholder="Patient Phone Number"
+                      label="Patient's Contact Number"
+                      placeholder="+91XXXXX"
                       input-classes="form-control-alternative"
                       v-model="request.patientContact"
                     />
@@ -88,7 +96,7 @@
                 </div>
               </div>
               <div class="col-11 text-center">
-                <base-button type="primary" class="my-4" @click="genApproval"
+                <base-button type="primary" class="my-4" @click="clickGenerate"
                   >Generate</base-button
                 >
               </div>
@@ -97,6 +105,34 @@
         </div>
       </div>
     </div>
+    <modal
+      :show.sync="noNumModal"
+      gradient="danger"
+      modal-classes="modal-danger modal-dialog-centered"
+    >
+      <div class="py-3 text-center">
+        <i class="ni ni-bell-55 ni-3x"></i>
+        <h4 class="heading mt-4">No contact number</h4>
+        <p>
+          You didn't enter the patient's contact number. That's okay, but they
+          won't receive the approval ID and your medical ID via SMS.<br />
+          You will see the ID on the dashboard and will have to enter it on
+          their phone yourself.
+        </p>
+      </div>
+
+      <template slot="footer">
+        <base-button type="white" @click="modalConfirm">Ok, Got it</base-button>
+        <base-button
+          type="link"
+          text-color="white"
+          class="ml-auto"
+          @click="modalReject"
+        >
+          Close
+        </base-button>
+      </template>
+    </modal>
   </div>
 </template>
 <script>
@@ -109,16 +145,40 @@ export default {
         medID: this.$store.getters.getUser.medID,
         patientContact: "",
       },
+      approvalID: "",
+      noNumModal: false,
     };
   },
   methods: {
+    clickGenerate() {
+      // check if patient num is empty, and alert
+      if (!this.request.patientContact) {
+        this.noNumModal = true;
+      } else {
+        this.genApproval();
+      }
+    },
+    modalConfirm() {
+      this.genApproval();
+      this.noNumModal = false;
+    },
+    modalReject() {
+      this.noNumModal = false;
+    },
     genApproval() {
       this.$axios
         .post("http://localhost:6400/generateapproval", this.request, {
           headers: { Authorization: this.$store.getters.authToken },
         })
         .then((response) => {
-          this.notify(response.data);
+          this.approvalID = response.data.apID;
+          if (response.data.smsErr) {
+            this.notify(response.data.smsErr);
+          } else {
+            this.notify(
+              "Approval record generated. Waiting for patient's daily keys."
+            );
+          }
         })
         .catch((err) => {
           if (!err.response.data) {
@@ -133,7 +193,7 @@ export default {
       this.$toasted.show(reason, {
         theme: "toasted-primary",
         position: "top-right",
-        duration: 5000,
+        duration: 6000,
       });
     },
   },
