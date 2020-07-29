@@ -1,7 +1,7 @@
 <template>
   <div>
     <base-header
-      class="header pb-8 pt-5 pt-lg-8 d-flex align-items-center"
+      class="header pb-6 pt-5 pt-lg-5 d-flex align-items-center"
       style="min-height: 600px; background-image: url(img/theme/profile-cover.jpg); background-size: cover; background-position: center top;"
     >
       <!-- Mask -->
@@ -12,10 +12,10 @@
           <div class="col-lg-12 col-md-10">
             <h1 class="display-2 text-white">Generate Approval Code</h1>
             <p class="text-white mt-0 mb-5">
-              After a patient has been diagnosed with COVID-19, follow these
-              steps<br />
-              to generate an approval record so they can upload their Daily Keys
-              from the CToF App.
+              After diagnosing a patient, please follow these steps to
+              generate<br />
+              an approval ID so they can upload their Daily Keys from the
+              CovidBloc App.
             </p>
           </div>
         </div>
@@ -67,6 +67,9 @@
               <div class="row align-items-center">
                 <div class="col-8">
                   <h3 class="mb-0">Generate Code</h3>
+                </div>
+                <div class="col-4 text-right">
+                  <h1 style="letter-spacing: 0.15em;">012345</h1>
                 </div>
               </div>
             </div>
