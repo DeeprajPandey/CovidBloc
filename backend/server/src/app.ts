@@ -107,7 +107,7 @@ app.get("/", (req, res, next) => {
 app.use("/official", healthRoutes);
 
 app.post("/trial", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
-  res.status(200).send("Hi");
+  res.status(200).send("Report filed.");
 });
 
 // Temp use: invoke readAsset
