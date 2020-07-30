@@ -79,10 +79,10 @@
                   <div class="col-lg-12">
                     <div class="mb-3">
                       <p class="text-muted">
-                        The contact number is <mark>optional</mark> and we only ask for
-                        it to send the patient an SMS with the code for their
-                        convenience. You can generate an approval without their
-                        number if they do not wish to disclose it.
+                        The contact number is <mark>optional</mark> and we only
+                        ask for it to send the patient an SMS with the code for
+                        their convenience. You can generate an approval without
+                        their number if they do not wish to disclose it.
                       </p>
                     </div>
                     <base-input
@@ -97,8 +97,7 @@
               </div>
               <div class="col-11 text-center">
                 <base-button type="primary" class="my-4" @click="clickGenerate"
-                  >Generate</base-button
-                >
+                  >Generate</base-button>
               </div>
             </form>
           </card>
