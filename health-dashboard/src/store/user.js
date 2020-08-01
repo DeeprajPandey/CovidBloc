@@ -63,6 +63,29 @@ const actions = {
         reject(e)
       }
     })
+  },
+  refresh(context, requestData){
+    return new Promise((resolve, reject) => {
+
+      VueInstance.$axios({
+        url: "http://localhost:6400/healthofficial",
+        data: requestData,
+        headers: { Authorization: context.state.token },
+        method: "POST",
+      })
+      .then(response => {
+        const user = JSON.stringify(response.data.data);
+        localStorage.setItem('meduser', user);
+        context.commit('auth_success', context.state.token, JSON.parse(user));
+        resolve(response);
+      })
+      .catch(err => {
+        context.commit('auth_error');
+        localStorage.removeItem('meduser');
+        localStorage.removeItem('token');
+        reject(err);
+      });
+    });
   }
 };
 
