@@ -107,7 +107,7 @@
                 href="https://github.com/DeeprajPandey/fabric-contact-tracing"
                 class="font-weight-bold ml-1"
                 target="_blank"
-                >Blockchain Powered Contact Tracing</a
+                >CovidBloc</a
               >
             </div>
           </div>

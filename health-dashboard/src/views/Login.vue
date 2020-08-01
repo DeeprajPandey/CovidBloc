@@ -105,7 +105,7 @@ export default {
       this.$store
         .dispatch("login", this.credentials)
         .then(() => {
-            this.$router.push("/profile");
+            this.$router.push("/diagnose");
         })
         .catch((err) => {
           if (!err.response.data) {

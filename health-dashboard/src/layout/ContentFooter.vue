@@ -8,8 +8,8 @@
             href="https://github.com/DeeprajPandey/fabric-contact-tracing"
             class="font-weight-bold ml-1"
             target="_blank"
-            >Exposure Notification Replica on Fabric</a
-          >
+            >CovidBloc
+          </a>
         </div>
       </div>
       <div class="col-lg-6">
