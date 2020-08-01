@@ -141,7 +141,7 @@
                         alternative=""
                         label="Contact Number"
                         input-classes="form-control-alternative"
-                        required="true"
+                        required
                         v-model="model.username"
                       />
                     </div>
