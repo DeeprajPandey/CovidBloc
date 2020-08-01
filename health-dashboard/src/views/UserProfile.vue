@@ -142,7 +142,7 @@
                         label="Contact Number"
                         input-classes="form-control-alternative"
                         required
-                        v-model="model.username"
+                        v-model="model.contact"
                       />
                     </div>
                     <div class="col-lg-6">
@@ -185,6 +185,13 @@
 <script>
 export default {
   name: "user-profile",
+  created() {
+    this.$store
+      .dispatch("refresh", {i: this.usr.medID, e: this.usr.email})
+      .catch((err) => {
+        console.log(err);
+      });
+  },
   mounted() {
     this.model.email = this.usr.email;
     this.model.firstName = this.usr.name.split(" ")[0];
@@ -197,6 +204,7 @@ export default {
         email: "",
         firstName: "",
         lastName: "",
+        contact: "",
         report: "",
       },
       btntype: "default",
@@ -204,27 +212,31 @@ export default {
   },
   methods: {
     submitReport() {
-      this.$axios
-        .post("http://localhost:6400/trial", this.request, {
-          headers: { Authorization: this.$store.getters.authToken },
-        })
-        .then((response) => {
-          this.btntype = "success";
-          this.notify(response.data, "primary");
-        })
-        .catch((err) => {
-          if (!err.response.data) {
-            this.notify(`⚠️ ${err.message}`, "error");
-          } else {
-            this.notify(err.response.data, "error");
-          }
-          console.log(err);
-        })
-        .finally(() => {
-          setTimeout(() => {
-            this.btntype = "default";
-          }, 3000);
-        });
+      if (this.model.contact) {
+        this.$axios
+          .post("http://localhost:6400/trial", this.model, {
+            headers: { Authorization: this.$store.getters.authToken },
+          })
+          .then((response) => {
+            this.btntype = "success";
+            this.notify(response.data, "primary");
+          })
+          .catch((err) => {
+            if (!err.response.data) {
+              this.notify(`⚠️ ${err.message}`, "error");
+            } else {
+              this.notify(err.response.data, "error");
+            }
+            console.log(err);
+          })
+          .finally(() => {
+            setTimeout(() => {
+              this.btntype = "default";
+            }, 2000);
+          });
+      } else {
+        this.notify("Contact number required", "error");
+      }
     },
     notify(reason, toastType) {
       this.$toasted.show(reason, {
