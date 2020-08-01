@@ -496,10 +496,13 @@ async function otpGen(dbObj: any): Promise<void> {
     dbObj.t_authstat = "INITIATED";
     dbObj.t_otp = OTP.toString();
 
-    const text = `Hey there,\nYour login code is ${OTP}\n\nEnter this code on the login page.`;
-    const html = `<b>Hey there!</b><br>Your login code is ${OTP}<br><br>Enter this code on the login page.`;
+    const firstName = dbObj.name.split(" ")[0];
+    const text = `Hey ${firstName},\nYour login OTP is ${OTP}\n\Please note, the code is valid for only 5 minutes.
+    \nIf you did not attempt to log in, please ignore this email.`;
+    const html = `<b>Hey ${firstName}!</b><br>Your login OTP is ${OTP}<br><br>Please note, te code is valid for only 5 minutes.
+    \nIf you did not attempt to log in, please ignore this email.`;
     try {
-      await sendEmail(dbObj.email, "Your Login OTP", text, html);
+      await sendEmail(dbObj.email, "Your Login Code", text, html);
     } catch (e) {
       throw new Error("Couldn't send email.");
     }
@@ -535,7 +538,7 @@ async function sendEmail(toEmail: string, sub: string, msgText: string, msgHtml:
     });
 
     let mailOptions = {
-      from: `"Development Team" <${process.env.EM_USR}>`,
+      from: `"CovidBloc Development Team" <${process.env.EM_USR}>`,
       to: toEmail,
       subject: sub,
       text: msgText,
