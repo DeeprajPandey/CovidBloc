@@ -107,7 +107,7 @@ app.get("/", (req, res, next) => {
 app.use("/official", healthRoutes);
 
 app.post("/trial", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
-  res.status(200).send("Report filed.");
+  res.status(200).send("Bug report filed");
 });
 
 // Temp use: invoke readAsset
@@ -331,7 +331,7 @@ app.post("/login", async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // GET: Get an official's profile
-app.get("/healthofficial", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
+app.post("/healthofficial", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
       req.body.i &&
