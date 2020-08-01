@@ -94,7 +94,7 @@ export default {
       switch (reason) {
         case "success":
           msg =
-            "Registered successfully. Please log in with the credentials you receieved on your email.";
+            "Registered successfully. Please log in with the credentials you received on your email.";
           toastType = "success";
           where = "/login";
           break;

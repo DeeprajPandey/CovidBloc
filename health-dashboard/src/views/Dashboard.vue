@@ -137,6 +137,13 @@
 <script>
 export default {
   name: "user-profile",
+  // created() {
+  //   this.$store
+  //     .dispatch("refresh", {i: this.$store.getters.getUser.medID, e: this.$store.getters.getUser.email})
+  //     .catch((err) => {
+  //       console.log(err);
+  //     });
+  // },
   data() {
     return {
       request: {
