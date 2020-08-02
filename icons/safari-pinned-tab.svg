@@ -1,0 +1,37 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="512" height="512" rx="80" fill="#073B4C"/>
+<rect width="512" height="512" rx="80" fill="url(#paint0_linear)"/>
+<mask id="mask0" mask-type="alpha" maskUnits="userSpaceOnUse" x="116" y="196" width="79" height="132">
+<rect x="116" y="196" width="79" height="132" fill="#C4C4C4"/>
+</mask>
+<g mask="url(#mask0)">
+<path d="M243.5 261.5C243.5 293.261 236.206 298.579 233.429 300.062C230.929 301.396 226.961 302.365 219.964 302.656C215.466 302.843 211.254 302.753 206.362 302.649C203 302.578 199.318 302.5 195 302.5C166.17 302.5 146.5 282.219 146.5 261.5C146.5 240.781 166.17 220.5 195 220.5C199.318 220.5 203.001 220.422 206.362 220.351C211.254 220.247 215.466 220.157 219.964 220.344C226.961 220.635 230.929 221.604 233.429 222.938C236.206 224.421 243.5 229.739 243.5 261.5Z" stroke="white" stroke-width="35"/>
+</g>
+<mask id="mask1" mask-type="alpha" maskUnits="userSpaceOnUse" x="195" y="196" width="51" height="132">
+<rect x="195" y="196" width="51" height="132" fill="#C4C4C4"/>
+</mask>
+<g mask="url(#mask1)">
+<line x1="195" y1="302.5" x2="313.105" y2="302.5" stroke="white" stroke-width="35"/>
+<line x1="195" y1="220.5" x2="313.105" y2="220.5" stroke="white" stroke-width="35"/>
+</g>
+<path d="M275 140V320.3" stroke="white" stroke-width="35"/>
+<mask id="mask2" mask-type="alpha" maskUnits="userSpaceOnUse" x="276" y="196" width="82" height="132">
+<rect x="276" y="196" width="82" height="132" fill="#C4C4C4"/>
+</mask>
+<g mask="url(#mask2)">
+<line x1="96.9388" y1="302.75" x2="317.837" y2="302.75" stroke="white" stroke-width="35"/>
+<line x1="101.959" y1="220.3" x2="322.857" y2="220.3" stroke="white" stroke-width="35"/>
+</g>
+<mask id="mask3" mask-type="alpha" maskUnits="userSpaceOnUse" x="316" y="188" width="91" height="140">
+<rect x="316" y="188" width="91" height="140" fill="#C4C4C4"/>
+</mask>
+<g mask="url(#mask3)">
+<path d="M385.41 261.5C385.41 281.88 365.462 302.5 335.427 302.5C331.052 302.5 327.298 302.578 323.861 302.649C318.834 302.753 314.486 302.843 309.87 302.655C302.666 302.362 298.484 301.384 295.808 299.987C292.822 298.428 285.444 293.108 285.444 261.5C285.444 229.892 292.822 224.572 295.808 223.013C298.484 221.617 302.666 220.638 309.87 220.345C314.486 220.157 318.834 220.247 323.861 220.351C327.298 220.422 331.052 220.5 335.427 220.5C365.462 220.5 385.41 241.12 385.41 261.5Z" stroke="white" stroke-width="35"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear" x1="256" y1="0" x2="256" y2="512" gradientUnits="userSpaceOnUse">
+<stop stop-color="#0AAB67"/>
+<stop offset="1" stop-color="white" stop-opacity="0"/>
+</linearGradient>
+</defs>
+</svg>
