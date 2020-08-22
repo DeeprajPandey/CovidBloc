@@ -6,6 +6,7 @@ import { Context, Contract, Info, Returns, Transaction } from 'fabric-contract-a
 import { Meta, DailyKey } from './asset';
 import { HealthOfficial, Patient, Approval } from './asset';
 const ClientIdentity = require('fabric-shim').ClientIdentity;
+const crypto = require('crypto')
 
 @Info({ title: 'AssetContract', description: 'My Smart Contract' })
 export class AssetContract extends Contract {
@@ -171,7 +172,7 @@ export class AssetContract extends Contract {
    * @param checkID ApprovalID of the patient 
    */
   @Transaction(false)
-  public async validatePatient(ctx: Context, medID: string, checkID: string): Promise<any> {
+  public async validatePatient(ctx: Context, medID: string, checkID: string, signature:String): Promise<any> {
     let responseObj = {};
     const medObj = await this.readAsset(ctx, `m${medID}`);
     if (medObj != null) {
@@ -179,18 +180,30 @@ export class AssetContract extends Contract {
         const assetKey = `m${medID}:${i.toString()}`;
         const approvalObj = await this.readAsset(ctx, assetKey);
         if (approvalObj !== null && approvalObj.approvalID === checkID && approvalObj.patientID === null) {
-          responseObj["msg"] = "Validate patient successful";
-          return responseObj;
-          //return "Validate Patient Successful";
+          
+          let publicKey = medObj.publicKey //in ascii(public key is string in health official asset)
+          const verifier = crypto.createVerify('RSA-SHA256')
+          verifier.update(checkID, 'ascii')
+
+          const publicKeyBuf = new Buffer(publicKey, 'ascii')
+          const signatureBuf = new Buffer(signature, 'hex')
+          const result = verifier.verify(publicKeyBuf, signatureBuf)
+          if (result == true) {
+            responseObj["msg"] = "Validate patient successful";
+            return responseObj;
+          }
+          else {
+            responseObj["err"] = "Invalid Signature";
+          }
         }
       }
-      //throw new Error(`ApprovalID ${checkID} is invalid`);
-      responseObj["err"] = "Invalid approval ID/email ID of the health offcial";
+      
+      responseObj["err"] = "Invalid approval ID of the health offcial";
     }
 
     else {
       //throw new Error(`Email ID ${medID} is invalid`);
-      responseObj["err"] = "No medical official with this email exists";
+      responseObj["err"] = "No medical official with this ID exists";
     }
 
     return responseObj;

@@ -52,6 +52,7 @@ export class HealthOfficial {
     public name: string;
     public email: string;
     public hospital: string;
+    public publicKey: string;
 }
 
 /**
