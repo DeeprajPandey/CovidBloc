@@ -13,8 +13,8 @@
             <h1 class="display-2 text-white">Generate Approval Code</h1>
             <p class="text-white mt-0 mb-5">
               After diagnosing a patient, please follow these steps to
-              generate<br />
-              an approval ID so they can upload their Daily Keys from the
+              generate
+              <br />an approval ID so they can upload their Daily Keys from the
               CovidBloc App.
             </p>
           </div>
@@ -38,7 +38,10 @@
               <ol style="font-size:14px">
                 <li>
                   Open the app by tapping on the icon
-                  <i class="fa fa-question-circle" aria-hidden="true"></i>
+                  <i
+                    class="fa fa-question-circle"
+                    aria-hidden="true"
+                  ></i>
                 </li>
                 <li>
                   Tap the upload keys button
@@ -46,7 +49,10 @@
                 </li>
                 <li>
                   Enter the approval id and the medical id received via sms
-                  <i class="fa fa-question-circle" aria-hidden="true"></i>
+                  <i
+                    class="fa fa-question-circle"
+                    aria-hidden="true"
+                  ></i>
                 </li>
                 <li>
                   Tap the submit button
@@ -55,7 +61,10 @@
                 <li>
                   Tap the I agree button. This will share the patient's last 14
                   days temporary keys
-                  <i class="fa fa-question-circle" aria-hidden="true"></i>
+                  <i
+                    class="fa fa-question-circle"
+                    aria-hidden="true"
+                  ></i>
                 </li>
               </ol>
             </div>
@@ -79,14 +88,15 @@
                   <div class="col-lg-12">
                     <div class="mb-3">
                       <p class="text-muted">
-                        The contact number is <mark>optional</mark> and we only
+                        The contact number is
+                        <mark>optional</mark> and we only
                         ask for it to send the patient an SMS with the code for
                         their convenience. You can generate an approval without
                         their number if they do not wish to disclose it.
                       </p>
                     </div>
                     <base-input
-                      alternative=""
+                      alternative
                       label="Patient's Contact Number"
                       placeholder="+91XXXXX"
                       input-classes="form-control-alternative"
@@ -96,8 +106,7 @@
                 </div>
               </div>
               <div class="col-11 text-center">
-                <base-button type="primary" class="my-4" @click="clickGenerate"
-                  >Generate</base-button>
+                <base-button type="primary" class="my-4" @click="clickGenerate">Generate</base-button>
               </div>
             </form>
           </card>
@@ -114,22 +123,15 @@
         <h4 class="heading mt-4">No contact number</h4>
         <p>
           You didn't enter the patient's contact number. That's okay, but they
-          won't receive the approval ID and your medical ID via SMS.<br />
-          You will see the ID on the dashboard and will have to enter it on
+          won't receive the approval ID and your medical ID via SMS.
+          <br />You will see the ID on the dashboard and will have to enter it on
           their phone yourself.
         </p>
       </div>
 
       <template slot="footer">
         <base-button type="white" @click="modalConfirm">Ok, Got it</base-button>
-        <base-button
-          type="link"
-          text-color="white"
-          class="ml-auto"
-          @click="modalReject"
-        >
-          Close
-        </base-button>
+        <base-button type="link" text-color="white" class="ml-auto" @click="modalReject">Close</base-button>
       </template>
     </modal>
   </div>
