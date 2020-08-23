@@ -11,35 +11,33 @@
               placeholder="Name"
               addon-left-icon="ni ni-hat-3"
               v-model="model.name">
-            </base-input> -->
+            </base-input>-->
 
             <base-input
               class="input-group-alternative mb-3"
               placeholder="Email"
               addon-left-icon="ni ni-email-83"
               v-model="credentials.email"
-            >
-            </base-input>
+            ></base-input>
 
             <div class="row my-4">
               <div class="col-12">
                 <base-checkbox class="custom-control-alternative">
-                  <span class="text-muted"
-                    >I agree with the <a href="#!">Privacy Policy</a></span
-                  >
+                  <span class="text-muted">
+                    I agree with the
+                    <a href="#!">Privacy Policy</a>
+                  </span>
                 </base-checkbox>
               </div>
             </div>
             <div class="text-center">
-              <base-button type="primary" class="my-4" @click="registerUser"
-                >Create account</base-button
-              >
+              <base-button type="primary" class="my-4" @click="registerUser">Create account</base-button>
             </div>
           </form>
           <div class="col-10 text-right">
-            <router-link to="/login" class="text-blue"
-              ><small>Already have an account? Sign in</small></router-link
-            >
+            <router-link to="/login" class="text-blue">
+              <small>Already have an account? Sign in</small>
+            </router-link>
           </div>
         </div>
       </div>
