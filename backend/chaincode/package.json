@@ -22,11 +22,13 @@
   "license": "Apache-2.0",
   "dependencies": {
     "fabric-contract-api": "^1.4.5",
-    "fabric-shim": "^1.4.5"
+    "fabric-shim": "^1.4.5",
+    "jsrsasign": "^9.0.3"
   },
   "devDependencies": {
     "@types/chai": "^4.2.11",
     "@types/chai-as-promised": "^7.1.2",
+    "@types/jsrsasign": "^8.0.5",
     "@types/mocha": "^7.0.2",
     "@types/node": "^13.9.3",
     "@types/sinon": "^7.5.2",

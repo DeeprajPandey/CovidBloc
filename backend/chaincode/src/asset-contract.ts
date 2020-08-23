@@ -5,8 +5,8 @@
 import { Context, Contract, Info, Returns, Transaction } from 'fabric-contract-api';
 import { Meta, DailyKey } from './asset';
 import { HealthOfficial, Patient, Approval } from './asset';
+import jsrsasign from 'jsrsasign';
 const ClientIdentity = require('fabric-shim').ClientIdentity;
-const crypto = require('crypto')
 
 @Info({ title: 'AssetContract', description: 'My Smart Contract' })
 export class AssetContract extends Contract {
@@ -172,7 +172,7 @@ export class AssetContract extends Contract {
    * @param checkID ApprovalID of the patient 
    */
   @Transaction(false)
-  public async validatePatient(ctx: Context, medID: string, checkID: string, signature:String): Promise<any> {
+  public async validatePatient(ctx: Context, medID: string, checkID: string, signature: string): Promise<any> {
     let responseObj = {};
     const medObj = await this.readAsset(ctx, `m${medID}`);
     if (medObj != null) {
@@ -181,29 +181,31 @@ export class AssetContract extends Contract {
         const approvalObj = await this.readAsset(ctx, assetKey);
         if (approvalObj !== null && approvalObj.approvalID === checkID && approvalObj.patientID === null) {
           
-          let publicKey = medObj.publicKey //in ascii(public key is string in health official asset)
-          const verifier = crypto.createVerify('RSA-SHA256')
-          verifier.update(checkID, 'ascii')
+          const pubKeyPEM = medObj.publicKey;
 
-          const publicKeyBuf = new Buffer(publicKey, 'ascii')
-          const signatureBuf = new Buffer(signature, 'hex')
-          const result = verifier.verify(publicKeyBuf, signatureBuf)
-          if (result == true) {
+          let sig = new jsrsasign.KJUR.crypto.Signature({ alg: "SHA512withRSA" });
+          sig.init(pubKeyPEM);
+          sig.updateString(checkID);
+          const isValid = sig.verify(signature);
+
+          if (isValid) {
             responseObj["msg"] = "Validate patient successful";
             return responseObj;
           }
           else {
             responseObj["err"] = "Invalid Signature";
+            break;
           }
         }
       }
-      
-      responseObj["err"] = "Invalid approval ID of the health offcial";
-    }
-
-    else {
+      // if we are here, there was no match in any of the approval objects
+      // unless, the signature was invalid
+      if (!Object.keys(responseObj).includes("err")) {
+        responseObj["err"] = "Invalid approval ID";
+      }
+    } else {
       //throw new Error(`Email ID ${medID} is invalid`);
-      responseObj["err"] = "No medical official with this ID exists";
+      responseObj["err"] = "Invalid medical ID";
     }
 
     return responseObj;
