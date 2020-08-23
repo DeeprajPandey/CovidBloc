@@ -102,11 +102,17 @@
                       input-classes="form-control-alternative"
                       v-model="request.patientContact"
                     />
+                    <file-reader v-if="showFileUpload" @load="fileLoad" @err="fileErr"></file-reader>
                   </div>
                 </div>
               </div>
               <div class="col-11 text-center">
-                <base-button type="primary" class="my-4" @click="clickGenerate">Generate</base-button>
+                <base-button
+                  v-bind:disabled="generateBtnDisabled"
+                  type="primary"
+                  class="my-4"
+                  @click="clickGenerate"
+                >Generate</base-button>
               </div>
             </form>
           </card>
@@ -137,8 +143,13 @@
   </div>
 </template>
 <script>
+import FileReader from "../components/FileReader";
+
 export default {
   name: "user-profile",
+  components: {
+    FileReader,
+  },
   // created() {
   //   this.$store
   //     .dispatch("refresh", {i: this.$store.getters.getUser.medID, e: this.$store.getters.getUser.email})
@@ -154,10 +165,65 @@ export default {
         patientContact: "",
       },
       approvalID: "",
+      showFileUpload: false,
+      generateBtnDisabled: false,
       noNumModal: false,
     };
   },
   methods: {
+    fileLoad(pKey) {
+      this.sign(pKey, this.approvalID)
+        .then((signature) => {
+          // send the signature and ID to patient
+          this.$axios
+            .post(
+              "http://localhost:6400/sms",
+              {
+                medID: this.request.medID,
+                contact: this.request.patientContact,
+                sig: signature,
+              },
+              { headers: { Authorization: this.$store.getters.authToken } }
+            )
+            .then((resp) => {
+              if (resp.data.smsErr) {
+                this.notify(resp.data.smsErr);
+              } else {
+                this.notify(
+                  "Signature and ID sent to patient. Waiting for daily keys."
+                );
+              }
+            })
+            .catch((err) => {
+              if (!err.response.data) {
+                this.notify(`⚠️ ${err.message}`);
+              } else {
+                this.notify(err.response.data);
+              }
+              console.log(err);
+            });
+        })
+        .catch((err) => {
+          console.error(err);
+        })
+        .finally(() => {
+          this.generateBtnDisabled = false;
+        });
+    },
+    fileErr(msg) {
+      this.notify(msg, "error");
+    },
+    sign(pKeyPEM, data) {
+      return new Promise((resolve) => {
+        let sig = new this.$crypto.KJUR.crypto.Signature({
+          alg: "SHA512withRSA",
+        });
+        sig.init(pKeyPEM);
+        sig.updateString(data);
+        const sigHex = sig.sign();
+        resolve(sigHex);
+      });
+    },
     clickGenerate() {
       // check if patient num is empty, and alert
       if (!this.request.patientContact) {
@@ -174,19 +240,18 @@ export default {
       this.noNumModal = false;
     },
     genApproval() {
+      // Disable generate button until signature has been sent 
+      this.generateBtnDisabled = true;
       this.$axios
         .post("http://localhost:6400/generateapproval", this.request, {
           headers: { Authorization: this.$store.getters.authToken },
         })
         .then((response) => {
           this.approvalID = response.data.apID;
-          if (response.data.smsErr) {
-            this.notify(response.data.smsErr);
-          } else {
-            this.notify(
-              "Approval record generated. Waiting for patient's daily keys."
-            );
-          }
+
+          // Show input field and ask for private key
+          this.showFileUpload = true;
+          this.notify("Please provide your private key");
         })
         .catch((err) => {
           if (!err.response.data) {
