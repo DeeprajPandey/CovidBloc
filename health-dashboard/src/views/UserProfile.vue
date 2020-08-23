@@ -29,35 +29,21 @@
               <div class="col-lg-3 order-lg-2">
                 <div class="card-profile-image">
                   <a href="#">
-                    <img
-                      src="img/theme/profile_user.png"
-                      class="rounded-circle"
-                    />
+                    <img src="img/theme/profile_user.png" class="rounded-circle" />
                   </a>
                 </div>
               </div>
             </div>
-            <div
-              class="card-header text-center border-0 pt-8 pt-md-4 pb-0 pb-md-4"
-            >
+            <div class="card-header text-center border-0 pt-8 pt-md-4 pb-0 pb-md-4">
               <div class="d-flex justify-content-between">
-                <base-button size="sm" type="info" class="mr-4 invisible"
-                  >Connect</base-button
-                >
-                <base-button
-                  size="sm"
-                  type="default"
-                  class="float-right invisible"
-                  >Message</base-button
-                >
+                <base-button size="sm" type="info" class="mr-4 invisible">Connect</base-button>
+                <base-button size="sm" type="default" class="float-right invisible">Message</base-button>
               </div>
             </div>
             <div class="card-body pt-0 pt-md-4">
               <div class="row">
                 <div class="col">
-                  <div
-                    class="card-profile-stats d-flex justify-content-center mt-md-5"
-                  >
+                  <div class="card-profile-stats d-flex justify-content-center mt-md-5">
                     <div>
                       <span class="heading">{{ usr.approveCtr }}</span>
                       <span class="description">Approvals</span>
@@ -70,17 +56,17 @@
                 </div>
               </div>
               <div class="text-center">
-                <h3>
-                  {{ usr.name }}
-                </h3>
+                <h3>{{ usr.name }}</h3>
                 <div class="h5 font-weight-300">
                   <i class="ni location_pin mr-2"></i>India
                 </div>
                 <div class="h5 mt-4">
-                  <i class="ni business_briefcase-24 mr-2"></i>{{ usr.email }}
+                  <i class="ni business_briefcase-24 mr-2"></i>
+                  {{ usr.email }}
                 </div>
                 <div>
-                  <i class="ni education_hat mr-2"></i>{{ usr.hospital }}
+                  <i class="ni education_hat mr-2"></i>
+                  {{ usr.hospital }}
                 </div>
                 <hr class="my-4" />
                 <p>
@@ -102,12 +88,11 @@
                 </div>
                 <div class="col-4 text-right">
                   <base-button
-                    href=""
+                    href
                     class="btn btn-sm"
                     v-bind:type="btntype"
                     @click="submitReport"
-                    >Submit Report</base-button
-                  >
+                  >Submit Report</base-button>
                 </div>
               </div>
             </div>
@@ -118,7 +103,7 @@
                   <div class="row">
                     <div class="col-lg-6">
                       <base-input
-                        alternative=""
+                        alternative
                         label="First name"
                         input-classes="form-control-alternative"
                         v-model="model.firstName"
@@ -127,7 +112,7 @@
                     </div>
                     <div class="col-lg-6">
                       <base-input
-                        alternative=""
+                        alternative
                         label="Last name"
                         input-classes="form-control-alternative"
                         v-model="model.lastName"
@@ -138,7 +123,7 @@
                   <div class="row">
                     <div class="col-lg-6">
                       <base-input
-                        alternative=""
+                        alternative
                         label="Contact Number"
                         input-classes="form-control-alternative"
                         required
@@ -147,7 +132,7 @@
                     </div>
                     <div class="col-lg-6">
                       <base-input
-                        alternative=""
+                        alternative
                         label="Email address"
                         input-classes="form-control-alternative"
                         v-model="model.email"
@@ -162,7 +147,7 @@
                 <div class="pl-lg-4">
                   <div class="form-group">
                     <base-input
-                      alternative=""
+                      alternative
                       label="Briefly describe what you were trying to do and what happened."
                     >
                       <textarea
@@ -187,7 +172,7 @@ export default {
   name: "user-profile",
   created() {
     this.$store
-      .dispatch("refresh", {i: this.usr.medID, e: this.usr.email})
+      .dispatch("refresh", { i: this.usr.medID, e: this.usr.email })
       .catch((err) => {
         console.log(err);
       });
