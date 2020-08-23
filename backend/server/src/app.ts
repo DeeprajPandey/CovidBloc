@@ -133,6 +133,40 @@ app.post("/trial", passport.authenticate('jwt', { session: false }), async (req:
 //   }
 // });
 
+/** Characteristic checks before trying to register */
+app.post("/check-registration-status", async (req: Request, res: Response) => {
+  try {
+    const validBody = Boolean(
+      req.body.email
+    );
+    if (!validBody) {
+      res.status(401).send("⚠️ Invalid request");
+      return;
+    }
+
+    let email = req.body.email;
+
+    const dbObj = await HealthOfficialModel.findOne({ email: email });
+    if (!dbObj) { // returns empty object if not in DB
+      res.status(401).send("unauthorised");
+      return;
+      // throw new Error("You are not an authorised medical official");
+    }
+    if (dbObj.t_status === "REGISTERED") {
+      res.status(400).send("registered");
+      return;
+      // throw new Error("You have an account. Please log in.");
+    }
+
+    res.status(200).send("valid");
+    // res.status(200).send(`${recvID} registered`);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Server error");
+    return;
+  }
+});
+
 /**
  * POST: Register a new official
  * Chaincode generates a medID and returns it on successful addition
@@ -140,7 +174,8 @@ app.post("/trial", passport.authenticate('jwt', { session: false }), async (req:
 app.post("/register", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
-      req.body.email
+      req.body.email &&
+      req.body.publicKey
     );
     if (!validBody) {
       res.status(401).send("⚠️ Invalid request");
@@ -182,6 +217,8 @@ app.post("/register", async (req: Request, res: Response) => {
     delete medObj.t_otp;
     delete medObj.t_timestamp;
     medObj.approveCtr = "0";
+    // TODO: check if it's a valid PEM encoded public key?
+    medObj.publicKey = req.body.publicKey;
 
     const contractResponse = await fabric.invoke('addHealthOfficial', [JSON.stringify(medObj)], false, networkObj);
     networkObj.gateway.disconnect();

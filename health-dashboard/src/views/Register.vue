@@ -14,6 +14,7 @@
             </base-input>-->
 
             <base-input
+              required
               class="input-group-alternative mb-3"
               placeholder="Email"
               addon-left-icon="ni ni-email-83"
@@ -31,7 +32,7 @@
               </div>
             </div>
             <div class="text-center">
-              <base-button type="primary" class="my-4" @click="registerUser">Create account</base-button>
+              <base-button type="primary" class="my-4" @click="checkUser">Create account</base-button>
             </div>
           </form>
           <div class="col-10 text-right">
@@ -61,6 +62,17 @@
 <script>
 export default {
   name: "register",
+  created() {
+    // Check if the browser supports saving files
+    try {
+      var isFileSaverSupported = !!new Blob();
+      if (!isFileSaverSupported) {
+        console.error("Saving files is not supported!");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  },
   data() {
     return {
       credentials: {
@@ -70,9 +82,62 @@ export default {
     };
   },
   methods: {
-    registerUser() {
+    checkUser() {
+      if (this.credentials.email) {
+        // check if this user can register
+        this.$axios
+          .post(
+            "http://localhost:6400/check-registration-status",
+            this.credentials
+          )
+          .then((response) => {
+            if (response.data === "valid") {
+              // generate keypair
+              this.keyGen().then((keys) => {
+                // send the public key with registration request
+                this.registerUser(keys.pubKeyPEM);
+                // download the private key on client's device
+                this.downloadFile(keys.privKeyPEM);
+              });
+            }
+          })
+          .catch((err) => {
+            if (!err.response.data) {
+              this.notify(`⚠️ ${err.message}`);
+            } else {
+              this.notify(err.response.data);
+            }
+            console.log(err);
+          });
+      } else {
+        this.notify("Please enter your email");
+      }
+    },
+    keyGen() {
+      return new Promise((resolve) => {
+        console.log("Generating keys");
+        const {
+          prvKeyObj: privKey,
+          pubKeyObj: pubKey,
+        } = this.$crypto.KEYUTIL.generateKeypair("RSA", 2048);
+        console.log("PEM encoding");
+        const privKeyPEM = this.$crypto.KEYUTIL.getPEM(privKey, "PKCS8PRV");
+        const pubKeyPEM = this.$crypto.KEYUTIL.getPEM(pubKey);
+        resolve({ privKeyPEM, pubKeyPEM });
+      });
+    },
+    downloadFile(data) {
+      var blob = new Blob([data], {
+        type: "text/plain;charset=utf-8",
+      });
+      this.$saveAs(blob, "covidbloc_privkey_RSA2048.pem");
+    },
+    registerUser(pubKeyPEM) {
       this.$axios
-        .post("http://localhost:6400/register", this.credentials)
+        .post("http://localhost:6400/register", {
+          email: this.credentials.email,
+          publicKey: pubKeyPEM
+        })
         .then((response) => {
           this.notify(response.data);
         })
