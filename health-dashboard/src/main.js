@@ -21,12 +21,19 @@ import App from './App.vue'
 import router from './router'
 import { axiosInstance } from './axios'
 import store from './store'
+import { saveAs } from 'file-saver'
 import './registerServiceWorker'
 import ArgonDashboard from './plugins/argon-dashboard'
+
+const jsrsa = require('jsrsasign')
 
 Vue.config.productionTip = false
 Vue.prototype.$axios = axiosInstance
 // this.$axios.defaults.headers.common['Authorization'] = this.$store.getters.authToken;
+
+// creating a prototype using defineProperty will make it readOnly
+Object.defineProperty(Vue.prototype, '$saveAs', { value: saveAs })
+Object.defineProperty(Vue.prototype, '$crypto', { value: jsrsa })
 
 Vue.use(Toasted)
 Vue.use(ArgonDashboard)
