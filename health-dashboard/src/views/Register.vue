@@ -7,11 +7,6 @@
             <small>Use your assigned email ID to register on the blockchain</small>
           </div>
           <form role="form">
-            <!-- <base-input class="input-group-alternative mb-3"
-              placeholder="Name"
-              addon-left-icon="ni ni-hat-3"
-              v-model="model.name">
-            </base-input>-->
 
             <base-input
               required
@@ -42,20 +37,6 @@
           </div>
         </div>
       </div>
-      <!--
-      <div class="row mt-3">
-        <div class="col-6">
-          <a href="#" class="text-light">
-              <small>Forgot password?</small>
-          </a>
-        </div>
-        <div class="col-6 text-right">
-          <router-link to="/login" class="text-light">
-            <small>Login into your account</small>
-          </router-link>
-        </div>
-      </div>
-      -->
     </div>
   </div>
 </template>
