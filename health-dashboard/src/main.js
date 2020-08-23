@@ -19,21 +19,24 @@ import Vue from 'vue'
 import Toasted from 'vue-toasted'
 import App from './App.vue'
 import router from './router'
-import { axiosInstance } from './axios'
 import store from './store'
-import { saveAs } from 'file-saver'
-import './registerServiceWorker'
 import ArgonDashboard from './plugins/argon-dashboard'
+import './registerServiceWorker'
+
+import { axiosInstance } from './axios'
+import { saveAs } from 'file-saver'
 
 const jsrsa = require('jsrsasign')
+const qrcode = require('qrcode');
 
 Vue.config.productionTip = false
-Vue.prototype.$axios = axiosInstance
 // this.$axios.defaults.headers.common['Authorization'] = this.$store.getters.authToken;
 
 // creating a prototype using defineProperty will make it readOnly
-Object.defineProperty(Vue.prototype, '$saveAs', { value: saveAs })
+Object.defineProperty(Vue.prototype, '$axios', { value: axiosInstance })
 Object.defineProperty(Vue.prototype, '$crypto', { value: jsrsa })
+Object.defineProperty(Vue.prototype, '$saveAs', { value: saveAs })
+Object.defineProperty(Vue.prototype, '$qrcode', { value: qrcode })
 
 Vue.use(Toasted)
 Vue.use(ArgonDashboard)

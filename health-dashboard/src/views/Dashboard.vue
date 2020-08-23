@@ -29,44 +29,48 @@
             <div slot="header" class="bg-white border-0">
               <div class="row align-items-center">
                 <div class="col-8">
-                  <h3 class="mb-0">Instructions</h3>
+                  <h1 class="mb-0 display-4">Instructions</h1>
                 </div>
               </div>
             </div>
             <div>
               <h4>Instruct the patient to:</h4>
-              <ol style="font-size:14px">
+              <ol class="list-unstyled">
                 <li>
-                  Open the app by tapping on the icon
+                  Tap on upload keys on the CovidBloc App
                   <i
                     class="fa fa-question-circle"
                     aria-hidden="true"
                   ></i>
                 </li>
                 <li>
-                  Tap the upload keys button
-                  <i class="fa fa-question-circle" aria-hidden="true"></i>
-                </li>
-                <li>
-                  Enter the approval id and the medical id received via sms
+                  Either enter the details received on SMS
                   <i
                     class="fa fa-question-circle"
                     aria-hidden="true"
                   ></i>
                 </li>
                 <li>
-                  Tap the submit button
-                  <i class="fa fa-question-circle" aria-hidden="true"></i>
+                  Or scan the QR code that will appear below once approval is generated
+                  <i
+                    class="fa fa-question-circle"
+                    aria-hidden="true"
+                  ></i>
                 </li>
                 <li>
-                  Tap the I agree button. This will share the patient's last 14
-                  days temporary keys
+                  Tap on I agree. This will share the patient's daily keys from the last 14
+                  days
                   <i
                     class="fa fa-question-circle"
                     aria-hidden="true"
                   ></i>
                 </li>
               </ol>
+            </div>
+            <div v-if="approvalStr">
+              <br/>
+              <p class="text-muted">Scan this code from the CovidBloc app to automatically upload the random IDs</p>
+              <img :src="qrURL" alt="QR Code to be scanned on the CovidBloc mobile app" />
             </div>
           </card>
         </div>
@@ -75,7 +79,7 @@
             <div slot="header" class="bg-white border-0">
               <div class="row align-items-center">
                 <div class="col-8">
-                  <h3 class="mb-0">Generate Code</h3>
+                  <h1 class="mb-0 display-4">Generate Code</h1>
                 </div>
                 <div class="col-4 text-right">
                   <h1 style="letter-spacing: 0.15em;">{{ approvalID }}</h1>
@@ -168,12 +172,21 @@ export default {
       showFileUpload: false,
       generateBtnDisabled: false,
       noNumModal: false,
+      approvalStr: "",
+      qrURL: "",
     };
   },
   methods: {
     fileLoad(pKey) {
       this.sign(pKey, this.approvalID)
         .then((signature) => {
+          this.approvalStr = JSON.stringify({
+            apID: this.approvalID,
+            medID: this.request.medID,
+            sig: signature,
+          });
+          this.genQRCode();
+          
           // send the signature and ID to patient
           this.$axios
             .post(
@@ -241,7 +254,7 @@ export default {
       this.noNumModal = false;
     },
     genApproval() {
-      // Disable generate button until signature has been sent 
+      // Disable generate button until signature has been sent
       this.generateBtnDisabled = true;
       this.$axios
         .post("http://localhost:6400/generateapproval", this.request, {
@@ -255,6 +268,7 @@ export default {
           this.notify("Please provide your private key");
         })
         .catch((err) => {
+          this.generateBtnDisabled = false;
           if (!err.response.data) {
             this.notify(`⚠️ ${err.message}`);
           } else {
@@ -262,6 +276,18 @@ export default {
           }
           console.log(err);
         });
+    },
+    genQRCode() {
+      console.log(this.approvalStr);
+
+      this.$qrcode.toDataURL(this.approvalStr, (err, url) => {
+        if (err) {
+          console.error(err);
+        } else {
+          console.log(url);
+          this.qrURL = url;
+        }
+      });
     },
     notify(reason) {
       this.$toasted.show(reason, {
