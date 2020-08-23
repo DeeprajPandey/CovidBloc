@@ -392,14 +392,38 @@ app.post("/generateapproval", passport.authenticate('jwt', { session: false }), 
       // Transaction error
       throw new Error("Something went wrong, please try again.");
     }
+
+    // Send the approval ID to display on the dashboard
+    res.status(200).json({ apID: approvalID });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Server error");
+    return;
+  }
+});
+
+// POST: Send the signature and approval ID to patient contact
+app.post("/sms", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
+  try {
+    const validBody = Boolean(
+      req.body.sig &&
+      req.body.apID &&
+      req.body.medID
+    );
+    if (!validBody) {
+      res.status(401).send("⚠️ Invalid request");
+      return;
+    }
+
     let sms_success = false;
     let err_msg = "";
-    // Send sms to patient with approvalID and medID
-    if (req.body.patientContact) {
+
+    // Send sms to patient with approvalID, medID, and the signature
+    if (req.body.contact) {
       const msgText = `Please enter these details on the app to send your daily keys from the last 14 days to the server.\n\n`
-        + `Approval ID: ${approvalID}\nMedical ID: ${req.body.medID}`;
+        + `Approval ID: ${req.body.apID}\nMedical ID: ${req.body.medID}\nHash: ${req.body.sig}`;
       try {
-        await sendSMS(req.body.patientContact, msgText);
+        await sendSMS(req.body.contact, msgText);
         sms_success = true;
       } catch (err) {
         sms_success = false;
@@ -407,8 +431,8 @@ app.post("/generateapproval", passport.authenticate('jwt', { session: false }), 
       }
     }
 
-    // Send the approval ID to display on the dashboard
-    res.status(200).json({ apID: approvalID, smsErr: err_msg });
+    // if there's an error sending sms, it will be sent back
+    res.status(200).json({ smsErr: err_msg });
   } catch (e) {
     console.error(e);
     res.status(500).send("Server error");
