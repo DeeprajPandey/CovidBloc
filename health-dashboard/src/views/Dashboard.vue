@@ -192,8 +192,8 @@ export default {
             .post(
               "http://localhost:6400/sms",
               {
-                apID: this.approvalID,
-                medID: this.request.medID,
+                apID: this.approvalID.toString(),
+                medID: this.request.medID.toString(),
                 contact: this.request.patientContact,
                 sig: signature,
               },
