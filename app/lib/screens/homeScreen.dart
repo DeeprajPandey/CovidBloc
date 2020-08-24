@@ -7,6 +7,7 @@ import '../storage.dart';
 import 'package:badges/badges.dart';
 import 'package:provider/provider.dart';
 import 'dart:collection';
+import 'dart:convert';
 import 'package:intl/intl.dart'; // for date format
 import 'package:barcode_scan/barcode_scan.dart';
 
@@ -50,8 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Dio dio = new Dio(options);
   final Storage s = new Storage();
 
-  Future<void> _sendKeys(
-      BuildContext context, final approvalID, final medID) async {
+  Future<void> _sendKeys(BuildContext context, final approvalID, final medID,
+      final signature) async {
     //s.delete(); //to delete file
     List dailyKeys = [];
     int currIval;
@@ -72,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
       Response response = await dio.post("/pushkeys", data: {
         "approvalID": approvalID,
         "medID": medID,
+        "signature": signature,
         "ival": currIval.toString(),
         "dailyKeys": dailyKeys,
       });
@@ -85,6 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List> _showPopUp(BuildContext context) async {
     TextEditingController approvalController = TextEditingController();
     TextEditingController medController = TextEditingController();
+    TextEditingController sigController = TextEditingController();
     final credentials = [];
     return showDialog(
       context: context,
@@ -105,6 +108,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     icon: Icon(Icons.local_hospital), labelText: 'Medical ID'),
                 controller: medController,
               ),
+              TextFormField(
+                decoration: InputDecoration(
+                    icon: Icon(Icons.perm_identity), labelText: 'Signature'),
+                controller: sigController,
+              ),
             ],
           ),
           actions: <Widget>[
@@ -113,6 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 credentials.add(approvalController.text.toString());
                 credentials.add(medController.text.toString());
+                credentials.add(sigController.text.toString());
                 Navigator.of(context).pop(credentials);
               },
             ),
@@ -273,10 +282,50 @@ class _HomeScreenState extends State<HomeScreen> {
           onPressed: () async {
             try {
               var read = await BarcodeScanner.scan();
-              print(read.type); // The result type (barcode, cancelled, failed)
-              print(read.rawContent); // The barcode content
-              print(read.format); // The barcode format (as enum)
-              print(read.formatNote);
+
+              if (read.type.toString() == "Barcode") {
+                try {
+                  // rawcontent is the scanned data
+                  // '{"apID":12345,"medID":1234,"sig":"hexcode"}'
+                  print(read.rawContent);
+                  Map<String, dynamic> decoded = jsonDecode(read.rawContent);
+                  print(decoded);
+                  int currIval = e.iVal;
+                  List dailyKeys = await s.readKeys();
+
+                  print(dailyKeys);
+                  if (dailyKeys == null) {
+                    // ignore: todo
+                    // TODO: create a snackbar
+                    print("No daily identifiers have been generated.");
+                  } else if (currIval == null) {
+                    // ignore: todo
+                    // TODO: create snackbar
+                    print("Failed to retrieve current i value");
+                    // "Something went wrong."
+                  } else {
+                    decoded['ival'] = currIval.toString();
+                    decoded['dailyKeys'] = dailyKeys;
+                    print(decoded['medID']);
+                    try {
+                      // Push the keys to backend
+                      Response response =
+                          await dio.post('/pushkeys', data: decoded);
+                      // create snackbar
+                      print(response.data.toString());
+                    } catch (networkErr) {
+                      print('Network error: ${networkErr}');
+                    }
+                  }
+                } catch (e) {
+                  // create snackbar
+                  print(e);
+                }
+              } else {
+                // scanning cancelled or failed
+                print({'cancelled: ${read.type}'});
+                print(read.rawContent);
+              }
             } on PlatformException catch (e) {
               if (e.code == BarcodeScanner.cameraAccessDenied) {
                 print("Camera access denied");
@@ -350,9 +399,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       onPressed: () {
                         _showPopUp(context).then((val) {
-                          if (val[0] != '' && val[1] != '') {
+                          if (val[0] != '' && val[1] != '' && val[2] != '') {
                             print('Credentials recieved');
-                            _sendKeys(context, val[0], val[1]);
+                            _sendKeys(context, val[0], val[1], val[2]);
                           } else
                             _validationPopUp(
                                 context, 'Error', 'Invalid Credentials');
