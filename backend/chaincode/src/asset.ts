@@ -36,6 +36,7 @@ export class Patient {
     @Property()
     public approvalID: string;
     public medID: string;
+    public signature: string;
     public ival : string;
     public dailyKeys: Array<DailyKey>;
 }

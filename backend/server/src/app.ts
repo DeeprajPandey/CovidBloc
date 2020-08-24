@@ -483,6 +483,7 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
     const validBody = Boolean(
       req.body.approvalID &&
       req.body.medID &&
+      req.body.signature &&
       req.body.ival &&
       req.body.dailyKeys.length > 0
     );
@@ -496,7 +497,7 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
       console.error(networkObj.err);
       throw new Error("Admin not registered.");
     }
-    const validateResponse = await fabric.invoke('validatePatient', [req.body.medID, req.body.approvalID], true, networkObj);
+    const validateResponse = await fabric.invoke('validatePatient', [req.body.medID, req.body.approvalID, req.body.signature], true, networkObj);
     if ("err" in validateResponse) {
       throw new Error(validateResponse.err);
     }
