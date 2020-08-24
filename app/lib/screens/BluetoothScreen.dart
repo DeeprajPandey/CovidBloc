@@ -4,24 +4,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:contact_tracing/screens/screens.dart';
 //import 'package:contact_tracing/widgets/widgets.dart';
-import 'package:contact_tracing/config/styles.dart';
+import 'package:contact_tracing/config/Styles.dart';
 import '../keyGen.dart';
 //import 'package:provider/provider.dart';
-
 
 typedef void Listener(dynamic msg);
 typedef void CancelListening();
 
 class BluetoothScreen extends StatefulWidget {
-  
   final ExposureNotification e;
 
   const BluetoothScreen({
     @required this.e,
-  }):assert(e!=null);
+  }) : assert(e != null);
 
   @override
-  BluetoothScreenState createState() => new BluetoothScreenState(e:e);
+  BluetoothScreenState createState() => new BluetoothScreenState(e: e);
 }
 
 class BluetoothScreenState extends State<BluetoothScreen> {
@@ -29,23 +27,20 @@ class BluetoothScreenState extends State<BluetoothScreen> {
 
   BluetoothScreenState({
     @required this.e,
-  }):assert(e!=null);
+  }) : assert(e != null);
 
   BluetoothState _bluetoothState = BluetoothState.UNKNOWN;
   static const platform = const MethodChannel('samples.flutter.dev/bluetooth');
-  
+
   String _address = "...";
   String _name = "...";
 
-  final bool isThreeLine=true;
+  final bool isThreeLine = true;
 
-  
-  
   @override
   void initState() {
     // this.e = e;
     super.initState();
-    
 
     // Get current state
     FlutterBluetoothSerial.instance.state.then((state) {
@@ -85,18 +80,18 @@ class BluetoothScreenState extends State<BluetoothScreen> {
       });
     });
   }
+
   @override
   void dispose() {
     FlutterBluetoothSerial.instance.setPairingRequestHandler(null);
     super.dispose();
   }
-  
-  
-  Future<void> _startServer () async {
+
+  Future<void> _startServer() async {
     String connStatus;
-    try{
+    try {
       connStatus = await platform.invokeMethod("customStartServer");
-    }on PlatformException catch(e){
+    } on PlatformException catch (e) {
       print("Failed to establish connection: '${e.message}'");
       connStatus = "Connection failed";
     }
@@ -104,14 +99,13 @@ class BluetoothScreenState extends State<BluetoothScreen> {
     print("Connection status : $connStatus\n");
   }
 
-
   @override
   Widget build(BuildContext context) {
     //_startServer();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Flutter Bluetooth Serial'),
-        backgroundColor: Styles.primaryColor, 
+        backgroundColor: Styles.primaryColor,
       ),
       body: Container(
         child: ListView(
@@ -127,8 +121,7 @@ class BluetoothScreenState extends State<BluetoothScreen> {
                   if (value) {
                     await FlutterBluetoothSerial.instance.requestEnable();
                     await _startServer();
-                  }
-                  else
+                  } else
                     await FlutterBluetoothSerial.instance.requestDisable();
                 }
 
@@ -149,9 +142,9 @@ class BluetoothScreenState extends State<BluetoothScreen> {
             ),
             ListTile(
               title: const Text('Local Adapter'),
-              subtitle: Text('Address: '+ _address + '\n'+'Name: '+ _name),
+              subtitle: Text('Address: ' + _address + '\n' + 'Name: ' + _name),
             ),
-        
+
             Divider(),
             ListTile(title: const Text('Devices discovery and connection')),
             ListTile(
@@ -162,7 +155,7 @@ class BluetoothScreenState extends State<BluetoothScreen> {
                         await Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) {
-                          return DiscoveryPage(exp:e);
+                          return DiscoveryPage(exp: e);
                         },
                       ),
                     );
@@ -182,7 +175,8 @@ class BluetoothScreenState extends State<BluetoothScreen> {
                       await Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) {
-                        return SelectBondedDevicePage(checkAvailability: false,exp:e);
+                        return SelectBondedDevicePage(
+                            checkAvailability: false, exp: e);
                       },
                     ),
                   );

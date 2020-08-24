@@ -15,17 +15,15 @@ import 'package:intl/intl.dart'; // for date format
 // import 'package:flutter/services.dart';
 // import 'package:cryptography/cryptography.dart';
 
-
-
 class HomeScreen extends StatefulWidget {
   final ExposureNotification e;
-  
+
   const HomeScreen({
     @required this.e,
-  }):assert(e!=null);
+  }) : assert(e != null);
 
   @override
-  _HomeScreenState createState() => _HomeScreenState(e:e);
+  _HomeScreenState createState() => _HomeScreenState(e: e);
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -33,68 +31,61 @@ class _HomeScreenState extends State<HomeScreen> {
 
   _HomeScreenState({
     @required this.e,
-  }):assert(e!=null);
+  }) : assert(e != null);
 
   final prevention = [
     {'assets/images/distance.png': 'Maintain Social\n Distancing'},
     {'assets/images/wash_hands.png': 'Clean your\nhands often'},
     {'assets/images/mask.png': 'Wear a\nfacemask'},
-  
   ];
-    
+
   //new Dio with a BaseOptions instance.
   static BaseOptions options = new BaseOptions(
-      baseUrl: "http://192.168.0.152:6400/",
+    baseUrl: "http://192.168.0.152:6400/",
   );
   //print(response.data.toString());
 
-  Dio dio=new Dio(options);
+  Dio dio = new Dio(options);
   final Storage s = new Storage();
 
-  
-  
-
-  Future<void> _sendKeys(BuildContext context, final approvalID, final medID,final signature) async{
+  Future<void> _sendKeys(
+      BuildContext context, final approvalID, final medID) async {
     //s.delete(); //to delete file
-    List dailyKeys=[];
+    List dailyKeys = [];
     int currIval;
-    
+
     try {
       dailyKeys = await s.readKeys();
       print(dailyKeys);
-      if(dailyKeys==null) {
-        return _validationPopUp(context,'Error',"No daily keys found");
+      if (dailyKeys == null) {
+        return _validationPopUp(context, 'Error', "No daily keys found");
       }
 
-      currIval= e.iVal;
-      if(currIval==null) { 
-        return _validationPopUp(context,'Error',"Current i value not retrieved");
+      currIval = e.iVal;
+      if (currIval == null) {
+        return _validationPopUp(
+            context, 'Error', "Current i value not retrieved");
       }
 
-      Response response = await dio.post("/pushkeys", 
-      data: {
-        "approvalID": approvalID, 
+      Response response = await dio.post("/pushkeys", data: {
+        "approvalID": approvalID,
         "medID": medID,
-        "signature":signature,
         "ival": currIval.toString(),
         "dailyKeys": dailyKeys,
       });
 
-      _validationPopUp(context,'Successful',response.data.toString());
-
-    } catch(e) {
-      _validationPopUp(context,'Error',e.message);
+      _validationPopUp(context, 'Successful', response.data.toString());
+    } catch (e) {
+      _validationPopUp(context, 'Error', e.message);
     }
-
   }
 
   Future<List> _showPopUp(BuildContext context) async {
     TextEditingController approvalController = TextEditingController();
     TextEditingController medController = TextEditingController();
-    TextEditingController sigController= TextEditingController();
     final credentials = [];
     return showDialog(
-      context:context,
+      context: context,
       barrierDismissible: false, // user must tap button!
       builder: (BuildContext context) {
         return AlertDialog(
@@ -103,17 +94,15 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               TextFormField(
-                decoration: InputDecoration(icon: Icon(Icons.perm_identity),labelText: 'Approval ID'),
+                decoration: InputDecoration(
+                    icon: Icon(Icons.perm_identity), labelText: 'Approval ID'),
                 controller: approvalController,
-                ), 
-              TextFormField(
-                decoration: InputDecoration(icon: Icon(Icons.local_hospital),labelText: 'Medical ID'),
-                controller: medController,
               ),
               TextFormField(
-                decoration: InputDecoration(icon: Icon(Icons.perm_identity),labelText: 'Signature'),
-                controller: sigController,
-                ), 
+                decoration: InputDecoration(
+                    icon: Icon(Icons.local_hospital), labelText: 'Medical ID'),
+                controller: medController,
+              ),
             ],
           ),
           actions: <Widget>[
@@ -122,7 +111,6 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 credentials.add(approvalController.text.toString());
                 credentials.add(medController.text.toString());
-                credentials.add(sigController.text.toString());
                 Navigator.of(context).pop(credentials);
               },
             ),
@@ -130,153 +118,149 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
-}
+  }
 
- List<Widget> extractTimestamps(HashMap exposed){
-  List timestamps= new List();
-  exposed.forEach((k, v) => timestamps.add(DateFormat().format(v)));
-  return timestamps.map((x){
+  List<Widget> extractTimestamps(HashMap exposed) {
+    List timestamps = new List();
+    exposed.forEach((k, v) => timestamps.add(DateFormat().format(v)));
+    return timestamps.map((x) {
       return Padding(
         padding: EdgeInsets.all(5.0),
-        child: Row(children: <Widget>[
-          Icon(Icons.access_time),
-          Text(x)
-        ]),
+        child: Row(children: <Widget>[Icon(Icons.access_time), Text(x)]),
       );
     }).toList();
   }
 
-void _showTimestamps(BuildContext context,HashMap exposed) async{
+  void _showTimestamps(BuildContext context, HashMap exposed) async {
     showDialog(
-      context: context,
+        context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             titlePadding: EdgeInsets.all(10.0),
             contentPadding: EdgeInsets.all(0.0),
             title: Text("Exposed Timestamps"),
-            content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Divider(
-                    height: 1.0,
-                    color: Colors.grey,
-                  ),
-
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: extractTimestamps(exposed)
+            content: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+              Divider(
+                height: 1.0,
+                color: Colors.grey,
+              ),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: extractTimestamps(exposed)),
+                ),
+              ),
+              Divider(
+                color: Colors.grey,
+                height: 1.0,
+              ),
+              Padding(
+                padding: EdgeInsets.only(
+                    left: 10.0, right: 10.0, top: 2.0, bottom: 5.0),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: FlatButton(
+                        color: Styles.primaryColor,
+                        textColor: Colors.white,
+                        shape: OutlineInputBorder(
+                            borderRadius: BorderRadius.only(
+                                bottomLeft: Radius.circular(4.0),
+                                topLeft: Radius.circular(4.0))),
+                        child: Text("OK"),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
                       ),
                     ),
-                  ),
-
-                  Divider(
-                    color: Colors.grey,
-                    height: 1.0,
-                  ),
-                  Padding(
-                    padding: EdgeInsets.only(left: 10.0, right: 10.0, top: 2.0, bottom: 5.0),
-                    child: Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: FlatButton(
-                            color: Styles.primaryColor,
-                            textColor: Colors.white,
-                            shape: OutlineInputBorder(
-                                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(4.0), topLeft: Radius.circular(4.0))),
-                            child: Text("OK"),
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                ]
-            ),
+                  ],
+                ),
+              )
+            ]),
           );
-        }
-    );
+        });
   }
 
-  Future<void> _validationPopUp(BuildContext context,String title,String msg) async{
+  Future<void> _validationPopUp(
+      BuildContext context, String title, String msg) async {
     return showDialog(
-    context:context,
-    barrierDismissible: false, // user must tap button!
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text(title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-              Text(msg,
-              textAlign: TextAlign.center,
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                msg,
+                textAlign: TextAlign.center,
               ),
             ],
           ),
-        actions: <Widget>[
-          FlatButton(
-            child: Text('OK'),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
+          actions: <Widget>[
+            FlatButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-  bool check=false;
+  bool check = false;
 
   @override
   Widget build(BuildContext context) {
     // final counter = context.select<ExposureNotification,int>(
     //   (exp) => exp.counter
     // );
-    final exposed= Provider.of<ExposureNotification>(context).exposedTimestamps;
-    if(exposed.length>0) {
-      check=true;
+    final exposed =
+        Provider.of<ExposureNotification>(context).exposedTimestamps;
+    if (exposed.length > 0) {
+      check = true;
     }
     final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(
-      backgroundColor: Styles.primaryColor,
-      elevation: 0.0,
-      leading: IconButton(
-        icon: const Icon(Icons.menu),
-        iconSize: 28.0,
-        onPressed: () {},
-      ),
-      actions: <Widget>[
-        Badge(
-          position: BadgePosition.topRight(top: 0, right: 3),
-          showBadge: check,
-          badgeContent: Text(
-            (exposed.length).toString(),
+        backgroundColor: Styles.primaryColor,
+        elevation: 0.0,
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          iconSize: 28.0,
+          onPressed: () {},
+        ),
+        actions: <Widget>[
+          Badge(
+            position: BadgePosition.topRight(top: 0, right: 3),
+            showBadge: check,
+            badgeContent: Text(
+              (exposed.length).toString(),
             ),
-          child: IconButton(
-            icon: const Icon(Icons.notifications_none),
-            iconSize: 28.0,
-            onPressed: () {
-              if(exposed.length>0) {
-              _showTimestamps(context,exposed);
-              }
-              else {
-                _validationPopUp(context, 'You are Safe', 'You havent come across anyone who has tested postive');
-              }
-            },
-          ),
-        )
-      ],
-    ),
+            child: IconButton(
+              icon: const Icon(Icons.notifications_none),
+              iconSize: 28.0,
+              onPressed: () {
+                if (exposed.length > 0) {
+                  _showTimestamps(context, exposed);
+                } else {
+                  _validationPopUp(context, 'You are Safe',
+                      'You havent come across anyone who has tested postive');
+                }
+              },
+            ),
+          )
+        ],
+      ),
       body: CustomScrollView(
         physics: ClampingScrollPhysics(),
         slivers: <Widget>[
-          _buildHeader(context,screenHeight),
+          _buildHeader(context, screenHeight),
           _buildPreventionTips(screenHeight),
           _buildStaySafe(screenHeight),
         ],
@@ -284,7 +268,7 @@ void _showTimestamps(BuildContext context,HashMap exposed) async{
     );
   }
 
-  SliverToBoxAdapter _buildHeader(BuildContext context,double screenHeight) {
+  SliverToBoxAdapter _buildHeader(BuildContext context, double screenHeight) {
     return SliverToBoxAdapter(
       child: Container(
         padding: const EdgeInsets.all(20.0),
@@ -342,12 +326,12 @@ void _showTimestamps(BuildContext context,HashMap exposed) async{
                       ),
                       onPressed: () {
                         _showPopUp(context).then((val) {
-                          if(val[0]!='' && val[1]!='' && val[2]!='') {
+                          if (val[0] != '' && val[1] != '') {
                             print('Credentials recieved');
-                            _sendKeys(context, val[0], val[1],val[2]);
-                          }
-                          else
-                            _validationPopUp(context,'Error','Invalid Credentials'); 
+                            _sendKeys(context, val[0], val[1]);
+                          } else
+                            _validationPopUp(
+                                context, 'Error', 'Invalid Credentials');
                         });
                       },
                       color: Colors.red,

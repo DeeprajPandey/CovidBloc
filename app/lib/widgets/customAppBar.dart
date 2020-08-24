@@ -3,7 +3,6 @@ import 'package:contact_tracing/config/Styles.dart';
 import 'package:badges/badges.dart';
 
 class CustomAppBar extends StatelessWidget with PreferredSizeWidget {
-  
   @override
   Widget build(BuildContext context) {
     return AppBar(
@@ -20,8 +19,7 @@ class CustomAppBar extends StatelessWidget with PreferredSizeWidget {
           child: IconButton(
             icon: const Icon(Icons.notifications_none),
             iconSize: 28.0,
-            onPressed: () {
-            },
+            onPressed: () {},
           ),
         )
       ],

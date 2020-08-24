@@ -8,18 +8,19 @@ import 'package:contact_tracing/screens/screens.dart';
 import 'package:progress_indicators/progress_indicators.dart';
 import '../keyGen.dart';
 
-
 class SelectBondedDevicePage extends StatefulWidget {
   /// If true, on page start there is performed discovery upon the bonded devices.
   /// Then, if they are not avaliable, they would be disabled from the selection.
   final bool checkAvailability;
   final ExposureNotification exp;
 
-  const SelectBondedDevicePage({this.checkAvailability = true,
-  @required this.exp}):assert(exp!=null);
+  const SelectBondedDevicePage(
+      {this.checkAvailability = true, @required this.exp})
+      : assert(exp != null);
 
   @override
-  _SelectBondedDevicePage createState() => new _SelectBondedDevicePage(exp:exp);
+  _SelectBondedDevicePage createState() =>
+      new _SelectBondedDevicePage(exp: exp);
 }
 
 enum _DeviceAvailability {
@@ -29,7 +30,6 @@ enum _DeviceAvailability {
 }
 
 class _DeviceWithAvailability extends BluetoothDevice {
-  
   BluetoothDevice device;
   _DeviceAvailability availability;
   int rssi;
@@ -44,8 +44,7 @@ class _SelectBondedDevicePage extends State<SelectBondedDevicePage> {
   StreamSubscription<BluetoothDiscoveryResult> _discoveryStreamSubscription;
   bool _isDiscovering;
 
-  _SelectBondedDevicePage({@required this.exp}):assert(exp!=null);
-
+  _SelectBondedDevicePage({@required this.exp}) : assert(exp != null);
 
   @override
   void initState() {
@@ -114,67 +113,60 @@ class _SelectBondedDevicePage extends State<SelectBondedDevicePage> {
     super.dispose();
   }
 
-  
   @override
   Widget build(BuildContext context) {
-    DiscoveryPageState discover = new DiscoveryPageState(exp:exp);
+    DiscoveryPageState discover = new DiscoveryPageState(exp: exp);
     List<BluetoothDeviceListEntry> list = devices
         .map((_device) => BluetoothDeviceListEntry(
               device: _device.device,
               rssi: _device.rssi,
               enabled: _device.availability == _DeviceAvailability.yes,
               onTap: () {
-                discover.connectToDevice(context,_device.device);
+                discover.connectToDevice(context, _device.device);
                 //Navigator.of(context).pop(_device.device);
               },
             ))
         .toList();
 
-    if(_isDiscovering){
-    return Scaffold(
-      body: Container(
-      color:Styles.primaryColor,
-      child:Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: SpinKitWave(
-              color: Colors.white, type: SpinKitWaveType.end, size: 30),
-              ),
-        Row(
+    if (_isDiscovering) {
+      return Scaffold(
+          body: Container(
+        color: Styles.primaryColor,
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-                  'Finding all paired bluetooth devices',
-                  style:TextStyle(
-                  fontSize:18.0,
-                  color:Colors.white,
-                  )
-                ),
-            FadingText('...'),
-            ],
+            Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: SpinKitWave(
+                  color: Colors.white, type: SpinKitWaveType.end, size: 30),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Text('Finding all paired bluetooth devices',
+                    style: TextStyle(
+                      fontSize: 18.0,
+                      color: Colors.white,
+                    )),
+                FadingText('...'),
+              ],
+            ),
+          ],
         ),
-      ],
-    ),
-    )
-    );
-    }
-
-    else{
+      ));
+    } else {
       return Scaffold(
-      appBar: AppBar(
-        title: Text('Available devices'),
-        backgroundColor: Styles.primaryColor,
-        actions: <Widget>[
-         IconButton(
-                  icon: Icon(Icons.replay),
-                  onPressed: _restartDiscovery,
-                )
-        ],
-      ),
-      body: ListView(children:list)
-      );
+          appBar: AppBar(
+            title: Text('Available devices'),
+            backgroundColor: Styles.primaryColor,
+            actions: <Widget>[
+              IconButton(
+                icon: Icon(Icons.replay),
+                onPressed: _restartDiscovery,
+              )
+            ],
+          ),
+          body: ListView(children: list));
     }
   }
 }
