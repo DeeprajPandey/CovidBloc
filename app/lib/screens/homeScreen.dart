@@ -1,12 +1,14 @@
 import 'package:contact_tracing/config/Styles.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import '../keyGen.dart';
 import '../storage.dart';
 import 'package:badges/badges.dart';
 import 'package:provider/provider.dart';
 import 'dart:collection';
 import 'package:intl/intl.dart'; // for date format
+import 'package:barcode_scan/barcode_scan.dart';
 
 //import 'dart:io';
 //import 'package:contact_tracing/widgets/widgets.dart';
@@ -265,6 +267,28 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildStaySafe(screenHeight),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+          // backgroundColor: Colors.red,
+          icon: Icon(Icons.camera_alt),
+          onPressed: () async {
+            try {
+              var read = await BarcodeScanner.scan();
+              print(read.type); // The result type (barcode, cancelled, failed)
+              print(read.rawContent); // The barcode content
+              print(read.format); // The barcode format (as enum)
+              print(read.formatNote);
+            } on PlatformException catch (e) {
+              if (e.code == BarcodeScanner.cameraAccessDenied) {
+                print("Camera access denied");
+              }
+            } catch (e) {
+              print(e);
+            }
+          },
+          label: Text(
+            "Scan",
+            style: Styles.buttonTextStyle,
+          )),
     );
   }
 
