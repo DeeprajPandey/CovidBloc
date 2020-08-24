@@ -1,6 +1,6 @@
 {
-  "name": "Exposure Notification on Fabric",
-  "short_name": "CToF",
+  "name": "CovidBloc Documentation",
+  "short_name": "CovidBlocDocs",
   "icons": [
     {
       "src": "/icons/android-chrome-192x192.png",
