@@ -1,4 +1,4 @@
-name: covidbloc
+name: contact_tracing
 description: Blockchain powered privacy preserving contact tracing.
 
 # The following line prevents the package from being accidentally published to

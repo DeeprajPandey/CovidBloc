@@ -9,7 +9,7 @@ import './keyGen.dart';
 //     print('Alarm fired!');
 //     await e.scheduler();
 //     // Get the previous cached count and increment it.
-    
+
 //   }
 
 void main() {
@@ -24,20 +24,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-  var e = new ExposureNotification();
+    var e = new ExposureNotification();
     return ChangeNotifierProvider<ExposureNotification>(
-      create: (_)=> e,
-      child: MaterialApp(
-      title: 'Flutter Contact Tracing Users Dashboard',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.white, //bg color white
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: BottomNavScreen(exp:e),
-      
-    )
-    );
+        create: (_) => e,
+        child: MaterialApp(
+          title: 'CovidBloc User Application',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            scaffoldBackgroundColor: Colors.white, //bg color white
+            visualDensity: VisualDensity.adaptivePlatformDensity,
+          ),
+          home: BottomNavScreen(exp: e),
+        ));
   }
 }
