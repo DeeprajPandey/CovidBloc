@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
   
   
 
-  Future<void> _sendKeys(BuildContext context, final approvalID, final medID) async{
+  Future<void> _sendKeys(BuildContext context, final approvalID, final medID,final signature) async{
     //s.delete(); //to delete file
     List dailyKeys=[];
     int currIval;
@@ -75,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
       data: {
         "approvalID": approvalID, 
         "medID": medID,
+        "signature":signature,
         "ival": currIval.toString(),
         "dailyKeys": dailyKeys,
       });
@@ -90,6 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List> _showPopUp(BuildContext context) async {
     TextEditingController approvalController = TextEditingController();
     TextEditingController medController = TextEditingController();
+    TextEditingController sigController= TextEditingController();
     final credentials = [];
     return showDialog(
       context:context,
@@ -108,6 +110,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: InputDecoration(icon: Icon(Icons.local_hospital),labelText: 'Medical ID'),
                 controller: medController,
               ),
+              TextFormField(
+                decoration: InputDecoration(icon: Icon(Icons.perm_identity),labelText: 'Signature'),
+                controller: sigController,
+                ), 
             ],
           ),
           actions: <Widget>[
@@ -116,6 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 credentials.add(approvalController.text.toString());
                 credentials.add(medController.text.toString());
+                credentials.add(sigController.text.toString());
                 Navigator.of(context).pop(credentials);
               },
             ),
@@ -335,9 +342,9 @@ void _showTimestamps(BuildContext context,HashMap exposed) async{
                       ),
                       onPressed: () {
                         _showPopUp(context).then((val) {
-                          if(val[0]!='' && val[1]!='') {
+                          if(val[0]!='' && val[1]!='' && val[2]!='') {
                             print('Credentials recieved');
-                            _sendKeys(context, val[0], val[1]);
+                            _sendKeys(context, val[0], val[1],val[2]);
                           }
                           else
                             _validationPopUp(context,'Error','Invalid Credentials'); 
