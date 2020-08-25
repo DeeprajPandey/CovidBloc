@@ -103,7 +103,7 @@ export const connectAsUser = async (username: string): Promise<NetworkObject | G
     const network = await gateway.getNetwork('mychannel');
 
     // Get the contract from the network.
-    const contract = network.getContract('ctof-chaincode');
+    const contract = network.getContract('covidbloc-chaincode');
 
     const responseObj: NetworkObject = { gateway: gateway, contract: contract, err: null };
     console.info(`fabric.connectAsUser::${username} connected to network...`);
