@@ -181,9 +181,9 @@ export default {
       this.sign(pKey, this.approvalID)
         .then((signature) => {
           this.approvalStr = JSON.stringify({
-            apID: this.approvalID,
+            approvalID: this.approvalID.toString(),
             medID: this.request.medID,
-            sig: signature,
+            signature: signature,
           });
           this.genQRCode();
           
@@ -233,7 +233,7 @@ export default {
           alg: "SHA512withRSA",
         });
         sig.init(pKeyPEM);
-        sig.updateString(data);
+        sig.updateString(data.toString());
         const sigHex = sig.sign();
         resolve(sigHex);
       });

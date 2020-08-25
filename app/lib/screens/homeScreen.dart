@@ -44,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   //new Dio with a BaseOptions instance.
   static BaseOptions options = new BaseOptions(
-    baseUrl: "http://192.168.0.152:6400/",
+    baseUrl: "http://10.1.17.140:6400/",
   );
   //print(response.data.toString());
 
@@ -287,13 +287,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 try {
                   // rawcontent is the scanned data
                   // '{"apID":12345,"medID":1234,"sig":"hexcode"}'
-                  print(read.rawContent);
+                  // print(read.rawContent);
                   Map<String, dynamic> decoded = jsonDecode(read.rawContent);
+<<<<<<< HEAD
                   print(decoded);
                   int currIval = exposure.iVal;
+=======
+                  // print(decoded);
+                  int currIval = e.iVal;
+>>>>>>> 57c8691abec4f17c9b7dd612b3b574db4634a5c4
                   List dailyKeys = await s.readKeys();
 
-                  print(dailyKeys);
+                  // print(dailyKeys);
                   if (dailyKeys == null) {
                     // ignore: todo
                     // TODO: create a snackbar
@@ -304,17 +309,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     print("Failed to retrieve current i value");
                     // "Something went wrong."
                   } else {
-                    decoded['ival'] = currIval.toString();
-                    decoded['dailyKeys'] = dailyKeys;
-                    print(decoded['medID']);
+                    decoded["ival"] = currIval.toString();
+                    decoded["dailyKeys"] = dailyKeys;
+                    // print(decoded['medID']);
+
+                    Response response;
                     try {
+                      // print("Sending request");
                       // Push the keys to backend
-                      Response response =
-                          await dio.post('/pushkeys', data: decoded);
+                      response = await dio.post("/pushkeys", data: decoded);
                       // create snackbar
-                      print(response.data.toString());
-                    } catch (networkErr) {
-                      print('Network error: ${networkErr}');
+                      if (response.statusCode == 200) {
+                        print(response.data.toString());
+                      }
+                    } on DioError catch (n_err) {
+                      if (n_err.response != null) {
+                        print(n_err.response.data);
+                        print(n_err.response.headers);
+                        print(n_err.response.request);
+                      } else {
+                        print(n_err.message);
+                        print(n_err.request);
+                      }
                     }
                   }
                 } catch (e) {
