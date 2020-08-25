@@ -19,22 +19,22 @@ import 'package:barcode_scan/barcode_scan.dart';
 // import 'package:cryptography/cryptography.dart';
 
 class HomeScreen extends StatefulWidget {
-  final ExposureNotification e;
+  final ExposureNotification exposure;
 
   const HomeScreen({
-    @required this.e,
-  }) : assert(e != null);
+    @required this.exposure,
+  }) : assert(exposure != null);
 
   @override
-  _HomeScreenState createState() => _HomeScreenState(e: e);
+  _HomeScreenState createState() => _HomeScreenState(exposure: exposure);
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final ExposureNotification e;
+  final ExposureNotification exposure;
 
   _HomeScreenState({
-    @required this.e,
-  }) : assert(e != null);
+    @required this.exposure,
+  }) : assert(exposure != null);
 
   final prevention = [
     {'assets/images/distance.png': 'Maintain Social\n Distancing'},
@@ -64,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return _validationPopUp(context, 'Error', "No daily keys found");
       }
 
-      currIval = e.iVal;
+      currIval = exposure.iVal;
       if (currIval == null) {
         return _validationPopUp(
             context, 'Error', "Current i value not retrieved");
@@ -290,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   print(read.rawContent);
                   Map<String, dynamic> decoded = jsonDecode(read.rawContent);
                   print(decoded);
-                  int currIval = e.iVal;
+                  int currIval = exposure.iVal;
                   List dailyKeys = await s.readKeys();
 
                   print(dailyKeys);

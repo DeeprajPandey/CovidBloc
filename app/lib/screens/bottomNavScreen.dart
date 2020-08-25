@@ -24,8 +24,8 @@ class BottomNavScreenState extends State<BottomNavScreen> {
   @override
   Widget build(BuildContext context) {
     final List _screens = [
-      HomeScreen(e: exp), //home screen
-      BluetoothScreen(e: exp) //info screen (bluetooth part)
+      HomeScreen(exposure: exp), //home screen
+      BluetoothScreen(exposure: exp) //info screen (bluetooth part)
     ];
     return Scaffold(
       body: _screens[_currentIndex],

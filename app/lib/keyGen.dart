@@ -237,7 +237,7 @@ class ExposureNotification extends ChangeNotifier{
     print('(scheduler) RPI Hex: $rpiHex');
 
     try {
-      String data= await platform.invokeMethod("messageForServer", {
+        await platform.invokeMethod("messageForServer", {
         "message": rpiHex.toString(),
         });
     } on PlatformException catch (e) {

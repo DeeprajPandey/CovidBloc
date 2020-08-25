@@ -24,9 +24,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var e = new ExposureNotification();
+    var exposure = new ExposureNotification();
     return ChangeNotifierProvider<ExposureNotification>(
-        create: (_) => e,
+        create: (_) => exposure,
         child: MaterialApp(
           title: 'CovidBloc User Application',
           debugShowCheckedModeBanner: false,
@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
             scaffoldBackgroundColor: Colors.white, //bg color white
             visualDensity: VisualDensity.adaptivePlatformDensity,
           ),
-          home: BottomNavScreen(exp: e),
+          home: BottomNavScreen(exp: exposure),
         ));
   }
 }

@@ -12,22 +12,22 @@ typedef void Listener(dynamic msg);
 typedef void CancelListening();
 
 class BluetoothScreen extends StatefulWidget {
-  final ExposureNotification e;
+  final ExposureNotification exposure;
 
   const BluetoothScreen({
-    @required this.e,
-  }) : assert(e != null);
+    @required this.exposure,
+  }) : assert(exposure != null);
 
   @override
-  BluetoothScreenState createState() => new BluetoothScreenState(e: e);
+  BluetoothScreenState createState() => new BluetoothScreenState(exposure: exposure);
 }
 
 class BluetoothScreenState extends State<BluetoothScreen> {
-  final ExposureNotification e;
+  final ExposureNotification exposure;
 
   BluetoothScreenState({
-    @required this.e,
-  }) : assert(e != null);
+    @required this.exposure,
+  }) : assert(exposure != null);
 
   BluetoothState _bluetoothState = BluetoothState.UNKNOWN;
   static const platform = const MethodChannel('samples.flutter.dev/bluetooth');
@@ -155,7 +155,7 @@ class BluetoothScreenState extends State<BluetoothScreen> {
                         await Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) {
-                          return DiscoveryPage(exp: e);
+                          return DiscoveryPage(exp: exposure);
                         },
                       ),
                     );
@@ -176,7 +176,7 @@ class BluetoothScreenState extends State<BluetoothScreen> {
                     MaterialPageRoute(
                       builder: (context) {
                         return SelectBondedDevicePage(
-                            checkAvailability: false, exp: e);
+                            checkAvailability: false, exp: exposure);
                       },
                     ),
                   );
