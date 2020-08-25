@@ -215,6 +215,9 @@ export default {
                 this.notify(err.response.data);
               }
               console.log(err);
+            })
+            .finally(() => {
+              this.showFileUpload = false;
             });
         })
         .catch((err) => {
