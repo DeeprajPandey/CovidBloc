@@ -289,13 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   // '{"apID":12345,"medID":1234,"sig":"hexcode"}'
                   // print(read.rawContent);
                   Map<String, dynamic> decoded = jsonDecode(read.rawContent);
-<<<<<<< HEAD
-                  print(decoded);
                   int currIval = exposure.iVal;
-=======
-                  // print(decoded);
-                  int currIval = e.iVal;
->>>>>>> 57c8691abec4f17c9b7dd612b3b574db4634a5c4
                   List dailyKeys = await s.readKeys();
 
                   // print(dailyKeys);
