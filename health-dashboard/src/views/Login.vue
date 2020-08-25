@@ -19,7 +19,7 @@
         -->
         <div class="card-body px-lg-5 py-lg-5">
           <div class="text-center text-muted mb-4">
-            <small>Sign in with credentials</small>
+            <small>Sign in with your credentials</small>
           </div>
           <form role="form">
             <base-input
@@ -105,7 +105,7 @@ export default {
       this.$store
         .dispatch("login", this.credentials)
         .then(() => {
-            this.$router.push("/profile");
+            this.$router.push("/diagnose");
         })
         .catch((err) => {
           if (!err.response.data) {

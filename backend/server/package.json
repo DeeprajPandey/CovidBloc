@@ -1,7 +1,7 @@
 {
-  "name": "ctof-server",
-  "version": "0.0.1",
-  "description": "CToF Server",
+  "name": "covidbloc-server",
+  "version": "1.0.0",
+  "description": "CovidBloc Server",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "engines": {
@@ -24,8 +24,7 @@
     "server": "node ./dist/app.js"
   },
   "engineStrict": true,
-  "author": "Hyperledger",
-  "license": "Apache-2.0",
+  "author": "Anon",
   "dependencies": {
     "@types/connect-history-api-fallback": "^1.3.3",
     "@types/cron": "^1.7.2",

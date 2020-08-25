@@ -2,8 +2,8 @@
   <div class="wrapper" :class="{ 'nav-open': $sidebar.showSidebar }">
     <side-bar
       :background-color="sidebarBackground"
-      short-title="CToF"
-      title="Cntact Tracing on Fabric"
+      short-title="CovidBloc"
+      title="CovidBloc Health Dashboard"
     >
       <template slot="links">
         <sidebar-item

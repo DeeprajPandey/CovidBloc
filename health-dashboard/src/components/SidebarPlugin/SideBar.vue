@@ -104,7 +104,7 @@
           <li class="nav-item">
             <a
               class="nav-link"
-              href="https://deeprajpandey.github.io/fabric-contact-tracing/"
+              href="https://deeprajpandey.github.io/CovidBloc/"
               target="_blank"
             >
               <i class="ni ni-spaceship"></i> Getting started
@@ -113,7 +113,7 @@
           <li class="nav-item">
             <a
               class="nav-link"
-              href="https://deeprajpandey.github.io/fabric-contact-tracing/"
+              href="https://deeprajpandey.github.io/CovidBloc/"
             >
               <i class="ni ni-palette"></i> Stack
             </a>
@@ -121,7 +121,7 @@
           <li class="nav-item">
             <a
               class="nav-link"
-              href="https://deeprajpandey.github.io/fabric-contact-tracing/docs/chaincode.html"
+              href="https://deeprajpandey.github.io/CovidBloc/docs/chaincode.html"
             >
               <i class="ni ni-ui-04"></i> Docs
             </a>

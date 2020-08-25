@@ -67,10 +67,9 @@
         <div class="header-body text-center mb-7">
           <div class="row justify-content-center">
             <div class="col-lg-5 col-md-6">
-              <h1 class="text-white">Welcome!</h1>
+              <h1 class="text-white">Health Dashboard</h1>
               <p class="text-lead text-white">
-                Use these awesome forms to login or create new account in your
-                project for free.
+                Use your assigned official email and/or medical ID to login or sign up on the portal.
               </p>
             </div>
           </div>
@@ -108,7 +107,7 @@
                 href="https://github.com/DeeprajPandey/fabric-contact-tracing"
                 class="font-weight-bold ml-1"
                 target="_blank"
-                >Exposure Notification Replica on Fabric</a
+                >CovidBloc</a
               >
             </div>
           </div>

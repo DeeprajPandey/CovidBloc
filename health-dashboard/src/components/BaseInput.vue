@@ -89,7 +89,7 @@ export default {
     },
     addonLeftIcon: {
       type: String,
-      description: "Addont left icon"
+      description: "Addon left icon"
     }
   },
   data() {

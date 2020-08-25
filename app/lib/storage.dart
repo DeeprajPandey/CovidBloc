@@ -2,6 +2,7 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
+import 'dart:collection';
 class Storage {
 
   Future<String> get localPath async {
@@ -35,7 +36,7 @@ class Storage {
 
     } catch (e) {
       // If encountering an error, return 0
-      print(e.message);
+      //print(e.message);
       return null;
     }
   }
@@ -58,6 +59,46 @@ class Storage {
     dir.deleteSync(recursive: true);
     print('file deleted');
 
+  }
+
+  Future<String> writeRPI(String exchangedRpi) async {
+    final file = await localFile('ExchangedRPI.txt');
+    List rpis=null;
+    try {
+      rpis= await file.readAsLines();
+    } catch(e) {
+      print("File not read");
+    }
+    if(rpis!=null) {
+      if(rpis.contains(exchangedRpi)!=true) {
+        await file.writeAsString('$exchangedRpi\n',mode:FileMode.append,encoding: utf8,flush:true);
+        return "Done";
+      }
+      else{ 
+        return null;
+      }
+    }
+    else{
+      await file.writeAsString('$exchangedRpi\n',mode:FileMode.append,encoding: utf8,flush:true);
+      return "Done";
+    }
+    
+  }
+
+  Future<HashMap> readRPIs() async {
+    try{
+      final file = await localFile('ExchangedRPI.txt');
+      List rpis = await file.readAsLines();
+      HashMap contactRPIS =HashMap();
+      for (var hexString in rpis) {
+        contactRPIS.putIfAbsent(hexString, () => 1);
+      }
+      return contactRPIS;
+    } catch(e) {
+      return null;
+    }
+    
+    
   }
     
 

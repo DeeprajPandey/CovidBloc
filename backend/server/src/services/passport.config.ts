@@ -28,7 +28,6 @@ const options = {
 };
 
 const verifyCallback = async function(jwt_payload: any, done: any) {
-  console.log(jwt_payload);
   const official_email = jwt_payload.email;
   
   try {

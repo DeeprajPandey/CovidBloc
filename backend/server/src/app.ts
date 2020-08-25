@@ -15,6 +15,7 @@ import * as fabric from './services/fabric';
 import { NetworkObject, GenericResponse } from './services/fabric.interface';
 import * as utils from './services/jwt';
 import HealthOfficialModel from './models/HealthOfficial';
+import healthRoutes from './routes/HealthOfficial';
 
 require('./services/passport.config')(passport);
 
@@ -99,10 +100,16 @@ app.use(express.json());
 /**
  * Fabric Routes
  */
-// TODO: Remove this to host webapp
 app.get("/", (req, res, next) => {
   res.sendFile("index.html", { root: staticRoot })
 });
+
+app.use("/official", healthRoutes);
+
+app.post("/trial", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
+  res.status(200).send("Bug report filed");
+});
+
 // Temp use: invoke readAsset
 // app.get("/", async (req: Request, res: Response) => {
 //   try {
@@ -126,6 +133,40 @@ app.get("/", (req, res, next) => {
 //   }
 // });
 
+/** Characteristic checks before trying to register */
+app.post("/check-registration-status", async (req: Request, res: Response) => {
+  try {
+    const validBody = Boolean(
+      req.body.email
+    );
+    if (!validBody) {
+      res.status(401).send("⚠️ Invalid request");
+      return;
+    }
+
+    let email = req.body.email;
+
+    const dbObj = await HealthOfficialModel.findOne({ email: email });
+    if (!dbObj) { // returns empty object if not in DB
+      res.status(401).send("unauthorised");
+      return;
+      // throw new Error("You are not an authorised medical official");
+    }
+    if (dbObj.t_status === "REGISTERED") {
+      res.status(400).send("registered");
+      return;
+      // throw new Error("You have an account. Please log in.");
+    }
+
+    res.status(200).send("valid");
+    // res.status(200).send(`${recvID} registered`);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Server error");
+    return;
+  }
+});
+
 /**
  * POST: Register a new official
  * Chaincode generates a medID and returns it on successful addition
@@ -133,7 +174,8 @@ app.get("/", (req, res, next) => {
 app.post("/register", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
-      req.body.email
+      req.body.email &&
+      req.body.publicKey
     );
     if (!validBody) {
       res.status(401).send("⚠️ Invalid request");
@@ -175,6 +217,8 @@ app.post("/register", async (req: Request, res: Response) => {
     delete medObj.t_otp;
     delete medObj.t_timestamp;
     medObj.approveCtr = "0";
+    // TODO: check if it's a valid PEM encoded public key?
+    medObj.publicKey = req.body.publicKey;
 
     const contractResponse = await fabric.invoke('addHealthOfficial', [JSON.stringify(medObj)], false, networkObj);
     networkObj.gateway.disconnect();
@@ -192,8 +236,7 @@ app.post("/register", async (req: Request, res: Response) => {
     const html = `<b>Hey there! </b><br><br>Please store the ID somewhere safe as you will need it to log
     into the portal later.<br>Medical ID: ${recvID}`;
     try {
-      // TODO: change the receiver to dbObj.email
-      await sendEmail(process.env.EM_RECVR, "Your Medical ID", text, html);
+      await sendEmail(dbObj.email, "Your Medical ID", text, html);
     } catch (e) {
       throw new Error("Couldn't send medID to the specified email.");
     }
@@ -313,7 +356,7 @@ app.post("/login", async (req: Request, res: Response, next: NextFunction) => {
       }
       const tokenObj = utils.issueJWT(dbObj);
       res.status(200).json({ token: tokenObj.token, expiresIn: tokenObj.expires, user: contractResponse.data });
-      
+
       // Reset auth status so request OTP suceeds on next login
       dbObj.t_authstat = "NA";
       await HealthOfficialModel.findOneAndUpdate({ email: dbObj.email }, dbObj);
@@ -325,7 +368,7 @@ app.post("/login", async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // GET: Get an official's profile
-app.get("/healthofficial", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
+app.post("/healthofficial", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
       req.body.i &&
@@ -353,17 +396,13 @@ app.get("/healthofficial", passport.authenticate('jwt', { session: false }), asy
     return;
   }
 });
-app.post("/trial", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
-  res.status(200).send("Hi");
-});
 
 // POST: Generate an approval for patient
 app.post("/generateapproval", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
       req.body.email &&
-      req.body.medID &&
-      req.body.patientContact
+      req.body.medID
     );
     if (!validBody) {
       res.status(401).send("⚠️ Invalid request");
@@ -390,11 +429,47 @@ app.post("/generateapproval", passport.authenticate('jwt', { session: false }), 
       // Transaction error
       throw new Error("Something went wrong, please try again.");
     }
-    // Send sms to patient with approvalID and medID
-    const msgText = `Please enter these details on the app to send your daily keys from the last 14 days to the server.\n\n`
-      + `Approval ID: ${approvalID}\nMedical ID: ${req.body.medID}`;
-    await sendSMS(req.body.patientContact, msgText);
-    res.status(200).send("Approval record generated. Waiting for user keys.");
+
+    // Send the approval ID to display on the dashboard
+    res.status(200).json({ apID: approvalID });
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Server error");
+    return;
+  }
+});
+
+// POST: Send the signature and approval ID to patient contact
+app.post("/sms", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
+  try {
+    const validBody = Boolean(
+      req.body.sig &&
+      req.body.apID &&
+      req.body.medID
+    );
+    if (!validBody) {
+      res.status(401).send("⚠️ Invalid request");
+      return;
+    }
+
+    let sms_success = false;
+    let err_msg = "";
+
+    // Send sms to patient with approvalID, medID, and the signature
+    if (req.body.contact) {
+      const msgText = `Please enter these details on the app to send your daily keys from the last 14 days to the server.\n\n`
+        + `Approval ID: ${req.body.apID}\nMedical ID: ${req.body.medID}\nHash: ${req.body.sig}`;
+      try {
+        await sendSMS(req.body.contact, msgText);
+        sms_success = true;
+      } catch (err) {
+        sms_success = false;
+        err_msg = "Approval ID generated but SMS failed. Please enter the code on the patient's app.";
+      }
+    }
+
+    // if there's an error sending sms, it will be sent back
+    res.status(200).json({ smsErr: err_msg });
   } catch (e) {
     console.error(e);
     res.status(500).send("Server error");
@@ -408,6 +483,7 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
     const validBody = Boolean(
       req.body.approvalID &&
       req.body.medID &&
+      req.body.signature &&
       req.body.ival &&
       req.body.dailyKeys.length > 0
     );
@@ -421,7 +497,7 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
       console.error(networkObj.err);
       throw new Error("Admin not registered.");
     }
-    const validateResponse = await fabric.invoke('validatePatient', [req.body.medID, req.body.approvalID], true, networkObj);
+    const validateResponse = await fabric.invoke('validatePatient', [req.body.medID, req.body.approvalID, req.body.signature], true, networkObj);
     if ("err" in validateResponse) {
       throw new Error(validateResponse.err);
     }
@@ -440,8 +516,7 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
 app.post("/keys", async (req: Request, res: Response) => {
   try {
     const validBody = Boolean(
-      req.body.currentIval &&
-      (req.body.firstCall === true || req.body.firstCall === false)
+      req.body.currentIval
     );
     if (!validBody) {
       throw new Error("Invalid request");
@@ -451,7 +526,7 @@ app.post("/keys", async (req: Request, res: Response) => {
       console.error(networkObj.err);
       throw new Error("Admin not registered.");
     }
-    const contractResponse = await fabric.invoke('getKeys', [req.body.currentIval, req.body.firstCall.toString()], true, networkObj);
+    const contractResponse = await fabric.invoke('getKeys', [req.body.currentIval], true, networkObj);
     networkObj.gateway.disconnect();
     if ("err" in contractResponse) {
       console.error(contractResponse.err);
@@ -483,15 +558,16 @@ async function otpGen(dbObj: any): Promise<void> {
     dbObj.t_authstat = "INITIATED";
     dbObj.t_otp = OTP.toString();
 
-    // TODO: Uncomment. Send email
-    // const text = `Hey there,\nYour login code is ${OTP}\n\nEnter this code on the login page.`;
-    // const html = `<b>Hey there!</b><br>Your login code is ${OTP}<br><br>Enter this code on the login page.`;
-    // try {
-    //   // TODO: change sending address to dbObj.email
-    //   await sendEmail(process.env.EM_RECVR, "Your Login OTP", text, html);
-    // } catch (e) {
-    //   throw new Error("Couldn't send email.");
-    // }
+    const firstName = dbObj.name.split(" ")[0];
+    const text = `Hey ${firstName},\nYour login OTP is ${OTP}\n\Please note, the code is valid for only 5 minutes.
+    \nIf you did not attempt to log in, please ignore this email.`;
+    const html = `<b>Hey ${firstName}!</b><br>Your login OTP is ${OTP}<br><br>Please note, te code is valid for only 5 minutes.
+    \nIf you did not attempt to log in, please ignore this email.`;
+    try {
+      await sendEmail(dbObj.email, "Your Login Code", text, html);
+    } catch (e) {
+      throw new Error("Couldn't send email.");
+    }
 
     // If the email was sent, set the timestamp
     const createdTime = Math.floor(Date.now() / 1000);
@@ -524,7 +600,7 @@ async function sendEmail(toEmail: string, sub: string, msgText: string, msgHtml:
     });
 
     let mailOptions = {
-      from: `"Development Team" <${process.env.EM_USR}>`,
+      from: `"CovidBloc Development Team" <${process.env.EM_USR}>`,
       to: toEmail,
       subject: sub,
       text: msgText,

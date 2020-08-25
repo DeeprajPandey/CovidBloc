@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:contact_tracing/config/Styles.dart';
+import 'package:badges/badges.dart';
 
 class CustomAppBar extends StatelessWidget with PreferredSizeWidget {
   @override
@@ -13,11 +14,14 @@ class CustomAppBar extends StatelessWidget with PreferredSizeWidget {
         onPressed: () {},
       ),
       actions: <Widget>[
-        IconButton(
-          icon: const Icon(Icons.notifications_none),
-          iconSize: 28.0,
-          onPressed: () {},
-        ),
+        Badge(
+          badgeContent: Text('1'),
+          child: IconButton(
+            icon: const Icon(Icons.notifications_none),
+            iconSize: 28.0,
+            onPressed: () {},
+          ),
+        )
       ],
     );
   }

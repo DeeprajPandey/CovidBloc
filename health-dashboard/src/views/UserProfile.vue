@@ -1,19 +1,9 @@
 <template>
   <div>
     <base-header
-      class="header pb-8 pt-5 pt-lg-5 d-flex align-items-center"
+      class="header pb-6 pt-5 pt-lg-5 d-flex align-items-center"
       style="min-height: 600px; background-image: url(img/theme/personal_info.svg); background-size: cover; background-position: center top;"
     >
-      <div>
-        Icons made by
-        <a href="https://www.flaticon.com/authors/freepik" title="Freepik"
-          >Freepik</a
-        >
-        from
-        <a href="https://www.flaticon.com/" title="Flaticon"
-          >www.flaticon.com</a
-        >
-      </div>
       <!-- Mask -->
       <span class="mask bg-gradient-success opacity-8"></span>
       <!-- Header container -->
@@ -39,35 +29,21 @@
               <div class="col-lg-3 order-lg-2">
                 <div class="card-profile-image">
                   <a href="#">
-                    <img
-                      src="img/theme/profile_user.png"
-                      class="rounded-circle"
-                    />
+                    <img src="img/theme/profile_user.png" class="rounded-circle" />
                   </a>
                 </div>
               </div>
             </div>
-            <div
-              class="card-header text-center border-0 pt-8 pt-md-4 pb-0 pb-md-4"
-            >
+            <div class="card-header text-center border-0 pt-8 pt-md-4 pb-0 pb-md-4">
               <div class="d-flex justify-content-between">
-                <base-button size="sm" type="info" class="mr-4 invisible"
-                  >Connect</base-button
-                >
-                <base-button
-                  size="sm"
-                  type="default"
-                  class="float-right invisible"
-                  >Message</base-button
-                >
+                <base-button size="sm" type="info" class="mr-4 invisible">Connect</base-button>
+                <base-button size="sm" type="default" class="float-right invisible">Message</base-button>
               </div>
             </div>
             <div class="card-body pt-0 pt-md-4">
               <div class="row">
                 <div class="col">
-                  <div
-                    class="card-profile-stats d-flex justify-content-center mt-md-5"
-                  >
+                  <div class="card-profile-stats d-flex justify-content-center mt-md-5">
                     <div>
                       <span class="heading">{{ usr.approveCtr }}</span>
                       <span class="description">Approvals</span>
@@ -80,17 +56,17 @@
                 </div>
               </div>
               <div class="text-center">
-                <h3>
-                  {{ usr.name }}
-                </h3>
+                <h3>{{ usr.name }}</h3>
                 <div class="h5 font-weight-300">
                   <i class="ni location_pin mr-2"></i>India
                 </div>
                 <div class="h5 mt-4">
-                  <i class="ni business_briefcase-24 mr-2"></i>{{ usr.email }}
+                  <i class="ni business_briefcase-24 mr-2"></i>
+                  {{ usr.email }}
                 </div>
                 <div>
-                  <i class="ni education_hat mr-2"></i>{{ usr.hospital }}
+                  <i class="ni education_hat mr-2"></i>
+                  {{ usr.hospital }}
                 </div>
                 <hr class="my-4" />
                 <p>
@@ -112,12 +88,11 @@
                 </div>
                 <div class="col-4 text-right">
                   <base-button
-                    href=""
+                    href
                     class="btn btn-sm"
                     v-bind:type="btntype"
                     @click="submitReport"
-                    >Submit Report</base-button
-                  >
+                  >Submit Report</base-button>
                 </div>
               </div>
             </div>
@@ -128,7 +103,7 @@
                   <div class="row">
                     <div class="col-lg-6">
                       <base-input
-                        alternative=""
+                        alternative
                         label="First name"
                         input-classes="form-control-alternative"
                         v-model="model.firstName"
@@ -137,7 +112,7 @@
                     </div>
                     <div class="col-lg-6">
                       <base-input
-                        alternative=""
+                        alternative
                         label="Last name"
                         input-classes="form-control-alternative"
                         v-model="model.lastName"
@@ -148,15 +123,16 @@
                   <div class="row">
                     <div class="col-lg-6">
                       <base-input
-                        alternative=""
-                        label="Contact Number*"
+                        alternative
+                        label="Contact Number"
                         input-classes="form-control-alternative"
-                        v-model="model.username"
+                        required
+                        v-model="model.contact"
                       />
                     </div>
                     <div class="col-lg-6">
                       <base-input
-                        alternative=""
+                        alternative
                         label="Email address"
                         input-classes="form-control-alternative"
                         v-model="model.email"
@@ -171,7 +147,7 @@
                 <div class="pl-lg-4">
                   <div class="form-group">
                     <base-input
-                      alternative=""
+                      alternative
                       label="Briefly describe what you were trying to do and what happened."
                     >
                       <textarea
@@ -194,6 +170,13 @@
 <script>
 export default {
   name: "user-profile",
+  created() {
+    this.$store
+      .dispatch("refresh", { i: this.usr.medID, e: this.usr.email })
+      .catch((err) => {
+        console.log(err);
+      });
+  },
   mounted() {
     this.model.email = this.usr.email;
     this.model.firstName = this.usr.name.split(" ")[0];
@@ -206,6 +189,7 @@ export default {
         email: "",
         firstName: "",
         lastName: "",
+        contact: "",
         report: "",
       },
       btntype: "default",
@@ -213,27 +197,31 @@ export default {
   },
   methods: {
     submitReport() {
-      this.$axios
-        .post("http://localhost:6400/trial", this.request, {
-          headers: { Authorization: this.$store.getters.authToken },
-        })
-        .then((response) => {
-          this.btntype = "success";
-          this.notify(response.data, "primary");
-        })
-        .catch((err) => {
-          if (!err.response.data) {
-            this.notify(`⚠️ ${err.message}`, "error");
-          } else {
-            this.notify(err.response.data, "error");
-          }
-          console.log(err);
-        })
-        .finally(() => {
-          setTimeout(() => {
-            this.btntype = "default";
-          }, 3000);
-        });
+      if (this.model.contact) {
+        this.$axios
+          .post("http://localhost:6400/trial", this.model, {
+            headers: { Authorization: this.$store.getters.authToken },
+          })
+          .then((response) => {
+            this.btntype = "success";
+            this.notify(response.data, "primary");
+          })
+          .catch((err) => {
+            if (!err.response.data) {
+              this.notify(`⚠️ ${err.message}`, "error");
+            } else {
+              this.notify(err.response.data, "error");
+            }
+            console.log(err);
+          })
+          .finally(() => {
+            setTimeout(() => {
+              this.btntype = "default";
+            }, 2000);
+          });
+      } else {
+        this.notify("Contact number required", "error");
+      }
     },
     notify(reason, toastType) {
       this.$toasted.show(reason, {

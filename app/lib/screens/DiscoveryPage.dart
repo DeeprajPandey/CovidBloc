@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:contact_tracing/config/Styles.dart';
+import 'package:contact_tracing/storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:progress_indicators/progress_indicators.dart';
@@ -8,20 +9,19 @@ import 'package:contact_tracing/widgets/widgets.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/services.dart';
 import '../keyGen.dart';
-import 'package:convert/convert.dart';
-
 
 class DiscoveryPage extends StatefulWidget {
   /// If true, discovery starts on page start, otherwise user must press action button.
   final bool start;
   final ExposureNotification exp;
 
-  const DiscoveryPage({this.start = true,
-  @required this.exp,
-  }):assert(exp!=null);
+  const DiscoveryPage({
+    this.start = true,
+    @required this.exp,
+  }) : assert(exp != null);
 
   @override
-  DiscoveryPageState createState() => new DiscoveryPageState(exp:exp);
+  DiscoveryPageState createState() => new DiscoveryPageState(exp: exp);
 }
 
 class DiscoveryPageState extends State<DiscoveryPage> {
@@ -30,9 +30,12 @@ class DiscoveryPageState extends State<DiscoveryPage> {
   StreamSubscription<BluetoothDiscoveryResult> _streamSubscription;
   List<BluetoothDiscoveryResult> results = List<BluetoothDiscoveryResult>();
   bool isDiscovering;
+  final Storage s = new Storage();
   // String _statusMsg = 'Waiting for response';
 
-  DiscoveryPageState({@required this.exp,}):assert(exp!=null);
+  DiscoveryPageState({
+    @required this.exp,
+  }) : assert(exp != null);
 
   @override
   void initState() {
@@ -68,7 +71,6 @@ class DiscoveryPageState extends State<DiscoveryPage> {
     });
   }
 
-
   @override
   void dispose() {
     // Avoid memory leak (`setState` after dispose) and cancel discovery
@@ -77,53 +79,66 @@ class DiscoveryPageState extends State<DiscoveryPage> {
     super.dispose();
   }
 
-  Future<void> _showKeyinDialogue(BuildContext context,String keyReceived) async {
-  return showDialog<void>(
-    context:context,
-    barrierDismissible: false, // user must tap button!
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('Exchanged Key'),
-        content: SingleChildScrollView(
-          child: ListBody(
-            children: <Widget>[
-              Text(keyReceived),
-              Text('Storing this key in your local storage'),
-            ],
+  Future<void> _showKeyinDialogue(
+      BuildContext context, String keyReceived, String msg) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Exchanged Key'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(keyReceived),
+                Text(msg),
+              ],
+            ),
           ),
-        ),
-        actions: <Widget>[
-          FlatButton(
-            child: Text('OK'),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
+          actions: <Widget>[
+            FlatButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-  Future<void> connectToDevice(BuildContext context, BluetoothDevice dev) async {
+  Future<void> connectToDevice(
+      BuildContext context, BluetoothDevice dev) async {
     String exchangedKey;
-    String rollingProximityIdentifier;
-    List<int> rpi= exp.rollingProximityIdentifier; //await doesnt matter
-    if (rpi!=null) {
-      rollingProximityIdentifier= hex.encode(rpi);
-    }
-    else { 
-      rollingProximityIdentifier= "Nothing";
-    }
+    //not needed now (both devices connect as client to get the other devices's rpi)
+
     try {
-      exchangedKey =
-          await platform.invokeMethod('customConnectToDevice', {"address": dev.address,"message":rollingProximityIdentifier});
+      exchangedKey = await platform
+          .invokeMethod('customConnectToDevice', {"address": dev.address});
     } on PlatformException catch (e) {
       print("Failed to establish connection: '${e.message}'");
-      exchangedKey="No key received";
+      exchangedKey = "No key received";
     }
     print("From dart: : $exchangedKey\n");
-     _showKeyinDialogue(context,exchangedKey);
+    if (exchangedKey == null ||
+        exchangedKey == 'Hi from Bluetooth Demo Server') {
+      if (exchangedKey == null)
+        _showKeyinDialogue(
+            context, 'Key not received', 'Try again in some time');
+      else
+        _showKeyinDialogue(context, 'Key not received',
+            'Server is running but unable to get rpi');
+    } else {
+      final data = await s.writeRPI(exchangedKey);
+      print(data);
+      if (data != null)
+        _showKeyinDialogue(
+            context, exchangedKey, 'Stored this key in your local storage');
+      else if (data == null)
+        _showKeyinDialogue(
+            context, exchangedKey, 'Key already in local storage');
+    }
   }
 
   @override
@@ -175,12 +190,12 @@ class DiscoveryPageState extends State<DiscoveryPage> {
             BluetoothDiscoveryResult result = results[index];
             return BluetoothDeviceListEntry(
               device: result.device,
-              rssi: result.rssi,
+              //rssi: result.rssi,
               onTap: () {
-                connectToDevice(context,result.device);
+                connectToDevice(context, result.device);
                 //Navigator.of(context).pop(result.device);
               },
-              
+
               onLongPress: () async {
                 try {
                   bool bonded = false;
@@ -227,7 +242,7 @@ class DiscoveryPageState extends State<DiscoveryPage> {
                     },
                   );
                 }
-               },
+              },
             );
           },
         ),

@@ -1,6 +1,6 @@
 {
-  "name": "exposure-notification-on-fabric",
-  "version": "0.1.0",
+  "name": "covidbloc-health-dashboard",
+  "version": "0.1.8",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -14,8 +14,11 @@
     "bootstrap-vue": "2.15.0",
     "chart.js": "2.9.3",
     "core-js": "3.6.5",
+    "file-saver": "^2.0.2",
     "flatpickr": "4.6.3",
+    "jsrsasign": "^9.0.3",
     "nouislider": "14.6.0",
+    "qrcode": "^1.4.4",
     "register-service-worker": "1.7.1",
     "vue": "2.6.11",
     "vue-chartjs": "3.5.0",

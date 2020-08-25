@@ -3,7 +3,7 @@ import HealthOfficialModel from "../models/HealthOfficial";
 
 const healthRoutes = Router();
 
-healthRoutes.get('/', async (req: Request, res: Response) => {
+healthRoutes.post('/one', async (req: Request, res: Response) => {
   try {
     const officials = await HealthOfficialModel.findOne({ name: "Mahavir Jhawar" }, "email");
     res.send(officials);
