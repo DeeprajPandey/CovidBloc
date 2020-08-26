@@ -178,7 +178,8 @@ export default {
   },
   methods: {
     fileLoad(pKey) {
-      this.sign(pKey, this.approvalID)
+      // Signature is sig(apID||medID)
+      this.sign(pKey, `${this.approvalID}${this.request.medID}`)
         .then((signature) => {
           this.approvalStr = JSON.stringify({
             approvalID: this.approvalID.toString(),

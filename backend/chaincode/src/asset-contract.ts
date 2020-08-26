@@ -185,7 +185,7 @@ export class AssetContract extends Contract {
 
           let sig = new jsrsasign.KJUR.crypto.Signature({ alg: "SHA512withRSA" });
           sig.init(pubKeyPEM);
-          sig.updateString(checkID);
+          sig.updateString(checkID+medID);
           const isValid = sig.verify(signature);
 
           if (isValid) {
