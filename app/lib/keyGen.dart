@@ -17,15 +17,12 @@ import 'package:flutter/material.dart';
 //import 'package:cron/cron.dart';
 //import 'package:android_alarm_manager/android_alarm_manager.dart';
 
-class ExposureNotification extends ChangeNotifier{
+class ExposureNotification extends ChangeNotifier {
   final _eKRollingPeriod = 144;
 
   /// Secret Keys
   /// {key: SecretKey, i: uint32_t}
-  Map _temporaryExposureKey = {
-    'key': null,
-    'i': null
-  }; 
+  Map _temporaryExposureKey = {'key': null, 'i': null};
 
   SecretKey _rpiKey; // RollingProximityIdentifierKey
   SecretKey _aemKey; // AssociatedEncryptedMetadataKey
@@ -36,36 +33,35 @@ class ExposureNotification extends ChangeNotifier{
 
   //connection to server
   static BaseOptions options = new BaseOptions(
-      baseUrl: "http://192.168.0.152:6400/",
+    baseUrl: "http://192.168.0.152:6400/",
   );
 
   //Dio object
-  Dio dio=new Dio(options);
+  Dio dio = new Dio(options);
 
   //to connect to server thread
   static const platform = const MethodChannel('samples.flutter.dev/bluetooth');
-
 
   int _eNIntervalNumber;
   int iVal;
   List<int> rollingProximityIdentifier = null; // to be broadcasted
   List<int> associatedEncryptedMetadata; // additional metadata
 
-  
   //Make a storage class object to write temporary keys to the file
   final Storage s = new Storage();
 
   ExposureNotification() {
-
-    //updating current temporaryExposureKey map from file. 
-    s.readKeys().then((keys) {  
-    if(keys!=null) {
-      int length = keys.length;
-      this._temporaryExposureKey['key'] = SecretKey(hex.decode(keys[length-1]['hexkey'])); 
-      this._temporaryExposureKey['i'] = int.parse(keys[length-1]['i']);
-      print('(constructor) TemporaryExposureKey i value ${this._temporaryExposureKey['i']}');
-      print(keys[length-1]['hexkey']);
-    }
+    //updating current temporaryExposureKey map from file.
+    s.readKeys().then((keys) {
+      if (keys != null) {
+        int length = keys.length;
+        this._temporaryExposureKey['key'] =
+            SecretKey(hex.decode(keys[length - 1]['hexkey']));
+        this._temporaryExposureKey['i'] = int.parse(keys[length - 1]['i']);
+        print(
+            '(constructor) TemporaryExposureKey i value ${this._temporaryExposureKey['i']}');
+        print(keys[length - 1]['hexkey']);
+      }
     });
 
     this.iVal = _getIval(timestamp: new DateTime.now());
@@ -76,13 +72,12 @@ class ExposureNotification extends ChangeNotifier{
     //print('Running alarm manager');
     //AndroidAlarmManager.periodic(const Duration(minutes: 1), 0, callback);
     const tenMins = const Duration(minutes: 10);
-    new Timer.periodic(
-      tenMins, (timer) async => await this.scheduler());
+    new Timer.periodic(tenMins, (timer) async => await this.scheduler());
 
-  //   var cron = new Cron();
-  //   cron.schedule(new Schedule.parse('*/10 * * * *'), () async {
-  //     this.scheduler();
-  // });
+    //   var cron = new Cron();
+    //   cron.schedule(new Schedule.parse('*/10 * * * *'), () async {
+    //     this.scheduler();
+    // });
 
     print('\n');
   }
@@ -162,7 +157,8 @@ class ExposureNotification extends ChangeNotifier{
     List.copyRange(paddedData, 12, this._intToBytes(interval));
 
     var key = encrypt.Key(await localRPIKey.extract());
-    var cipher = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.ecb, padding: null));
+    var cipher = encrypt.Encrypter(
+        encrypt.AES(key, mode: encrypt.AESMode.ecb, padding: null));
     List<int> rpi = cipher.encryptBytes(paddedData, iv: null).bytes;
 
     // print('(_repiGen) RPI Bytes: ${rpi.length}');
@@ -183,7 +179,8 @@ class ExposureNotification extends ChangeNotifier{
     var metadata = utf8.encode("Metadata");
 
     var key = encrypt.Key(await this._aemKey.extract());
-    var cipher = encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.ctr, padding: 'PKCS7'));
+    var cipher = encrypt.Encrypter(
+        encrypt.AES(key, mode: encrypt.AESMode.ctr, padding: 'PKCS7'));
     List<int> aem = cipher
         .encryptBytes(metadata, iv: encrypt.IV(this.rollingProximityIdentifier))
         .bytes;
@@ -205,25 +202,24 @@ class ExposureNotification extends ChangeNotifier{
 
     // If tempKey hasn't been set yet
     // or if it's been more than 24 hours since last keygen (i value must have changed)
-    
+
     if (this._temporaryExposureKey['i'] == null ||
         this._temporaryExposureKey['i'] != currIval) {
-        
-        this._temporaryExposureKey['i'] = currIval;
-        this._temporaryExposureKey['key'] = this._dailyKeygen();
+      this._temporaryExposureKey['i'] = currIval;
+      this._temporaryExposureKey['key'] = this._dailyKeygen();
 
-    
-        var tempKeyHex =
+      var tempKeyHex =
           hex.encode(await this._temporaryExposureKey['key'].extract());
-      
-        await s.writeKey(tempKeyHex,this._temporaryExposureKey['i'].toString());
-      
-        print('(scheduler) Generated new TempExpKey: $tempKeyHex');
-        print('(scheduler) i: ${this._temporaryExposureKey['i']}');
 
-        //remove once a day
-        exposedKeys.removeWhere((key, value) => (DateTime.now().difference(value)).inDays>14);        
-     }
+      await s.writeKey(tempKeyHex, this._temporaryExposureKey['i'].toString());
+
+      print('(scheduler) Generated new TempExpKey: $tempKeyHex');
+      print('(scheduler) i: ${this._temporaryExposureKey['i']}');
+
+      //remove once a day
+      exposedKeys.removeWhere(
+          (key, value) => (DateTime.now().difference(value)).inDays > 14);
+    }
 
     this._rpiKey = await this
         ._secondaryKeygen(_temporaryExposureKey['key'], stringData: 'EN-RPIK');
@@ -235,9 +231,9 @@ class ExposureNotification extends ChangeNotifier{
     print('(scheduler) RPI Hex: $rpiHex');
 
     try {
-        await platform.invokeMethod("messageForServer", {
+      await platform.invokeMethod("messageForServer", {
         "message": rpiHex.toString(),
-        });
+      });
     } on PlatformException catch (e) {
       print('Unable to send the rpi to android native side');
       print(e.message);
@@ -255,18 +251,16 @@ class ExposureNotification extends ChangeNotifier{
     //fetching data from server
     Response response;
     try {
-      response  = await dio.post("/keys",
-      data: {
-          "currentIval": currIval.toString()
-      });
+      response =
+          await dio.post("/keys", data: {"currentIval": currIval.toString()});
     } catch (e) {
       print(e.message);
     }
-    
+
     // Read the hashmap of RPIs saved in local storage
     HashMap contactRPI = await s.readRPIs();
-    if(contactRPI!=null && response.data!=null) {
-      checkExposure(response.data,contactRPI);
+    if (contactRPI != null && response.data != null) {
+      checkExposure(response.data, contactRPI);
     }
 
     print('\n');
@@ -275,32 +269,30 @@ class ExposureNotification extends ChangeNotifier{
   /// Check for exposures
   Future<void> checkExposure(List diagnosisKeys, HashMap contactRPIs) async {
     //int exposedCtr = 0;
-      for (var positiveKey in diagnosisKeys) {
-        // We received the keys as hex strings. Convert them to bytes and create a SecretKey instance.
-        var tempKey = SecretKey(hex.decode(positiveKey['hexkey']));
-        var tempIval = int.parse(positiveKey['i']);
-        var tempRPIKey =
-            await this._secondaryKeygen(tempKey, stringData: 'EN-RPIK');
+    for (var positiveKey in diagnosisKeys) {
+      // We received the keys as hex strings. Convert them to bytes and create a SecretKey instance.
+      var tempKey = SecretKey(hex.decode(positiveKey['hexkey']));
+      var tempIval = int.parse(positiveKey['i']);
+      var tempRPIKey =
+          await this._secondaryKeygen(tempKey, stringData: 'EN-RPIK');
 
-        // Generate an RPI for all intervals during the day
-        for (var i = tempIval; i < tempIval + 144; i++) {
-          var tempRPIHex =
-              await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
-          // Now check if we ever came in contact with this rolling proximity identifier
-          if (contactRPIs.containsKey(tempRPIHex)) {
-            //find timestamp in indian standart time for this interval
-            var date = new DateTime.fromMillisecondsSinceEpoch((i*600) * 1000);
-            exposedKeys.putIfAbsent(positiveKey['hexkey'], () => date);
-            break;
-            //exposedCtr++;
-          }
-        }     
+      // Generate an RPI for all intervals during the day
+      for (var i = tempIval; i < tempIval + 144; i++) {
+        var tempRPIHex =
+            await this._rpiGen(localRPIKey: tempRPIKey, interval: i);
+        // Now check if we ever came in contact with this rolling proximity identifier
+        if (contactRPIs.containsKey(tempRPIHex)) {
+          //find timestamp in indian standart time for this interval
+          var date = new DateTime.fromMillisecondsSinceEpoch((i * 600) * 1000);
+          exposedKeys.putIfAbsent(positiveKey['hexkey'], () => date);
+          break;
+          //exposedCtr++;
+        }
+      }
     }
-   
+
     notifyListeners();
   }
-
-
 }
 
 // Using only for debug
