@@ -1,7 +1,5 @@
 // A Dart port of the Exposure Notification API. The class has
 // a custom implementation of all the functionalities of the API.
-//
-// 2020. Ashoka University Computer Science.
 
 import 'dart:async';
 import 'dart:collection';
