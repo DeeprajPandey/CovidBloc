@@ -104,7 +104,7 @@
           <li class="nav-item">
             <a
               class="nav-link"
-              href="https://deeprajpandey.github.io/CovidBloc/"
+              href="https://anonymous.4open.science/r/c6caad6d-62a4-463c-8301-472e421b931f/"
               target="_blank"
             >
               <i class="ni ni-spaceship"></i> Getting started
@@ -113,7 +113,7 @@
           <li class="nav-item">
             <a
               class="nav-link"
-              href="https://deeprajpandey.github.io/CovidBloc/"
+              href="https://anonymous.4open.science/r/c6caad6d-62a4-463c-8301-472e421b931f/"
             >
               <i class="ni ni-palette"></i> Stack
             </a>
@@ -121,7 +121,7 @@
           <li class="nav-item">
             <a
               class="nav-link"
-              href="https://deeprajpandey.github.io/CovidBloc/docs/chaincode.html"
+              href="https://anonymous.4open.science/r/c6caad6d-62a4-463c-8301-472e421b931f/"
             >
               <i class="ni ni-ui-04"></i> Docs
             </a>
