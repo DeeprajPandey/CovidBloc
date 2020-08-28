@@ -21,3 +21,7 @@ $ npm run dev
 ```
 
 This will run the dashboard on port `8080` and only the Auth pages will be accessible.
+
+<p>
+  <sub>The theme used for the Dashboard is Argon, a free (with attribution) to use dashbaord template.</sub>
+</p>
