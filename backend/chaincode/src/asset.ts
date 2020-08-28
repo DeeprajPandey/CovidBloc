@@ -25,6 +25,13 @@ export interface DailyKey {
     i: string;
 }
 
+/*
+ * Interface for the approval records to be stored in health official asset
+ */
+export interface Approvals {
+  [key: string]: Array<string>
+}
+
 
 ////  Wrapper classes for assets in the World State  ////
 
@@ -35,6 +42,7 @@ export interface DailyKey {
 export class Patient {
     @Property()
     public approvalID: string;
+    public approvalDay: string;
     public medID: string;
     public ival : string;
     public dailyKeys: Array<DailyKey>;
@@ -48,20 +56,9 @@ export class Patient {
 export class HealthOfficial {
     @Property()
     public medID: string;
-    public approveCtr: string = "0";
+    public approvals: Approvals;
     public name: string;
     public email: string;
     public hospital: string;
     public publicKey: string;
-}
-
-/**
- * Represent an approval by binding the patient ID and approval ID.
- * Key for this asset is "medID:approvalCtr".
- */
-@Object()
-export class Approval {
-    @Property()
-    public approvalID: string;
-    public patientID: string = null;
 }

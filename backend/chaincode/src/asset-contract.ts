@@ -3,12 +3,12 @@
  */
 
 import { Context, Contract, Info, Returns, Transaction } from 'fabric-contract-api';
-import { Meta, DailyKey } from './asset';
-import { HealthOfficial, Patient, Approval } from './asset';
+import { Meta } from './asset';
+import { HealthOfficial, Patient } from './asset';
 import jsrsasign from 'jsrsasign';
 const ClientIdentity = require('fabric-shim').ClientIdentity;
 
-@Info({ title: 'AssetContract', description: 'My Smart Contract' })
+@Info({ title: 'AssetContract', description: 'CovidBloc Contract' })
 export class AssetContract extends Contract {
 
   /**
@@ -21,7 +21,6 @@ export class AssetContract extends Contract {
   @Transaction()
   public async addPatient(ctx: Context, patientObj: Patient): Promise<any> {
     let responseObj = {};
-    console.log("Reading meta");
     let currMeta = await this.readAsset(ctx, "meta") as Meta;
     if (currMeta === null) {
       responseObj["err"] = "Meta does not exist";
@@ -37,29 +36,25 @@ export class AssetContract extends Contract {
       responseObj["err"] = "Invalid medical official"
       return responseObj;
     }
-    // Check from the most recent approval number
-    for (let apNum = parseInt(healthOfficial.approveCtr); apNum > 0; apNum--) {
-      const apKey = `m${patientObj.medID}:${apNum.toString()}`;
-      let apObj = await this.readAsset(ctx, apKey) as Approval;
 
-      // Found valid approval from health official
-      if (apObj.patientID == null && apObj.approvalID == patientObj.approvalID) {
-        // Update approval to add patient key
-        apObj.patientID = newPKey;
-        await this.updateAsset(ctx, apKey, JSON.stringify(apObj));
+    console.log("Creating patient");
+    await this.createAsset(ctx, newPKey, JSON.stringify(patientObj));
 
-        console.log("Creating patient");
-        await this.createAsset(ctx, newPKey, JSON.stringify(patientObj));
-
-        currMeta.patientCtr = (lastPatientID + 1).toString();
-        console.log("Updating meta");
-        await this.updateAsset(ctx, "meta", JSON.stringify(currMeta));
-        console.log("done");
-
-        responseObj["msg"] = "Patient Added Successfully";
-        break;
-      }
+    // If we have apIDs for this day
+    if (Object.keys(healthOfficial.approvals).includes(patientObj.approvalDay)) {
+      // push new apID (this works because we have validated that apID is valid)
+      healthOfficial.approvals[patientObj.approvalDay].push(patientObj.approvalID);
+    } else {
+      // create a new record for this day and add this apID (this is an array)
+      healthOfficial.approvals[patientObj.approvalDay] = [patientObj.approvalID];
     }
+    await this.updateAsset(ctx, `m${patientObj.medID}`, JSON.stringify(healthOfficial));
+
+    currMeta.patientCtr = (lastPatientID + 1).toString();
+    console.log("Updating meta");
+    await this.updateAsset(ctx, "meta", JSON.stringify(currMeta));
+
+    responseObj["msg"] = "Patient added successfully";
     return responseObj;
   }
 
@@ -86,56 +81,6 @@ export class AssetContract extends Contract {
   }
 
   /**
-   * Adds a record of a health official approving a patient
-   * approvalNum = approveCtr + 1
-   * 
-   * @param medID Health Official's ID
-   * @param approvalNum The approval ID for this official
-   */
-  @Transaction()
-  public async addPatientApprovalRecord(ctx: Context, medID: string, newApprovalID: string): Promise<any> {
-    let responseObj = {}
-    let official = await this.readAsset(ctx, `m${medID}`) as HealthOfficial;
-    if (!official) {
-      responseObj["err"] = "Health official with this email doesnt exist";
-      return responseObj;
-    }
-    const apNum = parseInt(official.approveCtr) + 1;
-    official.approveCtr = apNum.toString();
-
-    const key = `m${medID}:${apNum.toString()}`;
-    let apObj = new Approval();
-    apObj.approvalID = newApprovalID;
-    apObj.patientID = null; // patient hasn't uploaded keys yet
-
-    await this.createAsset(ctx, key, JSON.stringify(apObj));
-    responseObj["msg"] = "Approval asset created successfully";
-
-    // Update health official record with new ctr only if the approval record is created
-    await this.updateAsset(ctx, `m${medID}`, JSON.stringify(official));
-
-    return responseObj;
-  }
-
-  @Transaction(false)
-  public async validApprovalID(ctx: Context, medID: string, checkID: string): Promise<boolean> {
-    const medicalOfficial = await this.readAsset(ctx, `m${medID}`) as HealthOfficial;
-    if (!medicalOfficial) {
-      // responseObj["err"] = "Health official with this email doesnt exist";
-      return false;
-    }
-    for (let i = parseInt(medicalOfficial.approveCtr); i > 0; i--) {
-      const apObjKey = `m${medID}:${i.toString()}`;
-      const approvalObj = await this.readAsset(ctx, apObjKey);
-      if (approvalObj !== null && approvalObj.approvalID === checkID) {
-        return false; // the ID clashes
-      }
-    }
-    // the ID hasn't been used before, so it's valid
-    return true;
-  }
-
-  /**
    * Query a HealthOfficial Asset from the WS.
    * 
    * @param ctx Transactional context
@@ -148,9 +93,11 @@ export class AssetContract extends Contract {
     const username = cid.getID();
     const attrCheck: boolean = cid.assertAttributeValue('health-official', 'true');
 
-    const medObj = await this.readAsset(ctx, `m${medID}`);
+    let medObj = await this.readAsset(ctx, `m${medID}`);
     if (attrCheck) {
       if (medObj !== null && username.includes(medObj.email)) {
+        delete medObj.publicKey;
+        delete medObj.approvals;
         responseObj["data"] = medObj;
       }
       else {
@@ -172,42 +119,45 @@ export class AssetContract extends Contract {
    * @param checkID ApprovalID of the patient 
    */
   @Transaction(false)
-  public async validatePatient(ctx: Context, medID: string, checkID: string, signature: string): Promise<any> {
+  public async validatePatient(ctx: Context, medID: string, checkID: string, signature: string, apTime: string): Promise<any> {
     let responseObj = {};
     const medObj = await this.readAsset(ctx, `m${medID}`);
     if (medObj != null) {
-      for (let i = parseInt(medObj.approveCtr); i > 0; i--) {
-        const assetKey = `m${medID}:${i.toString()}`;
-        const approvalObj = await this.readAsset(ctx, assetKey);
-        if (approvalObj !== null && approvalObj.approvalID === checkID && approvalObj.patientID === null) {
-          
+      let allTimestamps = Object.keys(medObj.approvals);
+      const twoWeekThreshold = (Math.floor(Math.floor(Math.floor(Date.now() / 1000) / 600) / 144) * 144) - (14 * 144);
+
+      // check if the approval came within last 14 days
+      if (parseInt(apTime) < twoWeekThreshold) {
+        // @ts-ignore
+        responseObj["err"] = "Old request";
+      } else {
+        if (allTimestamps.includes(apTime)) {
+          if (medObj.approvals[apTime].includes(checkID)) {
+            // @ts-ignore
+            responseObj["err"] = "Approval exists";
+          }
+        }
+        if (!Object.keys(responseObj).includes("err")) {
           const pubKeyPEM = medObj.publicKey;
 
           let sig = new jsrsasign.KJUR.crypto.Signature({ alg: "SHA512withRSA" });
           sig.init(pubKeyPEM);
-          sig.updateString(checkID+medID);
+          sig.updateString(checkID + medID + apTime);
           const isValid = sig.verify(signature);
 
           if (isValid) {
-            responseObj["msg"] = "Validate patient successful";
-            return responseObj;
-          }
-          else {
-            responseObj["err"] = "Invalid Signature";
-            break;
+            // @ts-ignore
+            responseObj["msg"] = "Validate patient Successful";
+          } else {
+            // @ts-ignore
+            responseObj["err"] = "Invalid signature";
           }
         }
-      }
-      // if we are here, there was no match in any of the approval objects
-      // unless, the signature was invalid
-      if (!Object.keys(responseObj).includes("err")) {
-        responseObj["err"] = "Invalid approval ID";
       }
     } else {
       //throw new Error(`Email ID ${medID} is invalid`);
       responseObj["err"] = "Invalid medical ID";
     }
-
     return responseObj;
   }
 
@@ -253,6 +203,8 @@ export class AssetContract extends Contract {
       responseObj["err"] = "Meta doesn't exist";
       return responseObj;
     }
+    // set-like behaviour b/c JS set doesn't work as expected for objs
+    let theDeletionSet = {};
 
     const threshold = parseInt(currentIval) - (144 * 14);
     for (let i = 1; i <= parseInt(metaObj.patientCtr); i++) {
@@ -260,18 +212,28 @@ export class AssetContract extends Contract {
       const patientObj = await this.readAsset(ctx, patientKey);
 
       if (patientObj !== null && parseInt(patientObj.ival) < threshold) {
-        const patientApproval = patientObj.approvalID;
-        const medId = patientObj.medID;
+        const apDay = patientObj.approvalDay;
+        const medID = patientObj.medID;
         await this.deleteAsset(ctx, patientKey);
 
-        const medObj = await this.readAsset(ctx, `m${medId}`);
-        for (let j = 1; j <= parseInt(medObj.approveCtr); j++) {
-          const appKey = "m" + medId + ":" + j;
-          const apObj = await this.readAsset(ctx, appKey);
-          if (apObj !== null && (apObj.approvalID === patientApproval) && (apObj.patientID === patientKey)) {
-            await this.deleteAsset(ctx, appKey);
-          }
+        // Store the medID and apDay to update this patient's medical official's record
+        if (theDeletionSet.hasOwnProperty(medID)) {
+          theDeletionSet[medID].push(apDay);
+        } else {
+          theDeletionSet[medID] = [apDay];
         }
+      }
+
+      // deletionSet = {medID: [apDay1, apDay2, ...]}
+      for (const [mID, dayArray] of Object.entries(theDeletionSet)) {
+        let mObj = await this.readAsset(ctx, `m${mID}`);
+        // @ts-ignore
+        dayArray.forEach((apDay: string) => {
+          // remove all approvalIDs for this day's entry
+          delete mObj.approvals[apDay];
+        });
+        // update the medObj
+        await this.updateAsset(ctx, `m${mID}`, mObj);
       }
     }
 

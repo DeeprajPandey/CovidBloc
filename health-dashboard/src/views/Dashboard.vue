@@ -12,8 +12,7 @@
           <div class="col-lg-12 col-md-10">
             <h1 class="display-2 text-white">Generate Approval Code</h1>
             <p class="text-white mt-0 mb-5">
-              After diagnosing a patient, please follow these steps to
-              generate
+              After diagnosing a patient, please follow these steps to generate
               <br />an approval ID so they can upload their Daily Keys from the
               CovidBloc App.
             </p>
@@ -38,39 +37,34 @@
               <ol class="list-unstyled">
                 <li>
                   Tap on upload keys on the CovidBloc App
-                  <i
-                    class="fa fa-question-circle"
-                    aria-hidden="true"
-                  ></i>
+                  <i class="fa fa-question-circle" aria-hidden="true"></i>
                 </li>
                 <li>
                   Either enter the details received on SMS
-                  <i
-                    class="fa fa-question-circle"
-                    aria-hidden="true"
-                  ></i>
+                  <i class="fa fa-question-circle" aria-hidden="true"></i>
                 </li>
                 <li>
-                  Or scan the QR code that will appear below once approval is generated
-                  <i
-                    class="fa fa-question-circle"
-                    aria-hidden="true"
-                  ></i>
+                  Or scan the QR code that will appear below once approval is
+                  generated
+                  <i class="fa fa-question-circle" aria-hidden="true"></i>
                 </li>
                 <li>
-                  Tap on I agree. This will share the patient's daily keys from the last 14
-                  days
-                  <i
-                    class="fa fa-question-circle"
-                    aria-hidden="true"
-                  ></i>
+                  Tap on I agree. This will share the patient's daily keys from
+                  the last 14 days
+                  <i class="fa fa-question-circle" aria-hidden="true"></i>
                 </li>
               </ol>
             </div>
             <div v-if="approvalStr">
-              <br/>
-              <p class="text-muted">Scan this code from the CovidBloc app to automatically upload the random IDs</p>
-              <img :src="qrURL" alt="QR Code to be scanned on the CovidBloc mobile app" />
+              <br />
+              <p class="text-muted">
+                Scan this code from the CovidBloc app to automatically upload
+                the random IDs
+              </p>
+              <img
+                :src="qrURL"
+                alt="QR Code to be scanned on the CovidBloc mobile app"
+              />
             </div>
           </card>
         </div>
@@ -93,10 +87,10 @@
                     <div class="mb-3">
                       <p class="text-muted">
                         The contact number is
-                        <mark>optional</mark> and we only
-                        ask for it to send the patient an SMS with the code for
-                        their convenience. You can generate an approval without
-                        their number if they do not wish to disclose it.
+                        <mark>optional</mark> and we only ask for it to send the
+                        patient an SMS with the code for their convenience. You
+                        can generate an approval without their number if they do
+                        not wish to disclose it.
                       </p>
                     </div>
                     <base-input
@@ -106,7 +100,11 @@
                       input-classes="form-control-alternative"
                       v-model="request.patientContact"
                     />
-                    <file-reader v-if="showFileUpload" @load="fileLoad" @err="fileErr"></file-reader>
+                    <file-reader
+                      v-if="showFileUpload"
+                      @load="fileLoad"
+                      @err="fileErr"
+                    ></file-reader>
                   </div>
                 </div>
               </div>
@@ -116,7 +114,8 @@
                   type="primary"
                   class="my-4"
                   @click="clickGenerate"
-                >Generate</base-button>
+                  >Generate</base-button
+                >
               </div>
             </form>
           </card>
@@ -134,14 +133,20 @@
         <p>
           You didn't enter the patient's contact number. That's okay, but they
           won't receive the approval ID and your medical ID via SMS.
-          <br />You will see the ID on the dashboard and will have to enter it on
-          their phone yourself.
+          <br />You will see the ID on the dashboard and will have to enter it
+          on their phone yourself.
         </p>
       </div>
 
       <template slot="footer">
         <base-button type="white" @click="modalConfirm">Ok, Got it</base-button>
-        <base-button type="link" text-color="white" class="ml-auto" @click="modalReject">Close</base-button>
+        <base-button
+          type="link"
+          text-color="white"
+          class="ml-auto"
+          @click="modalReject"
+          >Close</base-button
+        >
       </template>
     </modal>
   </div>
@@ -177,49 +182,65 @@ export default {
     };
   },
   methods: {
-    fileLoad(pKey) {
-      // Signature is sig(apID||medID)
-      this.sign(pKey, `${this.approvalID}${this.request.medID}`)
+    unixDay() {
+      return new Promise((resolve) => {
+        resolve(
+          Math.floor(Math.floor(Math.floor(Date.now() / 1000) / 600) / 144) *
+            144
+        );
+      });
+    },
+    async fileLoad(pKey) {
+      const now = await this.unixDay();
+      // Signature is sig(apID||medID||currIval)
+      this.sign(pKey, `${this.approvalID}${this.request.medID}${now}`)
+        // TODO: check if qr code is encoding the correct object
         .then((signature) => {
           this.approvalStr = JSON.stringify({
             approvalID: this.approvalID.toString(),
             medID: this.request.medID,
+            approvalTime: now,
             signature: signature,
           });
           this.genQRCode();
-          
-          // send the signature and ID to patient
-          this.$axios
-            .post(
-              "http://localhost:6400/sms",
-              {
-                apID: this.approvalID.toString(),
-                medID: this.request.medID.toString(),
-                contact: this.request.patientContact,
-                sig: signature,
-              },
-              { headers: { Authorization: this.$store.getters.authToken } }
-            )
-            .then((resp) => {
-              if (resp.data.smsErr) {
-                this.notify(resp.data.smsErr);
-              } else {
-                this.notify(
-                  "Signature and ID sent to patient. Waiting for daily keys."
-                );
-              }
-            })
-            .catch((err) => {
-              if (!err.response.data) {
-                this.notify(`⚠️ ${err.message}`);
-              } else {
-                this.notify(err.response.data);
-              }
-              console.log(err);
-            })
-            .finally(() => {
-              this.showFileUpload = false;
-            });
+
+          if (this.request.patientContact) {
+            // send the signature and ID to patient
+            this.$axios
+              .post(
+                "http://localhost:6400/sms",
+                {
+                  apID: this.approvalID.toString(),
+                  medID: this.request.medID.toString(),
+                  contact: this.request.patientContact,
+                  sig: signature,
+                },
+                { headers: { Authorization: this.$store.getters.authToken } }
+              )
+              .then((resp) => {
+                if (resp.data.smsErr) {
+                  this.notify(resp.data.smsErr);
+                } else {
+                  this.notify(
+                    "Signature and ID sent to patient. Waiting for daily keys."
+                  );
+                }
+              })
+              .catch((err) => {
+                if (!err.response.data) {
+                  this.notify(`⚠️ ${err.message}`);
+                } else {
+                  this.notify(err.response.data);
+                }
+                console.log(err);
+              })
+              .finally(() => {
+                this.showFileUpload = false;
+              });
+          } else {
+            // even when we don't send an sms, hide file upload
+            this.showFileUpload = false;
+          }
         })
         .catch((err) => {
           console.error(err);
@@ -260,26 +281,11 @@ export default {
     genApproval() {
       // Disable generate button until signature has been sent
       this.generateBtnDisabled = true;
-      this.$axios
-        .post("http://localhost:6400/generateapproval", this.request, {
-          headers: { Authorization: this.$store.getters.authToken },
-        })
-        .then((response) => {
-          this.approvalID = response.data.apID;
-
-          // Show input field and ask for private key
-          this.showFileUpload = true;
-          this.notify("Please provide your private key");
-        })
-        .catch((err) => {
-          this.generateBtnDisabled = false;
-          if (!err.response.data) {
-            this.notify(`⚠️ ${err.message}`);
-          } else {
-            this.notify(err.response.data);
-          }
-          console.log(err);
-        });
+      // apID will be handled via QR code so it can be UTS
+      this.approvalID = new Date.now() / 1000;
+      // Show input field and ask for private key
+      this.showFileUpload = true;
+      this.notify("Please provide your private key");
     },
     genQRCode() {
       console.log(this.approvalStr);

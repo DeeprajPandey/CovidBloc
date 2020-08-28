@@ -261,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _showTimestamps(context, exposed);
                 } else {
                   _validationPopUp(context, 'You are Safe',
-                      'You havent come across anyone who has tested postive');
+                      'No exposure detected.\nNobody you met in the past two weeks has been diagnosed. Keep taking precautions.');
                 }
               },
             ),

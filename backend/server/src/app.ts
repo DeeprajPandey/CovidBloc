@@ -110,29 +110,6 @@ app.post("/trial", passport.authenticate('jwt', { session: false }), async (req:
   res.status(200).send("Bug report filed");
 });
 
-// Temp use: invoke readAsset
-// app.get("/", async (req: Request, res: Response) => {
-//   try {
-//     const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(fabric.ADMIN);
-//     if (networkObj.err != null || !("gateway" in networkObj)) {
-//       console.error(networkObj.err);
-//       throw new Error("Admin not registered.");
-//     }
-//     const key = JSON.stringify(req.query.key);
-
-//     const contractResponse = await fabric.invoke('readAsset', [req.query.key], true, networkObj);
-//     networkObj.gateway.disconnect();
-
-//     // if ("err" in contractResponse) {
-//     //   console.log(contractResponse);
-//     //   throw new Error(contractResponse.err);
-//     // }
-//     res.status(200).send(JSON.stringify(contractResponse));
-//   } catch (e) {
-//     res.status(418).send("I'm a teapot.");
-//   }
-// });
-
 /** Characteristic checks before trying to register */
 app.post("/check-registration-status", async (req: Request, res: Response) => {
   try {
@@ -397,48 +374,6 @@ app.post("/healthofficial", async (req: Request, res: Response) => {
   }
 });
 
-// POST: Generate an approval for patient
-app.post("/generateapproval", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
-  try {
-    const validBody = Boolean(
-      req.body.email &&
-      req.body.medID
-    );
-    if (!validBody) {
-      res.status(401).send("⚠️ Invalid request");
-      return;
-    }
-
-    let approvalID = -1;
-    const networkObj: GenericResponse | NetworkObject = await fabric.connectAsUser(req.body.email);
-    if (networkObj.err != null || !("gateway" in networkObj)) {
-      console.error(networkObj.err);
-      throw new Error("Invalid request");
-    }
-    while (true) {
-      approvalID = generateApprovalID();
-      const valid = await fabric.invoke('validApprovalID', [req.body.medID, approvalID.toString()], true, networkObj);
-      if (valid) {
-        break;
-      }
-    }
-    const contractResponse = await fabric.invoke('addPatientApprovalRecord', [req.body.medID, approvalID.toString()], false, networkObj);
-    networkObj.gateway.disconnect();
-    if ("err" in contractResponse) {
-      console.error(contractResponse.err);
-      // Transaction error
-      throw new Error("Something went wrong, please try again.");
-    }
-
-    // Send the approval ID to display on the dashboard
-    res.status(200).json({ apID: approvalID });
-  } catch (e) {
-    console.error(e);
-    res.status(500).send("Server error");
-    return;
-  }
-});
-
 // POST: Send the signature and approval ID to patient contact
 app.post("/sms", passport.authenticate('jwt', { session: false }), async (req: Request, res: Response) => {
   try {
@@ -484,6 +419,7 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
       req.body.approvalID &&
       req.body.medID &&
       req.body.signature &&
+      req.body.approvalDay &&
       req.body.ival &&
       req.body.dailyKeys.length > 0
     );
@@ -497,10 +433,12 @@ app.post("/pushkeys", async (req: Request, res: Response) => {
       console.error(networkObj.err);
       throw new Error("Admin not registered.");
     }
-    const validateResponse = await fabric.invoke('validatePatient', [req.body.medID, req.body.approvalID, req.body.signature], true, networkObj);
+    const validateResponse = await fabric.invoke('validatePatient', [req.body.medID, req.body.approvalID, req.body.signature, req.body.approvalDay], true, networkObj);
     if ("err" in validateResponse) {
       throw new Error(validateResponse.err);
     }
+    // remove signature
+    delete req.body.signature;
     const contractResponse = await fabric.invoke('addPatient', [JSON.stringify(req.body)], false, networkObj);
     networkObj.gateway.disconnect();
     if ("err" in contractResponse) {
@@ -630,16 +568,6 @@ async function deleteKeys() {
     // Transaction error
     throw new Error(`Failed to run contract function deleteKeys.\n${contractResponse.err}`);
   }
-}
-
-function generateApprovalID() {
-  const prng = seedrandom.tychei(new Date().valueOf().toString());
-  let approvalID = prng.int32();
-  if (approvalID < 0) {
-    approvalID = approvalID * -1;
-  }
-
-  return approvalID;
 }
 
 async function sendSMS(to: string, msg: string): Promise<void> {
