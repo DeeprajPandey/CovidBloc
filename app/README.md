@@ -1,1 +1,1 @@
-# CovidBloc Android Application
+# CovidBloc Smartphone Application
