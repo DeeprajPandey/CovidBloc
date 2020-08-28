@@ -1,13 +1,3 @@
-# exposure-notification-on-fabric
+# CovidBloc - Documentation
 
-> A Replica of the Google-Apple Exposure Notification API built on top of Hyperledger Fabric
-
-## Development
-
-```bash
-yarn dev
-yarn build
-```
-
-For more details, please head VuePress's [documentation](https://v1.vuepress.vuejs.org/).
-
+A VuePress Documentation for the CovidBloc system. This is currently a work in progress and there might be breaking changes as updates are pushed.
