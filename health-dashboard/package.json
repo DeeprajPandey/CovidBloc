@@ -1,6 +1,6 @@
 {
   "name": "covidbloc-health-dashboard",
-  "version": "0.1.8",
+  "version": "1.2.7",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",

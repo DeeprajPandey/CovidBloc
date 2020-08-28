@@ -1,6 +1,6 @@
 {
   "name": "covidbloc-chaincode",
-  "version": "1.5.4",
+  "version": "1.7.1",
   "description": "CovidBloc Chaincode",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
