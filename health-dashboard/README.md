@@ -19,3 +19,5 @@ To run a development server, run the following command
 ```bash
 $ npm run dev
 ```
+
+This will run the dashboard on port `8080` and only the Auth pages will be accessible.
