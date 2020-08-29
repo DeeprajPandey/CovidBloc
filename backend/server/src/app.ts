@@ -193,7 +193,6 @@ app.post("/register", async (req: Request, res: Response) => {
     delete medObj.t_authstat;
     delete medObj.t_otp;
     delete medObj.t_timestamp;
-    medObj.approveCtr = "0";
     // TODO: check if it's a valid PEM encoded public key?
     medObj.publicKey = req.body.publicKey;
 
