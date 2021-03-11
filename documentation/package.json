@@ -1,7 +1,7 @@
 {
   "name": "exposure-notification-on-fabric",
   "version": "0.0.1",
-  "description": "A Replica of the Google-Apple Exposure Notification API built on top of Hyperledger Fabric",
+  "description": "API Documentation for the Hyperledger Fabric interface of CovidBloc - a privacy preserving contact tracing framework based on the Google-Apple Exposure Notification Framework.",
   "main": "index.js",
   "authors": [
     {
@@ -13,10 +13,10 @@
       "email": "nandini.agrawal@alumni.ashoka.edu.in"
     }
   ],
-  "repository": "https://github.com/DeeprajPandey/fabric-contact-tracing",
+  "repository": "https://github.com/DeeprajPandey/CovidBloc",
   "scripts": {
-    "dev": "vuepress dev docs",
-    "build": "vuepress build docs"
+    "dev": "npx vuepress dev docs",
+    "build": "npx vuepress build docs"
   },
   "license": "MIT",
   "devDependencies": {
