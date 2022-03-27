@@ -62,7 +62,7 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "jsrsasign": "^8.0.13",
-    "minimist": "^1.2.5",
+    "minimist": "^1.2.6",
     "mocha": "^6.2.0",
     "nodemon": "^2.0.4",
     "nyc": "^14.1.1",
