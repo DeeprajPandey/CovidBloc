@@ -22,7 +22,7 @@
   "dependencies": {
     "fabric-contract-api": "^1.4.5",
     "fabric-shim": "^1.4.5",
-    "jsrsasign": "^9.0.3"
+    "jsrsasign": "^10.5.25"
   },
   "devDependencies": {
     "@types/chai": "^4.2.11",
